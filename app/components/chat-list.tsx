@@ -23,10 +23,6 @@ export function ChatList({ messages }: ChatList) {
           )}
         </div>
       ))}
-      {/* This button should be removed in production.*/}
-      <Button className="relative mx-auto my-2">
-        <a href="/rank">Continue</a>
-      </Button>
     </div>
   )
 }

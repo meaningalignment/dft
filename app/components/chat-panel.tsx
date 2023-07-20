@@ -3,7 +3,7 @@ import { type UseChatHelpers } from "ai/react"
 import { Button } from "./ui/button"
 import { PromptForm } from "./prompt-form"
 import { ButtonScrollToBottom } from "./button-scroll-to-bottom"
-import { IconRefresh, IconStop } from "./ui/icons"
+import { IconArrowRight, IconNextChat, IconRefresh, IconStop } from "./ui/icons"
 import { FooterText } from "./footer"
 
 export interface ChatPanelProps
@@ -45,15 +45,21 @@ export function ChatPanel({
               Stop generating
             </Button>
           ) : (
-            messages?.length > 0 && (
-              <Button
-                variant="outline"
-                onClick={() => reload()}
-                className="bg-white"
-              >
-                <IconRefresh className="mr-2" />
-                Regenerate response
-              </Button>
+            messages?.length > 1 && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => reload()}
+                  className="bg-white"
+                >
+                  <IconRefresh className="mr-2" />
+                  Regenerate response
+                </Button>
+                <Button className="ml-2">
+                  <IconArrowRight className="mr-2" />
+                  <a href="/rank">Continue</a>
+                </Button>
+              </>
             )
           )}
         </div>
