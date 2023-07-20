@@ -1,0 +1,8 @@
+node_modules
+node_modules.nosync
+
+/.cache
+/build
+/public/build
+.env
+/notes

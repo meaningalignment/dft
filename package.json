@@ -1,0 +1,32 @@
+{
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "build": "remix build",
+    "dev": "remix dev",
+    "start": "remix-serve build",
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@prisma/client": "5",
+    "@remix-run/css-bundle": "^1.19",
+    "@remix-run/node": "^1.19",
+    "@remix-run/react": "^1.19",
+    "@remix-run/serve": "^1.19",
+    "cowpunk-auth": "latest",
+    "isbot": "^3.6.8",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@remix-run/dev": "^1.19",
+    "@types/react": "^18.0.35",
+    "@types/react-dom": "^18.0.11",
+    "prisma": "5",
+    "tailwindcss": "latest",
+    "typescript": "^5.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

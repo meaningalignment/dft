@@ -1,0 +1,29 @@
+datasource db {
+  provider          = "postgres"
+  url               = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl         = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING") // used for migrations
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  role      String[] @default(["USER"])
+}
+
+model EmailCodes {
+  email              String   @unique
+  loginCode          String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  loginCodeExpiresAt DateTime
+  register           Boolean  @default(false)
+  extraData          Json?
+}
