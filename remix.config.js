@@ -6,6 +6,31 @@ module.exports = {
   // serverBuildPath: "build/index.js",
   // publicPath: "/build/",
   serverModuleFormat: "cjs",
+  // See https://github.com/remix-run/remix/discussions/2594.
+  serverDependenciesToBundle: [
+    /^rehype.*/,
+    /^remark.*/,
+    /^unified.*/,
+    /^unist.*/,
+    /^hast.*/,
+    /^bail.*/,
+    /^trough.*/,
+    /^mdast.*/,
+    /^micromark.*/,
+    /^decode.*/,
+    /^character.*/,
+    /^property.*/,
+    /^space.*/,
+    /^comma.*/,
+    /^react-markdown$/,
+    /^vfile.*/,
+    /^ccount*/,
+    /^markdown-table*/,
+    /^longest-streak.*/,
+    /^is-plain-obj.*/,
+    /^escape-string-regexp.*/,
+    /^trim-lines.*/,
+  ],
   tailwind: true,
   future: {
     v2_dev: true,
@@ -15,4 +40,4 @@ module.exports = {
     v2_normalizeFormMethod: true,
     v2_routeConvention: true,
   },
-};
+}

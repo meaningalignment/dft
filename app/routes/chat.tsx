@@ -1,14 +1,15 @@
-import Button from "~/components/Button"
-import Navbar from "~/components/Navbar"
+import Button from "~/components/button"
+import { Chat } from "~/components/chat"
+import Header from "~/components/header"
 
 export default function ChatScreen() {
   return (
     <div className="flex flex-col h-screen w-screen">
-      <Navbar />
+      <Header />
       <div className="grid flex-grow place-items-center">
-        <h1>Chat</h1>
+        <Chat id={"foobar"} />
         <Button>
-          <a href="/flow/rank">Continue</a>
+          <a href="/rank">Continue</a>
         </Button>
       </div>
     </div>

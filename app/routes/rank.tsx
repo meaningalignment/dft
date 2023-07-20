@@ -1,14 +1,14 @@
-import Button from "~/components/Button"
-import Navbar from "~/components/Navbar"
+import Button from "~/components/button"
+import Header from "~/components/header"
 
 export default function RankScreen() {
   return (
     <div className="flex flex-col h-screen w-screen">
-      <Navbar />
+      <Header />
       <div className="grid flex-grow place-items-center">
         <h1>Rank Values</h1>
         <Button>
-          <a href="/flow/link">Continue</a>
+          <a href="/link">Continue</a>
         </Button>
       </div>
     </div>

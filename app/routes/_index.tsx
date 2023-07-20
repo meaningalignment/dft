@@ -19,7 +19,7 @@ export default function Index() {
       navigate("/auth/login")
     } else {
       console.log(user)
-      navigate("/flow/chat")
+      navigate("/chat")
     }
   }, [user, navigate])
 
