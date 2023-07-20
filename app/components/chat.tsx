@@ -14,12 +14,18 @@ export interface ChatProps extends React.ComponentProps<"div"> {
 export function Chat({ id, initialMessages, className }: ChatProps) {
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
-      initialMessages,
       id,
+      api: "/api/chat", // default is /api/chat, whereas the remix function is exposed at /chat.
+      initialMessages,
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: {
         id,
       },
-      onResponse(response) {
+      async onResponse(response) {
+        console.log(response)
+
         if (response.status === 401) {
           toast.error(response.statusText)
         }
@@ -34,7 +40,9 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
         ) : (
-          <EmptyScreen />
+          <>
+            <EmptyScreen />
+          </>
         )}
       </div>
       <ChatPanel

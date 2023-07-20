@@ -2,6 +2,7 @@ import { type Message } from "ai"
 
 import { Separator } from "./ui/separator"
 import { ChatMessage } from "./chat-message"
+import { Button } from "./ui/button"
 
 export interface ChatList {
   messages: Message[]
@@ -22,6 +23,10 @@ export function ChatList({ messages }: ChatList) {
           )}
         </div>
       ))}
+      {/* This button should be removed in production.*/}
+      <Button className="relative mx-auto my-2">
+        <a href="/rank">Continue</a>
+      </Button>
     </div>
   )
 }
