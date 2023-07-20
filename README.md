@@ -1,35 +1,28 @@
-# Welcome to Remix Cowpunk
+# Welcome to the DFT repo
 
-- [Remix Docs](https://remix.run/docs)
+## Running locally
+
+There are lots of node package managers. My favorite is `bun`, but you can substitute `npm` or `pnmp` (or with some changes, `yarn`) below.
+
+To intall everything
+
+`bun i`
+`bunx prisma generate`
+
+Then, you'll need to add an `.env` file with the database URL and some other stuff. Joe will send you one.
+
+To run the local dev server
+
+`bun run dev`
+
+## Evolving the schema
+
+Let's say you want to add a table to the db. Just run `bunx prisma db push` to take your local changes in schema.prisma and migrate the live db to match.
+
+## Depoloyment
+
+Pushing to the github repo should automatically deploy at `dft.meaningalignment.org`.
 
 ## Development
 
-Stick the following stuff in an `.env` file
-
-```sh
-POSTGRES_URL="..."
-POSTGRES_PRISMA_URL="..."
-POSTGRES_URL_NON_POOLING="..."
-SESSION_SECRET="..."
-MAILGUN_API_KEY="..."
-MAILGUN_DOMAIN="..."
-```
-
-and modify the stuff in `/app/config.server.ts`.
-
-You might need to
-
-```sh
-bunx prisma db push
-```
-
-To populate your database.
-
-Then you should be able to
-
-```sh
-bunx prisma generate
-npm run dev
-```
-
-To start your app in development mode, rebuilding assets on file changes.
+- [Remix Docs](https://remix.run/docs)
