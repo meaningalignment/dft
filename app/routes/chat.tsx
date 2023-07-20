@@ -1,4 +1,4 @@
-import Button from "~/components/button"
+import { Button } from "~/components/ui/button"
 import { Chat } from "~/components/chat"
 import Header from "~/components/header"
 
