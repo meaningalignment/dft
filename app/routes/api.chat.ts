@@ -1,4 +1,8 @@
-import { Configuration, OpenAIApi } from "openai-edge"
+import {
+  ChatCompletionRequestMessage,
+  Configuration,
+  OpenAIApi,
+} from "openai-edge"
 import { ActionArgs, ActionFunction } from "@remix-run/node"
 
 //
@@ -112,7 +116,14 @@ export const action: ActionFunction = async ({
 
   const res = await openai.createChatCompletion({
     model: "gpt-3.5-turbo",
-    messages,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are an assistant helping users understand the underlying value behind how they respond to a tricky moral situation.",
+      },
+      ...messages,
+    ],
     temperature: 0.7,
     stream: true,
   })
