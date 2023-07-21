@@ -16,8 +16,8 @@ import {
 } from "@remix-run/react"
 import styles from "./tailwind.css"
 import { auth, db } from "./config.server"
-import { User } from "./types"
 import { TooltipProvider } from "@radix-ui/react-tooltip"
+import { User } from "@prisma/client"
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
