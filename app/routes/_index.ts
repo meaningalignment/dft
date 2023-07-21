@@ -1,5 +1,5 @@
 import type { V2_MetaFunction } from "@remix-run/node"
-import { useLoaderData, useNavigate } from "@remix-run/react"
+import { useNavigate } from "@remix-run/react"
 import { useEffect } from "react"
 import { useCurrentUser } from "~/root"
 
@@ -19,7 +19,7 @@ export default function Index() {
       navigate("/auth/login")
     } else {
       console.log(user)
-      navigate("/flow/chat")
+      navigate("/chat")
     }
   }, [user, navigate])
 

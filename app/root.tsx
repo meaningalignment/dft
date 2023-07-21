@@ -16,6 +16,8 @@ import {
 } from "@remix-run/react"
 import styles from "./tailwind.css"
 import { auth, db } from "./config.server"
+import { TooltipProvider } from "@radix-ui/react-tooltip"
+import { User } from "@prisma/client"
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -39,19 +41,21 @@ export function useCurrentUser(): User | null {
 
 export default function App() {
   return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="widt=device-width,initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        <Outlet />
-        <ScrollRestoration />
-        <Scripts />
-        <LiveReload />
-      </body>
-    </html>
+    <TooltipProvider>
+      <html lang="en">
+        <head>
+          <meta charSet="utf-8" />
+          <meta name="viewport" content="widt=device-width,initial-scale=1" />
+          <Meta />
+          <Links />
+        </head>
+        <body className="bg-slate-50">
+          <Outlet />
+          <ScrollRestoration />
+          <Scripts />
+          <LiveReload />
+        </body>
+      </html>
+    </TooltipProvider>
   )
 }

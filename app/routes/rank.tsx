@@ -1,14 +1,15 @@
-import Button from "~/components/Button"
-import Navbar from "~/components/Navbar"
+import { Button } from "~/components/ui/button"
+import Header from "~/components/header"
+import { Link } from "@remix-run/react"
 
 export default function RankScreen() {
   return (
     <div className="flex flex-col h-screen w-screen">
-      <Navbar />
+      <Header />
       <div className="grid flex-grow place-items-center">
         <h1>Rank Values</h1>
-        <Button>
-          <a href="/flow/link">Continue</a>
+        <Button asChild>
+          <Link to="/link">Continue</Link>
         </Button>
       </div>
     </div>
