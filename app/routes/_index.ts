@@ -1,7 +1,7 @@
 import type { V2_MetaFunction } from "@remix-run/node"
 import { useNavigate } from "@remix-run/react"
 import { useEffect } from "react"
-import { useCurrentUser } from "~/root"
+import { useCurrentUser } from "../root"
 
 export const meta: V2_MetaFunction = () => {
   return [

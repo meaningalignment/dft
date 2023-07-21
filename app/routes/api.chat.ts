@@ -34,17 +34,15 @@ export class StreamingTextResponse extends Response {
 }
 
 function addRawHeaders(headers: Headers) {
-  // @ts-expect-error shame on me
+  // @ts-expect-error bad types
   headers.raw = function () {
     const rawHeaders = {}
     const headerEntries = headers.entries()
     for (const [key, value] of headerEntries) {
       const headerKey = key.toLowerCase()
       if (rawHeaders.hasOwnProperty(headerKey)) {
-        // @ts-expect-error shame on me
         rawHeaders[headerKey].push(value)
       } else {
-        // @ts-expect-error shame on me
         rawHeaders[headerKey] = [value]
       }
     }
@@ -115,6 +113,27 @@ Some general guidelines:
 // Functions.
 //
 
+// functions: [
+//   {
+//     name: "get_current_weather",
+//     description: "Get the current weather in a given location",
+//     parameters: {
+//       type: "object",
+//       properties: {
+//         location: {
+//           type: "string",
+//           description: "The city and state, e.g. San Francisco, CA"
+//         },
+//         unit: {
+//           type: "string",
+//           enum: ["celsius", "fahrenheit"]
+//         }
+//       },
+//       required: ["location"]
+//     }
+//   }
+// ]
+
 const chatFunctions: ChatCompletionFunctions[] = [
   {
     name: "articulate_values_card",
@@ -130,6 +149,7 @@ const chatFunctions: ChatCompletionFunctions[] = [
               "A comprehensive summary of the way of living that is meaningful to the user.",
           },
         },
+        required: ["summary"],
       },
     ],
   },
@@ -146,6 +166,7 @@ const chatFunctions: ChatCompletionFunctions[] = [
             description: "The values card submitted by the user.",
           },
         },
+        required: ["values_card"],
       },
     ],
   },
@@ -164,7 +185,7 @@ export const action: ActionFunction = async ({
   const openai = new OpenAIApi(configuration)
 
   const json = await request.json()
-  const { messages, previewToken } = json
+  const { messages } = json
 
   // TODO add authentication
   // if (!userId) {
@@ -173,12 +194,8 @@ export const action: ActionFunction = async ({
   //   })
   // }
 
-  if (previewToken) {
-    configuration.apiKey = previewToken
-  }
-
   const res = await openai.createChatCompletion({
-    model: "gpt-4",
+    model: "gpt-3.5-turbo-0613",
     messages: [
       {
         role: "system",
@@ -187,10 +204,15 @@ export const action: ActionFunction = async ({
       ...messages,
     ],
     temperature: 0.7,
-    // functions: chatFunctions,
-    // function_call: "auto",
+    functions: chatFunctions,
+    function_call: "auto",
     stream: true,
   })
+
+  if (!res.ok) {
+    const body = await res.json()
+    throw body.error
+  }
 
   return new StreamingTextResponse(OpenAIStream(res))
 }

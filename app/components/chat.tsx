@@ -1,3 +1,4 @@
+import React from "react"
 import { useChat, type Message } from "ai/react"
 import { cn } from "../utils"
 import { ChatList } from "./chat-list"
@@ -18,6 +19,9 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       id,
       api: "/api/chat",
       initialMessages,
+      body: {
+        id,
+      },
       headers: {
         "Content-Type": "application/json",
       },
@@ -28,9 +32,6 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
         console.log("On Function call")
         console.log(chatMessages)
         console.log(functionCall)
-      },
-      body: {
-        id,
       },
       onFinish(message) {
         console.log("On Finish")
