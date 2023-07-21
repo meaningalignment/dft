@@ -5,6 +5,7 @@ import { PromptForm } from "./prompt-form"
 import { ButtonScrollToBottom } from "./button-scroll-to-bottom"
 import { IconArrowRight, IconNextChat, IconRefresh, IconStop } from "./ui/icons"
 import { FooterText } from "./footer"
+import { Link } from "@remix-run/react"
 
 export interface ChatPanelProps
   extends Pick<
@@ -57,7 +58,7 @@ export function ChatPanel({
                 </Button>
                 <Button className="ml-2">
                   <IconArrowRight className="mr-2" />
-                  <a href="/rank">Continue</a>
+                  <Link to="/rank">Continue</Link>
                 </Button>
               </>
             )

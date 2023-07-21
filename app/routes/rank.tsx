@@ -1,5 +1,6 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
+import { Link } from "@remix-run/react"
 
 export default function RankScreen() {
   return (
@@ -7,8 +8,8 @@ export default function RankScreen() {
       <Header />
       <div className="grid flex-grow place-items-center">
         <h1>Rank Values</h1>
-        <Button>
-          <a href="/link">Continue</a>
+        <Button asChild>
+          <Link to="/link">Continue</Link>
         </Button>
       </div>
     </div>
