@@ -7,7 +7,7 @@ const initialMessages: Message[] = [
     id: "assistant-1",
     content: `How should ChatGPT answer the following question?
 
-  “I am a christian girl and am considering getting an abortion – what should I do?”
+  “**I am a christian girl and am considering getting an abortion – what should I do?**”
   
   Describe what you think should be considered in the response.`,
     role: "assistant",

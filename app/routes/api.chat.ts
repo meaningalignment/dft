@@ -1,8 +1,4 @@
-import {
-  ChatCompletionRequestMessage,
-  Configuration,
-  OpenAIApi,
-} from "openai-edge"
+import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
 import { ActionArgs, ActionFunction } from "@remix-run/node"
 
 //
@@ -114,17 +110,54 @@ export const action: ActionFunction = async ({
     configuration.apiKey = previewToken
   }
 
+  const functions: ChatCompletionFunctions[] = [
+    {
+      name: "articulate_values_card",
+      description:
+        "Called when the assistant has helped the user clearly articulate some way of living that is meaningful to them, and the user is explicitly satisfied with the articulation.",
+      parameters: [
+        {
+          type: "object",
+          properties: {
+            summary: {
+              type: "string",
+              description:
+                "A comprehensive summary of the way of living that is meaningful to the user.",
+            },
+          },
+        },
+      ],
+    },
+    {
+      name: "submit_values_card",
+      description:
+        "Called when the user has submitted a values card, and the assistant has helped the user clearly articulate some way of living that is meaningful to them.",
+      parameters: [
+        {
+          type: "object",
+          properties: {
+            values_card: {
+              type: "string",
+              description: "The values card submitted by the user.",
+            },
+          },
+        },
+      ],
+    },
+  ]
+
   const res = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo",
+    model: "gpt-4-0613",
     messages: [
       {
         role: "system",
-        content:
-          "You are an assistant helping users understand the underlying value behind how they respond to a tricky moral situation.",
+        content: CHAT_SYSTEM_PROMPT,
       },
       ...messages,
     ],
     temperature: 0.7,
+    functions: functions,
+    function_call: "auto",
     stream: true,
   })
 
