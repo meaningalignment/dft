@@ -6,7 +6,6 @@ import { ChatPanel } from "./chat-panel"
 import { EmptyScreen } from "./empty-screen"
 import { ChatScrollAnchor } from "./chat-scroll-anchor"
 import { toast } from "react-hot-toast"
-import { ChatCompletionRequestMessageFunctionCall } from "openai-edge"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
@@ -19,28 +18,10 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       id,
       api: "/api/chat",
       initialMessages,
-      body: {
-        id,
-      },
-      headers: {
-        "Content-Type": "application/json",
-      },
-      experimental_onFunctionCall: async (
-        chatMessages: Message[],
-        functionCall: ChatCompletionRequestMessageFunctionCall
-      ) => {
-        console.log("On Function call")
-        console.log(chatMessages)
-        console.log(functionCall)
-      },
       onFinish(message) {
-        console.log("On Finish")
         console.log(message)
       },
       onResponse: async (response) => {
-        console.log("On Response")
-        console.log(response)
-
         if (response.status === 401) {
           toast.error(response.statusText)
         }

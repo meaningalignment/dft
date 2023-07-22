@@ -1,218 +1,229 @@
-import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
+import { Configuration, OpenAIApi } from "openai-edge"
 import { ActionArgs, ActionFunction } from "@remix-run/node"
+import { functions, systemPrompt, articulationPrompt } from "~/lib/consts"
+import { ChatCompletionRequestMessage } from "openai-edge"
+import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
+// import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
+
+export const runtime = "edge"
+
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+})
+
+const openai = new OpenAIApi(configuration)
+
+export type ArticulationFunction = {
+  name: string
+  arguments: {
+    summary: string
+    description?: string
+  }
+}
+
+export type SubmitFunction = {
+  name: string
+  arguments: {
+    values_card: string
+  }
+}
+
+// For debug purposes.
+export type DebugFunction = {
+  name: string
+  arguments: {
+    location: string
+    unit?: string
+  }
+}
 
 //
-// The Vercel "ai" package is broken for Remix.
-// Below is a temporary fix from https://github.com/vercel-labs/ai/issues/199.
+// Vercel AI openai functions handling is broken in Remix. The `experimental_onFunctionCall` provided by the `ai` package does not work.
 //
-// The following code (until the "prompts" section)
-// should be replaced with the classes from the "ai" package
-// with the same names when above is fixed.
+// We have to handle them manually, until https://github.com/vercel-labs/ai/issues/199 is fixed.
+// This is done by listening to the first token and seeing if it is a function call.
+// If so, wait for the whole response and handle the function call.
+// Otherwise, return the stream as-is.
 //
+async function getFunctionCall(
+  res: Response
+): Promise<ArticulationFunction | SubmitFunction | DebugFunction | null> {
+  const stream = OpenAIStream(res.clone())
+  const reader = stream.getReader()
 
-import { createEventStreamTransformer, trimStartOfStreamHelper } from "ai"
-import { ReadableStream as PolyfillReadableStream } from "web-streams-polyfill"
-import { createReadableStreamWrapper } from "@mattiasbuelens/web-streams-adapter"
+  //
+  // In the case of a function call, the first token in the stream
+  // is an unfinished JSON object, with "function_call" as the first key.
+  //
+  // We can use that key to check if the response is a function call.
+  //
+  const { value: first } = await reader.read()
+  const isFunctionCall = first
+    ?.replace(/[^a-zA-Z0-9_]/g, "")
+    ?.startsWith("function_call")
 
-// @ts-expect-error bad types
-const toPolyfillReadable = createReadableStreamWrapper(PolyfillReadableStream)
-const toNativeReadable = createReadableStreamWrapper(ReadableStream)
+  if (!isFunctionCall) {
+    return null
+  }
 
-export class StreamingTextResponse extends Response {
-  constructor(res: ReadableStream, init?: ResponseInit) {
-    const headers: HeadersInit = {
-      "Content-Type": "text/plain; charset=utf-8",
-      ...init?.headers,
+  //
+  // Function arguments are streamed as tokens, so we need to
+  // read the whole stream, concatenate the tokens, and parse the resulting JSON.
+  //
+  let result = first
+
+  while (true) {
+    const { done, value } = await reader.read()
+
+    if (done) {
+      break
     }
-    super(res, { ...init, status: 200, headers })
-    this.getRequestHeaders()
+
+    result += value
   }
 
-  getRequestHeaders() {
-    return addRawHeaders(this.headers)
-  }
+  // Return the resulting function call.
+  const json = JSON.parse(result)["function_call"]
+  json["arguments"] = JSON.parse(json["arguments"]) // This is needed due to the way tokens are streamed with escape characters.
+  return json as ArticulationFunction | SubmitFunction | DebugFunction
 }
 
-function addRawHeaders(headers: Headers) {
-  // @ts-expect-error bad types
-  headers.raw = function () {
-    const rawHeaders = {}
-    const headerEntries = headers.entries()
-    for (const [key, value] of headerEntries) {
-      const headerKey = key.toLowerCase()
-      if (rawHeaders.hasOwnProperty(headerKey)) {
-        rawHeaders[headerKey].push(value)
-      } else {
-        rawHeaders[headerKey] = [value]
-      }
-    }
-    return rawHeaders
-  }
-  return headers
-}
-
-function parseOpenAIStream(): (data: string) => string | void {
-  const trimStartOfStream = trimStartOfStreamHelper()
-  return (data) => {
-    // TODO: Needs a type
-    const json = JSON.parse(data)
-
-    // this can be used for either chat or completion models
-    const text = trimStartOfStream(
-      json.choices[0]?.delta?.content ?? json.choices[0]?.text ?? ""
-    )
-
-    return text
-  }
-}
-
-function OpenAIStream(response: Response): ReadableStream<any> {
-  if (!response.ok || !response.body) {
-    throw new Error(
-      `Failed to convert the response to stream. Received status code: ${response.status}.`
-    )
-  }
-
-  const responseBodyStream = toPolyfillReadable(response.body)
-
-  // @ts-expect-error bad types
-  return toNativeReadable(
-    // @ts-expect-error bad types
-    responseBodyStream.pipeThrough(
-      createEventStreamTransformer(parseOpenAIStream())
-    )
-  )
-}
-
-//
-// Prompts.
-//
-
-const chatSystemPrompt = `You are a meaning assistant, helping a user understand what their underlying "sources of meaning" are when deliberating about how they think ChatGPT should respond to morally tricky situations. 
-
-A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. These are more specific than big words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity.
-
-A source of meaning is distinct from similar concepts:
-- A source of meaning is not a goal. A goal is something you want to achieve, like "become a doctor" or "get married". A source of meaning is a way of living, like "be a good friend" or "be a good listener".
-- A source of meaning is not a moral principle. A source of meaning is not a rule that you think everyone should follow. It is a way of living that is important to the user, but not necessarily to others.
-- A source of meaning is not a norm or a social expectation. A source of meaning is not something you do because you feel like you have to, or because you feel like you should. It is something the user does because it is intrinsically important to them.
-- A source of meaning is not an internalized norm – a norm the user has adopted outside of the original social context. It is a way of living that produces a sense of meaning for you, not a way of living that you think is "right" or "correct".
-
-Your task is to find out what the source of meaning behind the user's response is, and disamiguate it from goals, moral principles, norms, and internalized norms.
-
-Some strategies you can use:
-- Asking the user why they think ChatGPT should respond in a particular way.
-- Asking the user about similar situations they have encountered in the past, how they felt then, and what they paid attention to.
-
-Some general guidelines:
-- Don't "lead the witness". Ask questions and don't make assumptions about the users motivations.
-- To clarify the source of meaning, ask what the user payed attention to when living by it – what felt meaningful to attend to? What one pays attention to is a good way to externally verify that a user is living by a source of meaning.
-- Refer to "sources of meaning" as "values" in the conversation with the user. The user may not be familiar with the term "source of meaning".`
-
-//
-// Functions.
-//
-
-// functions: [
-//   {
-//     name: "get_current_weather",
-//     description: "Get the current weather in a given location",
-//     parameters: {
-//       type: "object",
-//       properties: {
-//         location: {
-//           type: "string",
-//           description: "The city and state, e.g. San Francisco, CA"
-//         },
-//         unit: {
-//           type: "string",
-//           enum: ["celsius", "fahrenheit"]
-//         }
-//       },
-//       required: ["location"]
-//     }
-//   }
-// ]
-
-const chatFunctions: ChatCompletionFunctions[] = [
-  {
-    name: "articulate_values_card",
-    description:
-      "Called when the assistant has helped the user clearly articulate some way of living that is meaningful to them, and the user is explicitly satisfied with the articulation.",
-    parameters: [
-      {
-        type: "object",
-        properties: {
-          summary: {
-            type: "string",
-            description:
-              "A comprehensive summary of the way of living that is meaningful to the user.",
-          },
-        },
-        required: ["summary"],
-      },
-    ],
-  },
-  {
-    name: "submit_values_card",
-    description:
-      "Called when the user has submitted a values card, and the assistant has helped the user clearly articulate some way of living that is meaningful to them.",
-    parameters: [
-      {
-        type: "object",
-        properties: {
-          values_card: {
-            type: "string",
-            description: "The values card submitted by the user.",
-          },
-        },
-        required: ["values_card"],
-      },
-    ],
-  },
-]
-
-// Action function to handle POST requests
-export const action: ActionFunction = async ({
-  request,
-}: ActionArgs): Promise<Response> => {
-  console.log("inside action function")
-
-  const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
-  })
-
-  const openai = new OpenAIApi(configuration)
-
-  const json = await request.json()
-  const { messages } = json
-
-  // TODO add authentication
-  // if (!userId) {
-  //   return new Response("Unauthorized", {
-  //     status: 401,
-  //   })
-  // }
+async function articulateValuesCard(
+  summary: string,
+  messages: ChatCompletionRequestMessage[]
+): Promise<string> {
+  const msg =
+    "Here is a transcript. Return a values card summarizing the source of meaning that was discussed.\n\n" +
+    messages
+      .filter((m) => m.role === "assistant" || m.role === "user")
+      .map((m) =>
+        m.role === "assistant"
+          ? "Assistant: " + m.content
+          : "User: " + m.content
+      )
+      .join("\n")
 
   const res = await openai.createChatCompletion({
     model: "gpt-3.5-turbo-0613",
     messages: [
       {
         role: "system",
-        content: chatSystemPrompt,
+        content: articulationPrompt,
       },
-      ...messages,
+      {
+        role: "user",
+        content: msg,
+      },
     ],
     temperature: 0.7,
-    functions: chatFunctions,
+  })
+
+  const data = await res.json()
+  console.log(data)
+  return data.choices[0].text
+}
+
+async function submitValuesCard(valuesCard: string): Promise<string> {
+  return "<the values card was submitted. The user has now submitted 1 value in total. Proceed to thank the user>"
+}
+
+/** Call the right function recursively and return the resulting stream. */
+async function streamingFunctionCallResponse(
+  func: ArticulationFunction | SubmitFunction | DebugFunction,
+  messages: any[] = []
+): Promise<StreamingTextResponse> {
+  //
+  // Call the right function.
+  //
+  let result: string = ""
+
+  switch (func.name) {
+    case "articulate_values_card": {
+      const summary = (func as ArticulationFunction).arguments.summary
+      result = await articulateValuesCard(summary, messages)
+      break
+    }
+    case "submit_values_card": {
+      const valuesCard = (func as SubmitFunction).arguments.values_card
+      result = await submitValuesCard(valuesCard)
+      break
+    }
+  }
+
+  //
+  // Call the OpenAI API with the function result.
+  //
+  const res = await openai.createChatCompletion({
+    model: "gpt-3.5-turbo-0613",
+    messages: [
+      ...messages,
+      {
+        role: "function",
+        name: func.name,
+        content: result,
+      },
+    ],
+    temperature: 0.7,
+    stream: true,
+    function_call: "auto",
+    functions,
+  })
+
+  // If a subsequent function call is present, call this method recursively...
+  const nextFunc = await getFunctionCall(res)
+
+  if (nextFunc) {
+    return streamingFunctionCallResponse(nextFunc, messages)
+  }
+
+  // ...otherwise, return the response.
+  return new StreamingTextResponse(OpenAIStream(res))
+}
+
+/** Prepend the system message if needed. */
+function withSystemPrompt(
+  messages: ChatCompletionRequestMessage[]
+): ChatCompletionRequestMessage[] {
+  if (messages[0]?.role !== "system") {
+    return [
+      {
+        role: "system",
+        content: systemPrompt,
+      },
+      ...messages,
+    ]
+  }
+
+  return messages
+}
+
+export const action: ActionFunction = async ({
+  request,
+}: ActionArgs): Promise<Response> => {
+  const json = await request.json()
+  const { messages } = json
+
+  const res = await openai.createChatCompletion({
+    model: "gpt-3.5-turbo-0613",
+    messages: withSystemPrompt(messages),
+    temperature: 0.7,
+    functions,
     function_call: "auto",
     stream: true,
   })
 
+  // Print out the entire error for now.
   if (!res.ok) {
     const body = await res.json()
     throw body.error
   }
 
+  // If a function call is present, call this method recursively...
+  const func = await getFunctionCall(res)
+  if (func) {
+    return streamingFunctionCallResponse(func, messages)
+  }
+
+  // ...otherwise, return the response.
   return new StreamingTextResponse(OpenAIStream(res))
 }
