@@ -1,3 +1,4 @@
+import React from "react"
 import { useChat, type Message } from "ai/react"
 import { cn } from "../utils"
 import { ChatList } from "./chat-list"
@@ -15,17 +16,12 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       id,
-      api: "/api/chat", // default is /api/chat, whereas the remix function is exposed at /chat.
+      api: "/api/chat",
       initialMessages,
-      headers: {
-        "Content-Type": "application/json",
+      onFinish(message) {
+        console.log(message)
       },
-      body: {
-        id,
-      },
-      async onResponse(response) {
-        console.log(response)
-
+      onResponse: async (response) => {
         if (response.status === 401) {
           toast.error(response.statusText)
         }

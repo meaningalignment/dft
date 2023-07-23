@@ -1,4 +1,5 @@
-import { useCurrentUser } from "~/root"
+import React from "react"
+import { useCurrentUser } from "../root"
 import { Button } from "./ui/button"
 
 export default function Header() {

@@ -1,132 +1,201 @@
-import {
-  ChatCompletionRequestMessage,
-  Configuration,
-  OpenAIApi,
-} from "openai-edge"
+import { Configuration, OpenAIApi } from "openai-edge"
 import { ActionArgs, ActionFunction } from "@remix-run/node"
+import { functions, systemPrompt, articulationPrompt } from "~/lib/consts"
+import { ChatCompletionRequestMessage } from "openai-edge"
+import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
+// import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
+
+export const runtime = "edge"
+
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+})
+
+const openai = new OpenAIApi(configuration)
+
+export type CreateCardFunction = {
+  name: string
+  arguments: {}
+}
+
+export type SubmitCardFunction = {
+  name: string
+  arguments: {
+    values_card: string
+  }
+}
 
 //
-// The Vercel "ai" package is broken for Remix.
-// Here is a temporary fix from https://github.com/vercel-labs/ai/issues/199.
-// To remove, use the OpenAIStream function from the package instead.
+// Vercel AI openai functions handling is broken in Remix. The `experimental_onFunctionCall` provided by the `ai` package does not work.
 //
-// Everything before the action function in this file should be removed when fixed.
+// We have to handle them manually, until https://github.com/vercel-labs/ai/issues/199 is fixed.
+// This is done by listening to the first token and seeing if it is a function call.
+// If so, wait for the whole response and handle the function call.
+// Otherwise, return the stream as-is.
 //
-import { createEventStreamTransformer, trimStartOfStreamHelper } from "ai"
-import { ReadableStream as PolyfillReadableStream } from "web-streams-polyfill"
-import { createReadableStreamWrapper } from "@mattiasbuelens/web-streams-adapter"
+async function getFunctionCall(
+  res: Response
+): Promise<CreateCardFunction | SubmitCardFunction | null> {
+  const stream = OpenAIStream(res.clone()) // .clone() since we don't want to consume the response.
+  const reader = stream.getReader()
 
-// @ts-expect-error bad types
-const toPolyfillReadable = createReadableStreamWrapper(PolyfillReadableStream)
-const toNativeReadable = createReadableStreamWrapper(ReadableStream)
+  //
+  // In the case of a function call, the first token in the stream
+  // is an unfinished JSON object, with "function_call" as the first key.
+  //
+  // We can use that key to check if the response is a function call.
+  //
+  const { value: first } = await reader.read()
 
-export class StreamingTextResponse extends Response {
-  constructor(res: ReadableStream, init?: ResponseInit) {
-    const headers: HeadersInit = {
-      "Content-Type": "text/plain; charset=utf-8",
-      ...init?.headers,
+  const isFunctionCall = first
+    ?.replace(/[^a-zA-Z0-9_]/g, "")
+    ?.startsWith("function_call")
+
+  if (!isFunctionCall) {
+    return null
+  }
+
+  //
+  // Function arguments are streamed as tokens, so we need to
+  // read the whole stream, concatenate the tokens, and parse the resulting JSON.
+  //
+  let result = first
+
+  while (true) {
+    const { done, value } = await reader.read()
+
+    if (done) {
+      break
     }
-    super(res, { ...init, status: 200, headers })
-    this.getRequestHeaders()
+
+    result += value
   }
 
-  getRequestHeaders() {
-    return addRawHeaders(this.headers)
-  }
+  //
+  // Return the resulting function call.
+  //
+  const json = JSON.parse(result)["function_call"]
+
+  // This is needed due to tokens being streamed with escape characters.
+  json["arguments"] = JSON.parse(json["arguments"])
+
+  return json as CreateCardFunction | SubmitCardFunction
 }
 
-function addRawHeaders(headers: Headers) {
-  // @ts-expect-error shame on me
-  headers.raw = function () {
-    const rawHeaders = {}
-    const headerEntries = headers.entries()
-    for (const [key, value] of headerEntries) {
-      const headerKey = key.toLowerCase()
-      if (rawHeaders.hasOwnProperty(headerKey)) {
-        // @ts-expect-error shame on me
-        rawHeaders[headerKey].push(value)
-      } else {
-        // @ts-expect-error shame on me
-        rawHeaders[headerKey] = [value]
-      }
-    }
-    return rawHeaders
-  }
-  return headers
-}
-
-function parseOpenAIStream(): (data: string) => string | void {
-  const trimStartOfStream = trimStartOfStreamHelper()
-  return (data) => {
-    // TODO: Needs a type
-    const json = JSON.parse(data)
-
-    // this can be used for either chat or completion models
-    const text = trimStartOfStream(
-      json.choices[0]?.delta?.content ?? json.choices[0]?.text ?? ""
+/** Create a values card from a transcript of the conversation. */
+async function createValuesCard(
+  messages: ChatCompletionRequestMessage[]
+): Promise<string> {
+  const transcript = messages
+    .filter((m) => m.role === "assistant" || m.role === "user")
+    .map((m) =>
+      m.role === "assistant" ? "Assistant: " + m.content : "User: " + m.content
     )
-
-    return text
-  }
-}
-
-function OpenAIStream(response: Response): ReadableStream<any> {
-  if (!response.ok || !response.body) {
-    throw new Error(
-      `Failed to convert the response to stream. Received status code: ${response.status}.`
-    )
-  }
-
-  const responseBodyStream = toPolyfillReadable(response.body)
-
-  // @ts-expect-error bad types
-  return toNativeReadable(
-    // @ts-expect-error bad types
-    responseBodyStream.pipeThrough(
-      createEventStreamTransformer(parseOpenAIStream())
-    )
-  )
-}
-
-// Action function to handle POST requests
-export const action: ActionFunction = async ({
-  request,
-}: ActionArgs): Promise<Response> => {
-  console.log("inside action function")
-
-  const configuration = new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
-  })
-
-  const openai = new OpenAIApi(configuration)
-
-  const json = await request.json()
-  const { messages, previewToken } = json
-
-  // TODO add authentication
-  // if (!userId) {
-  //   return new Response("Unauthorized", {
-  //     status: 401,
-  //   })
-  // }
-
-  if (previewToken) {
-    configuration.apiKey = previewToken
-  }
+    .join("\n")
+  const message =
+    "Here is a transcript. Return a values card summarizing the source of meaning that was discussed.\n\n" +
+    transcript
 
   const res = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo",
+    model: "gpt-3.5-turbo-0613",
     messages: [
-      {
-        role: "system",
-        content:
-          "You are an assistant helping users understand the underlying value behind how they respond to a tricky moral situation.",
-      },
-      ...messages,
+      { role: "system", content: articulationPrompt },
+      { role: "user", content: message },
     ],
-    temperature: 0.7,
+    temperature: 0.3,
+  })
+
+  const data = await res.json()
+  return data.choices[0].message.content
+}
+
+async function submitValuesCard(valuesCard: string): Promise<string> {
+  // TODO - add card to server
+  return "<the values card was submitted. The user has now submitted 1 value in total. Proceed to thank the user>"
+}
+
+/** Call the right function and return the resulting stream. */
+async function streamingFunctionCallResponse(
+  func: CreateCardFunction | SubmitCardFunction,
+  messages: any[] = []
+): Promise<StreamingTextResponse> {
+  //
+  // Call the right function.
+  //
+  let result: string = ""
+
+  switch (func.name) {
+    case "create_values_card": {
+      result = await createValuesCard(messages)
+      break
+    }
+    case "submit_values_card": {
+      const valuesCard = (func as SubmitCardFunction).arguments.values_card
+      result = await submitValuesCard(valuesCard)
+      break
+    }
+    default: {
+      throw new Error("Unknown function call: " + func.name)
+    }
+  }
+
+  console.log("Result from function call:", result)
+
+  //
+  // Call the OpenAI API with the function result.
+  //
+  // This wraps the raw function result in a generated message that fits the flow
+  // of the conversation.
+  //
+  const res = await openai.createChatCompletion({
+    model: "gpt-3.5-turbo-0613",
+    messages: [
+      ...messages,
+      {
+        role: "function",
+        name: func.name,
+        content: result,
+      },
+    ],
+    temperature: 0.0,
+    functions,
+    function_call: "none", // Prevent recursion.
     stream: true,
   })
 
+  // Return the resulting stream.
+  return new StreamingTextResponse(OpenAIStream(res))
+}
+
+export const action: ActionFunction = async ({
+  request,
+}: ActionArgs): Promise<Response> => {
+  const json = await request.json()
+  let { messages } = json
+
+  // Prepend the system message.
+  messages = [{ role: "system", content: systemPrompt }, ...messages]
+
+  const res = await openai.createChatCompletion({
+    model: "gpt-3.5-turbo-0613",
+    messages: messages,
+    temperature: 0.7,
+    stream: true,
+    functions,
+    function_call: "auto",
+  })
+
+  if (!res.ok) {
+    const body = await res.json()
+    throw body.error
+  }
+
+  // If a function call is present, handle it...
+  const func = await getFunctionCall(res)
+  if (func) {
+    return streamingFunctionCallResponse(func, messages)
+  }
+
+  // ...otherwise, return the response.
   return new StreamingTextResponse(OpenAIStream(res))
 }

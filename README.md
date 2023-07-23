@@ -19,7 +19,7 @@ To run the local dev server
 
 Let's say you want to add a table to the db. Just run `bunx prisma db push` to take your local changes in schema.prisma and migrate the live db to match.
 
-## Depoloyment
+## Deployment
 
 Pushing to the github repo should automatically deploy at `dft.meaningalignment.org`.
 
