@@ -13,27 +13,15 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration)
 
-export type ArticulationFunction = {
+export type CreateCardFunction = {
   name: string
-  arguments: {
-    summary: string
-    description?: string
-  }
+  arguments: {}
 }
 
-export type SubmitFunction = {
+export type SubmitCardFunction = {
   name: string
   arguments: {
     values_card: string
-  }
-}
-
-// For debug purposes.
-export type DebugFunction = {
-  name: string
-  arguments: {
-    location: string
-    unit?: string
   }
 }
 
@@ -47,7 +35,7 @@ export type DebugFunction = {
 //
 async function getFunctionCall(
   res: Response
-): Promise<ArticulationFunction | SubmitFunction | DebugFunction | null> {
+): Promise<CreateCardFunction | SubmitCardFunction | null> {
   const stream = OpenAIStream(res.clone())
   const reader = stream.getReader()
 
@@ -85,51 +73,43 @@ async function getFunctionCall(
   // Return the resulting function call.
   const json = JSON.parse(result)["function_call"]
   json["arguments"] = JSON.parse(json["arguments"]) // This is needed due to the way tokens are streamed with escape characters.
-  return json as ArticulationFunction | SubmitFunction | DebugFunction
+  return json as CreateCardFunction | SubmitCardFunction
 }
 
-async function articulateValuesCard(
-  summary: string,
+/** Create a values card from a transcript of the conversation. */
+async function createValuesCard(
   messages: ChatCompletionRequestMessage[]
 ): Promise<string> {
-  const msg =
+  const transcript = messages
+    .filter((m) => m.role === "assistant" || m.role === "user")
+    .map((m) =>
+      m.role === "assistant" ? "Assistant: " + m.content : "User: " + m.content
+    )
+    .join("\n")
+  const message =
     "Here is a transcript. Return a values card summarizing the source of meaning that was discussed.\n\n" +
-    messages
-      .filter((m) => m.role === "assistant" || m.role === "user")
-      .map((m) =>
-        m.role === "assistant"
-          ? "Assistant: " + m.content
-          : "User: " + m.content
-      )
-      .join("\n")
+    transcript
 
   const res = await openai.createChatCompletion({
     model: "gpt-3.5-turbo-0613",
     messages: [
-      {
-        role: "system",
-        content: articulationPrompt,
-      },
-      {
-        role: "user",
-        content: msg,
-      },
+      { role: "system", content: articulationPrompt },
+      { role: "user", content: message },
     ],
-    temperature: 0.7,
+    temperature: 0.3,
   })
 
   const data = await res.json()
-  console.log(data)
-  return data.choices[0].text
+  return data.choices[0].message.content
 }
 
 async function submitValuesCard(valuesCard: string): Promise<string> {
   return "<the values card was submitted. The user has now submitted 1 value in total. Proceed to thank the user>"
 }
 
-/** Call the right function recursively and return the resulting stream. */
+/** Call the right function and return the resulting stream. */
 async function streamingFunctionCallResponse(
-  func: ArticulationFunction | SubmitFunction | DebugFunction,
+  func: CreateCardFunction | SubmitCardFunction,
   messages: any[] = []
 ): Promise<StreamingTextResponse> {
   //
@@ -138,17 +118,21 @@ async function streamingFunctionCallResponse(
   let result: string = ""
 
   switch (func.name) {
-    case "articulate_values_card": {
-      const summary = (func as ArticulationFunction).arguments.summary
-      result = await articulateValuesCard(summary, messages)
+    case "create_values_card": {
+      result = await createValuesCard(messages)
       break
     }
     case "submit_values_card": {
-      const valuesCard = (func as SubmitFunction).arguments.values_card
+      const valuesCard = (func as SubmitCardFunction).arguments.values_card
       result = await submitValuesCard(valuesCard)
       break
     }
+    default: {
+      throw new Error("Unknown function call: " + func.name)
+    }
   }
+
+  console.log("Result from function call:", result)
 
   //
   // Call the OpenAI API with the function result.
@@ -163,20 +147,12 @@ async function streamingFunctionCallResponse(
         content: result,
       },
     ],
-    temperature: 0.7,
-    stream: true,
-    function_call: "auto",
+    temperature: 0.0,
     functions,
+    function_call: "none", // Prevent recursion.
+    stream: true,
   })
 
-  // If a subsequent function call is present, call this method recursively...
-  const nextFunc = await getFunctionCall(res)
-
-  if (nextFunc) {
-    return streamingFunctionCallResponse(nextFunc, messages)
-  }
-
-  // ...otherwise, return the response.
   return new StreamingTextResponse(OpenAIStream(res))
 }
 
@@ -201,24 +177,26 @@ export const action: ActionFunction = async ({
   request,
 }: ActionArgs): Promise<Response> => {
   const json = await request.json()
-  const { messages } = json
+  let { messages } = json
+
+  // Prepend the system message.
+  messages = [{ role: "system", content: systemPrompt }, ...messages]
 
   const res = await openai.createChatCompletion({
     model: "gpt-3.5-turbo-0613",
-    messages: withSystemPrompt(messages),
+    messages: messages,
     temperature: 0.7,
+    stream: true,
     functions,
     function_call: "auto",
-    stream: true,
   })
 
-  // Print out the entire error for now.
   if (!res.ok) {
     const body = await res.json()
     throw body.error
   }
 
-  // If a function call is present, call this method recursively...
+  // If a function call is present, handle it...
   const func = await getFunctionCall(res)
   if (func) {
     return streamingFunctionCallResponse(func, messages)

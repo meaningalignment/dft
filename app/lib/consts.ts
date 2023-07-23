@@ -23,7 +23,10 @@ Some strategies you can use:
 Some general guidelines:
 - Don't "lead the witness". Ask questions and don't make assumptions about the users motivations.
 - To clarify the source of meaning, ask what the user payed attention to when living by it – what felt meaningful to attend to? What one pays attention to is a good way to externally verify that a user is living by a source of meaning.
-- Refer to "sources of meaning" as "values" in the conversation with the user. The user may not be familiar with the term "source of meaning".`
+- Refer to "sources of meaning" as "values" in the conversation with the user. The user may not be familiar with the term "source of meaning".
+
+When a "source of meaning" is articulated into a "values card", show it to the user in the provided format (without rephrasing it) and ask them if they are satisfied with it.
+A values card has a title, a short instruction for ChatGPT and a HOW? section with further instructions for ChatGPT. The title and HOW? should always be in bold.`
 
 export const articulationPrompt = `You are a meaning assistant, helping a user articulate a "values card" from a transcript of a conversation.
 
@@ -37,9 +40,11 @@ A source of meaning is distinct from similar concepts:
 - A source of meaning is not a norm or a social expectation. A source of meaning is not something you do because you feel like you have to, or because you feel like you should. It is something the user does because it is intrinsically important to them.
 - A source of meaning is not an internalized norm – a norm the user has adopted outside of the original social context. It is a way of living that produces a sense of meaning for you, not a way of living that you think is "right" or "correct".
 
-A "values card" has a short title, an instruction for what ChatGPT could do to consider the "source of meaning" and a "HOW?" section giving further instructions as to how ChatGPT could consider the "source of meaning" in its respone.
+A "values card" always has a short title, an instruction for what ChatGPT could do to consider the "source of meaning" and a "HOW?" section giving further instructions as to how ChatGPT could consider the "source of meaning" in its respone.
+The title and "HOW?" should always be in bold.
 
 Here is an example of a "values card":
+
 **Embodied Justice**
 ChatGPT should ask the girl to feel into what she thinks is right.
 
@@ -52,25 +57,18 @@ ChatGPT can help her find environments, emotions, actions, and discrepancies whi
 
 export const functions: ChatCompletionFunctions[] = [
   {
-    name: "articulate_values_card",
+    name: "create_values_card",
     description:
-      "Should be called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do.",
+      "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do. Returns a formatted values card",
     parameters: {
       type: "object",
-      properties: {
-        summary: {
-          type: "string",
-          description:
-            "A comprehensive summary of the way of living that is meaningful to the user, including all details.",
-        },
-      },
-      required: ["summary"],
+      properties: {},
     },
   },
   {
     name: "submit_values_card",
     description:
-      "Called when the assistant has helped the user clearly articulate some way of living that is meaningful to them, and the user is satisfied with the articulated values card.",
+      "Called when the assistant has helped the user clearly articulate a values card, and the user has confirmed the card.",
     parameters: {
       type: "object",
       properties: {
