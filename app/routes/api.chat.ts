@@ -36,7 +36,7 @@ export type SubmitCardFunction = {
 async function getFunctionCall(
   res: Response
 ): Promise<CreateCardFunction | SubmitCardFunction | null> {
-  const stream = OpenAIStream(res.clone())
+  const stream = OpenAIStream(res.clone()) // .clone() since we don't want to consume the response.
   const reader = stream.getReader()
 
   //
@@ -46,6 +46,7 @@ async function getFunctionCall(
   // We can use that key to check if the response is a function call.
   //
   const { value: first } = await reader.read()
+
   const isFunctionCall = first
     ?.replace(/[^a-zA-Z0-9_]/g, "")
     ?.startsWith("function_call")
@@ -70,9 +71,14 @@ async function getFunctionCall(
     result += value
   }
 
+  //
   // Return the resulting function call.
+  //
   const json = JSON.parse(result)["function_call"]
-  json["arguments"] = JSON.parse(json["arguments"]) // This is needed due to the way tokens are streamed with escape characters.
+
+  // This is needed due to tokens being streamed with escape characters.
+  json["arguments"] = JSON.parse(json["arguments"])
+
   return json as CreateCardFunction | SubmitCardFunction
 }
 
@@ -104,6 +110,7 @@ async function createValuesCard(
 }
 
 async function submitValuesCard(valuesCard: string): Promise<string> {
+  // TODO - add card to server
   return "<the values card was submitted. The user has now submitted 1 value in total. Proceed to thank the user>"
 }
 
@@ -137,6 +144,9 @@ async function streamingFunctionCallResponse(
   //
   // Call the OpenAI API with the function result.
   //
+  // This wraps the raw function result in a generated message that fits the flow
+  // of the conversation.
+  //
   const res = await openai.createChatCompletion({
     model: "gpt-3.5-turbo-0613",
     messages: [
@@ -153,24 +163,8 @@ async function streamingFunctionCallResponse(
     stream: true,
   })
 
+  // Return the resulting stream.
   return new StreamingTextResponse(OpenAIStream(res))
-}
-
-/** Prepend the system message if needed. */
-function withSystemPrompt(
-  messages: ChatCompletionRequestMessage[]
-): ChatCompletionRequestMessage[] {
-  if (messages[0]?.role !== "system") {
-    return [
-      {
-        role: "system",
-        content: systemPrompt,
-      },
-      ...messages,
-    ]
-  }
-
-  return messages
 }
 
 export const action: ActionFunction = async ({
