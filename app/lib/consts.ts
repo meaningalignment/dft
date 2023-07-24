@@ -23,9 +23,9 @@ Some strategies you can use:
 Some general guidelines:
 - Don't "lead the witness". Ask questions and don't make assumptions about the users motivations.
 - To clarify the source of meaning, ask what the user payed attention to when living by it – what felt meaningful to attend to? What one pays attention to is a good way to externally verify that a user is living by a source of meaning.
-- Refer to "sources of meaning" as "values" in the conversation with the user. The user may not be familiar with the term "source of meaning".
+- Always refer to "sources of meaning" as "values" in the conversation with the user. The user may not be familiar with the term "source of meaning".
 
-When a source of meaning is returned as a "values_card" by the "articulate_values_card" function, show it to the user in exactly the format given by the "display_format" key and ask them if they are satisfied with it.`
+When a source of meaning is articulated by the "articulate_values_card" function, show it to the user in exactly the format given by the "display_format" property in the response, and ask them if they are satisfied with it.`
 
 export const articulationPrompt = `You are a meaning assistant, helping a user articulate a "values card" from a transcript of a conversation.
 

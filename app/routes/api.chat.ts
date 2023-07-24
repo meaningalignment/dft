@@ -103,16 +103,12 @@ async function articulateValuesCard(
       { role: "system", content: articulationPrompt },
       { role: "user", content: message },
     ],
-    temperature: 0.3,
+    temperature: 0.0,
   })
 
   const data = await res.json()
   const text = data.choices[0].message.content
-
-  console.log("Result from articulateValuesCard:", text)
-
   const json = JSON.parse(text)
-
   return JSON.stringify({
     values_card: json,
     display_format: `**{{title}}**\n\n{{instructions_short}}\n\n**HOW?**\n\n{{instructions_detailed}}`,
