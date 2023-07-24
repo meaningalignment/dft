@@ -92,25 +92,52 @@ async function articulateValuesCard(
     .map((m) => `${capitalize(m.role)}: ${m.content}`)
     .join("\n")
 
-  const message = `Return a values card JSON object summarizing the source of meaning that was discussed in the following conversation.
-    
-    Transcript:
-    ${transcript}`
-
   const res = await openai.createChatCompletion({
     model: "gpt-3.5-turbo-0613",
     messages: [
       { role: "system", content: articulationPrompt },
-      { role: "user", content: message },
+      { role: "user", content: transcript },
     ],
+    functions: [
+      // Use a virtual "submit" function to ensure we get a structured JSON response.
+      {
+        name: "submit",
+        description:
+          "Submit an articulated values card based on a source of meaning discussed in a transcript of a conversation.",
+        parameters: {
+          type: "object",
+          properties: {
+            title: {
+              type: "string",
+              description: "The title of the values card.",
+            },
+            instructions_short: {
+              type: "string",
+              description:
+                "A short instruction for how ChatGPT could act based on this source of meaning.",
+            },
+            instructions_detailed: {
+              type: "string",
+              description:
+                "A detailed instruction for how ChatGPT could act based on this source of meaning.",
+            },
+          },
+        },
+      },
+    ],
+    function_call: {
+      name: "submit",
+    },
     temperature: 0.0,
+    stream: false,
   })
 
   const data = await res.json()
-  const text = data.choices[0].message.content
-  const json = JSON.parse(text)
+
+  const valuesCard = JSON.parse(data.choices[0].message.function_call.arguments)
+
   return JSON.stringify({
-    values_card: json,
+    values_card: valuesCard,
     display_format: `**{{title}}**\n\n{{instructions_short}}\n\n**HOW?**\n\n{{instructions_detailed}}`,
   })
 }
