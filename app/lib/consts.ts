@@ -25,7 +25,7 @@ Some strategies you can use:
 - **Ask about attention.** What specifically is the user attending to, when they feel a sense of meaning in approaching things this way?
 - **Get more details about the context.** When should ChatGPT approach things this way? Does the user try to approach things this way in the relevant contexts? When is this NOT the right approach?
 - **Make sure it’s not just about the goal.** If any single benefit was removed for approaching things this way, would the user still choose to relate like this?
-- **Ask about the user’s past.** Before they learned this value, was there a different way they were approaching things?
+- **Ask about the user’s past.** Before they learned this source of meaning, was there a different way they were approaching things?
 
 Some general guidelines:
 - Don't "lead the witness". Ask questions and don't make assumptions about the users motivations.
