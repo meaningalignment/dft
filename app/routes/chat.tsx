@@ -1,7 +1,6 @@
 import { Message } from "ai"
 import { Chat } from "../components/chat"
 import Header from "../components/header"
-import React from "react"
 
 const initialMessages: Message[] = [
   {
