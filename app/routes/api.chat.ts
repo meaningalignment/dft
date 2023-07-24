@@ -3,6 +3,7 @@ import { ActionArgs, ActionFunction } from "@remix-run/node"
 import { functions, systemPrompt, articulationPrompt } from "~/lib/consts"
 import { ChatCompletionRequestMessage } from "openai-edge"
 import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
+import { capitalize } from "~/utils"
 // import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
 
 export const runtime = "edge"
@@ -88,10 +89,9 @@ async function createValuesCard(
 ): Promise<string> {
   const transcript = messages
     .filter((m) => m.role === "assistant" || m.role === "user")
-    .map((m) =>
-      m.role === "assistant" ? "Assistant: " + m.content : "User: " + m.content
-    )
+    .map((m) => `${capitalize(m.role)}: ${m.content}`)
     .join("\n")
+
   const message =
     "Here is a transcript. Return a values card summarizing the source of meaning that was discussed.\n\n" +
     transcript
@@ -106,7 +106,13 @@ async function createValuesCard(
   })
 
   const data = await res.json()
-  return data.choices[0].message.content
+  const text = data.choices[0].message.content
+
+  return JSON.stringify({
+    values_card: text,
+    display_instructions:
+      "Show this values card to the user in precisely this format.", // If we only return the card itself, ChatGPT will freestyle-text it. Easier to be explicit here than messing with the system prompt.
+  })
 }
 
 async function submitValuesCard(valuesCard: string): Promise<string> {
