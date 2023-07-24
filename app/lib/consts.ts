@@ -25,12 +25,11 @@ Some general guidelines:
 - To clarify the source of meaning, ask what the user payed attention to when living by it – what felt meaningful to attend to? What one pays attention to is a good way to externally verify that a user is living by a source of meaning.
 - Refer to "sources of meaning" as "values" in the conversation with the user. The user may not be familiar with the term "source of meaning".
 
-When a "source of meaning" is articulated into a "values card", show it to the user in the provided format (without rephrasing it) and ask them if they are satisfied with it.
-A values card has a title, a short instruction for ChatGPT and a HOW? section with further instructions for ChatGPT. The title and HOW? should always be in bold.`
+When a source of meaning is returned as a "values_card" by the "articulate_values_card" function, show it to the user in exactly the format given by the "display_format" key and ask them if they are satisfied with it.`
 
 export const articulationPrompt = `You are a meaning assistant, helping a user articulate a "values card" from a transcript of a conversation.
 
-A "values card" is a format for representing a "source of meaning"
+A "values card" is a JSON format for representing a "source of meaning".
 
 A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. These are more specific than big words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity.
 
@@ -40,16 +39,12 @@ A source of meaning is distinct from similar concepts:
 - A source of meaning is not a norm or a social expectation. A source of meaning is not something you do because you feel like you have to, or because you feel like you should. It is something the user does because it is intrinsically important to them.
 - A source of meaning is not an internalized norm – a norm the user has adopted outside of the original social context. It is a way of living that produces a sense of meaning for you, not a way of living that you think is "right" or "correct".
 
-A "values card" always has a short title, an instruction for what ChatGPT could do to consider the "source of meaning" and a "HOW?" section giving further instructions as to how ChatGPT could consider the "source of meaning" in its respone.
-The title and "HOW?" should always be in bold.
+The values card should be written from the perspective of how ChatGPT should respond to the girl.
+
+A values card is a JSON object with "title", "instructions_short" and "instructions_detailed" keys.
 
 Here is an example of a "values card":
-
-**Embodied Justice**
-ChatGPT should ask the girl to feel into what she thinks is right.
-
-**HOW?**
-ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.`
+{"title": "Embodied Justice", "instructions_short": "ChatGPT should ask the girl to feel into what she thinks is right.", "instructions_detailed": "ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take"}`
 
 //
 // OpenAI function declarations.
@@ -57,7 +52,7 @@ ChatGPT can help her find environments, emotions, actions, and discrepancies whi
 
 export const functions: ChatCompletionFunctions[] = [
   {
-    name: "create_values_card",
+    name: "articulate_values_card",
     description:
       "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do. Returns a formatted values card",
     parameters: {

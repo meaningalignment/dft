@@ -14,7 +14,7 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration)
 
-export type CreateCardFunction = {
+export type ArticulateCardFunction = {
   name: string
   arguments: {}
 }
@@ -36,7 +36,7 @@ export type SubmitCardFunction = {
 //
 async function getFunctionCall(
   res: Response
-): Promise<CreateCardFunction | SubmitCardFunction | null> {
+): Promise<ArticulateCardFunction | SubmitCardFunction | null> {
   const stream = OpenAIStream(res.clone()) // .clone() since we don't want to consume the response.
   const reader = stream.getReader()
 
@@ -80,11 +80,11 @@ async function getFunctionCall(
   // This is needed due to tokens being streamed with escape characters.
   json["arguments"] = JSON.parse(json["arguments"])
 
-  return json as CreateCardFunction | SubmitCardFunction
+  return json as ArticulateCardFunction | SubmitCardFunction
 }
 
 /** Create a values card from a transcript of the conversation. */
-async function createValuesCard(
+async function articulateValuesCard(
   messages: ChatCompletionRequestMessage[]
 ): Promise<string> {
   const transcript = messages
@@ -92,9 +92,10 @@ async function createValuesCard(
     .map((m) => `${capitalize(m.role)}: ${m.content}`)
     .join("\n")
 
-  const message =
-    "Here is a transcript. Return a values card summarizing the source of meaning that was discussed.\n\n" +
-    transcript
+  const message = `Return a values card JSON object summarizing the source of meaning that was discussed in the following conversation.
+    
+    Transcript:
+    ${transcript}`
 
   const res = await openai.createChatCompletion({
     model: "gpt-3.5-turbo-0613",
@@ -108,10 +109,13 @@ async function createValuesCard(
   const data = await res.json()
   const text = data.choices[0].message.content
 
+  console.log("Result from articulateValuesCard:", text)
+
+  const json = JSON.parse(text)
+
   return JSON.stringify({
-    values_card: text,
-    display_instructions:
-      "Show this values card to the user in precisely this format.", // If we only return the card itself, ChatGPT will freestyle-text it. Easier to be explicit here than messing with the system prompt.
+    values_card: json,
+    display_format: `**{{title}}**\n\n{{instructions_short}}\n\n**HOW?**\n\n{{instructions_detailed}}`,
   })
 }
 
@@ -122,7 +126,7 @@ async function submitValuesCard(valuesCard: string): Promise<string> {
 
 /** Call the right function and return the resulting stream. */
 async function streamingFunctionCallResponse(
-  func: CreateCardFunction | SubmitCardFunction,
+  func: ArticulateCardFunction | SubmitCardFunction,
   messages: any[] = []
 ): Promise<StreamingTextResponse> {
   //
@@ -131,8 +135,8 @@ async function streamingFunctionCallResponse(
   let result: string = ""
 
   switch (func.name) {
-    case "create_values_card": {
-      result = await createValuesCard(messages)
+    case "articulate_values_card": {
+      result = await articulateValuesCard(messages)
       break
     }
     case "submit_values_card": {
@@ -145,7 +149,7 @@ async function streamingFunctionCallResponse(
     }
   }
 
-  console.log("Result from function call:", result)
+  console.log(`Result from "${func.name}":\n${result}`)
 
   //
   // Call the OpenAI API with the function result.
@@ -157,6 +161,14 @@ async function streamingFunctionCallResponse(
     model: "gpt-3.5-turbo-0613",
     messages: [
       ...messages,
+      {
+        role: "assistant",
+        content: null,
+        function_call: {
+          name: func.name,
+          arguments: JSON.stringify(func.arguments), // API expects a string.
+        },
+      },
       {
         role: "function",
         name: func.name,
