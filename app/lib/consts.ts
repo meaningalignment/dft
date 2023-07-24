@@ -29,7 +29,7 @@ When a source of meaning is articulated by the "articulate_values_card" function
 
 export const articulationPrompt = `You are a meaning assistant, helping a user articulate a "values card" from a transcript of a conversation.
 
-A "values card" is a JSON format for representing a "source of meaning".
+A "values card" is a representation of a "source of meaning".
 
 A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. These are more specific than big words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity.
 
@@ -39,12 +39,7 @@ A source of meaning is distinct from similar concepts:
 - A source of meaning is not a norm or a social expectation. A source of meaning is not something you do because you feel like you have to, or because you feel like you should. It is something the user does because it is intrinsically important to them.
 - A source of meaning is not an internalized norm – a norm the user has adopted outside of the original social context. It is a way of living that produces a sense of meaning for you, not a way of living that you think is "right" or "correct".
 
-The values card should be written from the perspective of how ChatGPT should respond to the girl.
-
-A values card is a JSON object with "title", "instructions_short" and "instructions_detailed" keys.
-
-Here is an example of a "values card":
-{"title": "Embodied Justice", "instructions_short": "ChatGPT should ask the girl to feel into what she thinks is right.", "instructions_detailed": "ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take"}`
+The values card should be written from the perspective of how ChatGPT should respond to the girl asking for help. It should have a title, a short instruction for how ChatGPT should act based on this source of meaning, and a detailed instruction for how ChatGPT should act based on this source of meaning.`
 
 //
 // OpenAI function declarations.
