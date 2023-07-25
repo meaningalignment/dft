@@ -80,11 +80,6 @@ const formatCard = {
   },
 }
 
-// const critiqueCard = {
-//   name: "critique",
-//   description: "Submit a critique ",
-// }
-
 //
 // Vercel AI openai functions handling is broken in Remix. The `experimental_onFunctionCall` provided by the `ai` package does not work.
 //
