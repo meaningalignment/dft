@@ -145,13 +145,6 @@ async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
   console.log("Critiquing values card...")
   console.log(`Card before critique:\n${JSON.stringify(valuesCard)}`)
 
-  // Format the values card to match the other examples in the prompt.
-  const message = `**${valuesCard.title}**\n${
-    valuesCard.instructions_short
-  }\n\n**HOW?**\n${
-    valuesCard.instructions_detailed
-  }\n\n**DETAILS**\n${valuesCard.evaluation_criteria!.join("\n")}`
-
   //
   // Critique the card and return a structured JSON response
   // by using a virtual "submit_critique" function.
@@ -160,7 +153,7 @@ async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
     model: "gpt-4-0613",
     messages: [
       { role: "system", content: critiquePrompt },
-      { role: "user", content: message },
+      { role: "user", content: JSON.stringify(valuesCard) },
     ],
     functions: [
       {
@@ -225,7 +218,7 @@ async function articulateValuesCard(
 
   const data = await res.json()
   const card = JSON.parse(data.choices[0].message.function_call.arguments)
-  const improvedCard = card
+  const improvedCard = await critiqueValuesCard(card)
   return improvedCard
 }
 

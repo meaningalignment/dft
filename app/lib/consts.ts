@@ -46,28 +46,21 @@ A source of meaning is distinct from similar concepts:
 
 The values card should be written from the perspective of how ChatGPT should respond to the girl asking for help. It should have a title, a short instruction for how ChatGPT should act based on this source of meaning, and a detailed instruction for how ChatGPT should act based on this source of meaning.`
 
-export const critiquePrompt = `In the user message, I’ll provide an "Attentional Policy Card", written in a certain format. Output a critique of that policy card, and, if possible, an improved policy card which addresses the critique.
+export const critiquePrompt = `In the user message, I’ll provide a “source of meaning card”, written in a certain format. Output a critique of that card, and, if possible, an improved card which addresses the critique.
 
-# Format of Attentional Policy Cards
+# Format of Source of Meaning Cards
 
-An Attentional Policy Card has: 
+The card has four fields: title, instructions_short, instructions_detailed, and evaluation_criteria. The first three are strings and the last is an array of strings.
 
-- a title,
-- a short instruction for ChatGPT
-- a HOW section with further instructions for ChatGPT
-- and a DETAILS section which lists criteria for each referent listed in the HOW section
+# How to Critique the Cards
 
-The title, HOW, and DETAILS should always be in bold.
-
-# How to Critique Attentional Policy Cards
-
-1. **Cards should not be goal-directed.** The card should describe a way of living that has broad benefits and that is directly part of the good life for a person, not that leads narrowly to a clear goal or away from a fear.
+1. **Cards should be indeterminate.** The card should describe a way of living that has broad benefits and which might lead to many outcomes, where the journey itself is part of the good life for a person. It should not lead determinately towards one, narrow instrumental goal.
 2. **Cards should not be about meeting others’ expectations.** They should be the kind of thing that meaningful to someone.
 3. **Cards should be positively stated**. The stuff in the “how” section should be things ChatGPT SHOULD attend to.
 4. **Cards should use clear, simple language**. Anyone in the relevant context should be able to see what you mean about what to attend to. The instructions should be clear enough that you could use them in a survey to see whether or not someone was attending to those things.
-5. **Cards should be as general as possible.** Avoid unnecessarily specific terminology if the same attentional policy would apply equally to other things.
-6. **Cards should not have unnecessary elements.** All elements of the attentional policy should be required, and work together, in the context.
-7. The title should be pithy, and unlikely to be confused with other similar attentional policies.
+5. **Cards should be as general as possible.** Avoid being unnecessarily specific, if the same source of meaning would be meaningful in other contexts.
+6. **Cards should not have unnecessary elements.** All elements of the source of meaning should be required, and work together, in the context.
+7. The title should be pithy, and unlikely to be confused with other similar sources of meaning.
 
 # Example Critiques
 
@@ -75,79 +68,78 @@ The title, HOW, and DETAILS should always be in bold.
 
 ### Card
 
-**Faith in People**
-ChatGPT should foster participation by helping people become leaders.
-
-**HOW**
-ChatGPT can foster new leaders, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.
-
-**DETAILS**
-MOMENTS where people become leaders.
-INSIGHTS that emerge through grappling with morally fraught questions
-CAPACITIES that develop when a person tries to be free and self-directed
-WISDOM that emerges in a discursive, responsible context
+{
+  "title":"Faith in People",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "instructions_detailed":"ChatGPT can foster new leaders, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "evaluation_criteria":[
+    "MOMENTS where people become leaders.",
+    "INSIGHTS that emerge through grappling with morally fraught questions",
+    "CAPACITIES that develop when a person tries to be free and self-directed",
+    "WISDOM that emerges in a discursive, responsible context",
+    ]
+}
 
 ### Critique
 
-- **Cards should not be goal-directed:**
-    
-    The “new leaders” / “Moments” entries seem goal directed.
-    
+- **Cards should be indeterminate:**
+
+    The “new leaders” / “Moments” entries seems useful only if it leads to that one outcome.
+
 
 ### Improved Card
 
-**Faith in People**
-ChatGPT should foster participation by helping people become leaders.
-
-**HOW**
-ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.
-
-**DETAILS**
-To evaluate whether ChatGPT is following this attentional policy, we can ask:
-****Did it foster CHANGES in people when entrusted with the work of self-determination?
-Did it uncover INSIGHTS that emerge through grappling with morally fraught questions?
-Did it discover CAPACITIES that develop when a person tries to be free and self-directed?
-Did it identify WISDOM that emerges in a discursive, responsible context?
+{
+  "title":"Faith in People",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "evaluation_criteria":[
+    "CHANGES in people when entrusted with the work of self-determination",
+    "INSIGHTS that emerge through grappling with morally fraught questions",
+    "CAPACITIES that develop when a person tries to be free and self-directed",
+    "WISDOM that emerges in a discursive, responsible context",
+    ]
+}
 
 ## Example 2
 
 ### Card
 
-**Embodied Justice**
-ChatGPT should ask the girl to feel into what she thinks is right.
-
-**HOW**
-ChatGPT can help her find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.
-
-**DETAILS**
-To evaluate whether ChatGPT is following this attentional policy, we can ask:
-Did it help her find COURSES she could take about the subject?
-Did it help her find QUIET PLACES and PEOPLE that make it is easier for her to decide for herself?
-Did it help her identify DISCREPANCIES between the status quo and her own moral compass?
-Did it help her identify EMOTIONS that spark her agency and power?
-Did it help her find ACTIONS she could take that would address those emotions?
+{
+  "title":"Embodied Justice",
+  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "instructions_detailed":"ChatGPT can help her find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.
+",
+  "evaluation_criteria":[
+    "COURSES she could take about the subject",
+    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
+    "DISCREPANCIES between the status quo and her own moral compass",
+    "EMOTIONS that spark her agency and power",
+    "ACTIONS she could take that would address those emotions",
+    ]
+}
 
 ### Critique
 
 - **Cards should not have unnecessary elements.**
-    
-    Courses are unrelated to this attentional policy.
-    
+
+    Courses are unrelated to this value.
+
 
 ### Improved Card
 
-**Embodied Justice**
-ChatGPT should ask the girl to feel into what she thinks is right.
-
-**HOW**
-ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.
-
-**DETAILS**
-To evaluate whether ChatGPT is following this attentional policy, we can ask:
-Did it help her find QUIET PLACES and PEOPLE that make it is easier for her to decide for herself?
-Did it help her identify DISCREPANCIES between the status quo and her own moral compass?
-Did it help her identify EMOTIONS that spark her agency and power?
-Did it help her find ACTIONS she could take that would address those emotions?`
+{
+  "title":"Embodied Justice",
+  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
+  "evaluation_criteria":[
+    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
+    "DISCREPANCIES between the status quo and her own moral compass",
+    "EMOTIONS that spark her agency and power",
+    "ACTIONS she could take that would address those emotions",
+    ]
+}
+`
 
 //
 // OpenAI function declarations.
