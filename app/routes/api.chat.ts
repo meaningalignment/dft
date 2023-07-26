@@ -225,7 +225,6 @@ async function articulateValuesCard(
 
   const data = await res.json()
   const card = JSON.parse(data.choices[0].message.function_call.arguments)
-
   const improvedCard = card
   return improvedCard
 }
@@ -272,13 +271,7 @@ async function streamingFunctionCallResponse(
       // Save the card in the session.
       session.set("values_card", JSON.stringify(card))
 
-      result =
-        "A card was articulated and shown to the user. Here is what it looks like:\n\n" +
-        card.title +
-        "\n\n" +
-        card.instructions_short +
-        "\n\n" +
-        card.instructions_detailed
+      result = `<A card (${card.title}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
       break
     }
     case "submit_values_card": {
