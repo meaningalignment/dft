@@ -1,6 +1,11 @@
 import { Configuration, OpenAIApi } from "openai-edge"
 import { ActionArgs, ActionFunction } from "@remix-run/node"
-import { functions, systemPrompt, articulationPrompt } from "~/lib/consts"
+import {
+  functions,
+  systemPrompt,
+  articulationPrompt,
+  critiquePrompt,
+} from "~/lib/consts"
 import { ChatCompletionRequestMessage } from "openai-edge"
 import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
 import { capitalize } from "~/utils"
@@ -24,6 +29,55 @@ export type SubmitCardFunction = {
   arguments: {
     values_card: string
   }
+}
+
+type ValuesCard = {
+  title: string
+  instructions_short: string
+  instructions_detailed: string
+  evaluation_criteria: string[]
+}
+
+/**
+ * A function declaration for a virtual function that outputs a values cards JSON.
+ */
+const formatCard = {
+  name: "submit",
+  description:
+    "Submit an articulated values card based on a source of meaning.",
+  parameters: {
+    type: "object",
+    properties: {
+      title: {
+        type: "string",
+        description: "The title of the values card.",
+      },
+      instructions_short: {
+        type: "string",
+        description:
+          "A short instruction for how ChatGPT could act based on this source of meaning.",
+      },
+      instructions_detailed: {
+        type: "string",
+        description:
+          "A detailed instruction for how ChatGPT could act based on this source of meaning.",
+      },
+      evaluation_criteria: {
+        type: "array",
+        items: {
+          type: "string",
+        },
+        description:
+          "A list of questions that can be used to evaluate whether ChatGPT is following this source of meaning.",
+      },
+    },
+    required: [
+      "title",
+      "instructions_short",
+      "instructions_detailed",
+      "evaluation_criteria",
+    ],
+  },
 }
 
 //
@@ -83,10 +137,72 @@ async function getFunctionCall(
   return json as ArticulateCardFunction | SubmitCardFunction
 }
 
+/** Critique a values card and return an updated version in the format of the official schema. */
+async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
+  console.log("Critiquing values card...")
+  console.log(`Card before critique:\n${JSON.stringify(valuesCard)}`)
+
+  // Format the values card to match the other examples in the prompt.
+  const message = `**${valuesCard.title}**\n${
+    valuesCard.instructions_short
+  }\n\n**HOW?**\n${
+    valuesCard.instructions_detailed
+  }\n\n**DETAILS**\n${valuesCard.evaluation_criteria.join("\n")}`
+
+  //
+  // Critique the card and return a structured JSON response
+  // by using a virtual "submit_critique" function.
+  //
+  const res = await openai.createChatCompletion({
+    model: "gpt-3.5-turbo-0613",
+    messages: [
+      { role: "system", content: critiquePrompt },
+      { role: "user", content: message },
+    ],
+    functions: [
+      {
+        name: "submit_critique",
+        description: "Critique a values card submitted by the user.",
+        parameters: {
+          type: "object",
+          properties: {
+            initial_card: formatCard.parameters,
+            revised_card: formatCard.parameters,
+            critique: {
+              type: "string",
+              description: "Critique of the initial card.",
+            },
+          },
+          required: ["initial_card", "critique", "revised_card"],
+        },
+      },
+    ],
+    function_call: {
+      name: "submit_critique",
+    },
+    temperature: 0.0,
+    stream: false,
+  })
+
+  const json = await res.json()
+  const data = json.choices[0].message.function_call.arguments as {
+    initial_card: ValuesCard
+    revised_card: ValuesCard
+    critique: string
+  }
+
+  console.log(`Card after critique:\n${JSON.stringify(data.revised_card)}`)
+  console.log(`Critique: ${data.critique}`)
+
+  return data.revised_card
+}
+
 /** Create a values card from a transcript of the conversation. */
 async function articulateValuesCard(
   messages: ChatCompletionRequestMessage[]
 ): Promise<string> {
+  console.log("Articulating values card...")
+
   const transcript = messages
     .filter((m) => m.role === "assistant" || m.role === "user")
     .map((m) => `${capitalize(m.role)}: ${m.content}`)
@@ -98,48 +214,23 @@ async function articulateValuesCard(
       { role: "system", content: articulationPrompt },
       { role: "user", content: transcript },
     ],
-    functions: [
-      // Use a virtual "submit" function to ensure we get a structured JSON response.
-      {
-        name: "submit",
-        description:
-          "Submit an articulated values card based on a source of meaning discussed in a transcript of a conversation.",
-        parameters: {
-          type: "object",
-          properties: {
-            title: {
-              type: "string",
-              description: "The title of the values card.",
-            },
-            instructions_short: {
-              type: "string",
-              description:
-                "A short instruction for how ChatGPT could act based on this source of meaning.",
-            },
-            instructions_detailed: {
-              type: "string",
-              description:
-                "A detailed instruction for how ChatGPT could act based on this source of meaning.",
-            },
-          },
-        },
-      },
-    ],
-    function_call: {
-      name: "submit",
-    },
+    functions: [formatCard],
+    function_call: { name: formatCard.name },
     temperature: 0.0,
     stream: false,
   })
 
   const data = await res.json()
+  const card = JSON.parse(data.choices[0].message.function_call.arguments)
 
-  const valuesCard = JSON.parse(data.choices[0].message.function_call.arguments)
+  const improvedCard = (await critiqueValuesCard(card)) as {
+    [key: string]: any
+  }
 
-  return JSON.stringify({
-    values_card: valuesCard,
-    display_format: `**{{title}}**\n\n{{instructions_short}}\n\n**HOW?**\n\n{{instructions_detailed}}`,
-  })
+  // TODO handle the `evaluation_criteria` property.
+  delete improvedCard.evaluation_criteria
+
+  return JSON.stringify(card)
 }
 
 async function submitValuesCard(valuesCard: string): Promise<string> {
