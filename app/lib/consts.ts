@@ -182,3 +182,10 @@ export const functions: ChatCompletionFunctions[] = [
     },
   },
 ]
+
+export type ValuesCard = {
+  title: string
+  instructions_short: string
+  instructions_detailed: string
+  evaluation_criteria?: string[]
+}

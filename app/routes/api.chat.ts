@@ -10,6 +10,7 @@ import {
   systemPrompt,
   articulationPrompt,
   critiquePrompt,
+  ValuesCard,
 } from "~/lib/consts"
 import { ChatCompletionRequestMessage } from "openai-edge"
 import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
@@ -34,15 +35,10 @@ export type ArticulateCardFunction = {
 export type SubmitCardFunction = {
   name: string
   arguments: {
-    values_card: string
+    title: string
+    instructions_short: string
+    instructions_detailed: string
   }
-}
-
-type ValuesCard = {
-  title: string
-  instructions_short: string
-  instructions_detailed: string
-  evaluation_criteria?: string[]
 }
 
 /**
@@ -154,7 +150,7 @@ async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
     valuesCard.instructions_short
   }\n\n**HOW?**\n${
     valuesCard.instructions_detailed
-  }\n\n**DETAILS**\n${valuesCard.evaluation_criteria.join("\n")}`
+  }\n\n**DETAILS**\n${valuesCard.evaluation_criteria!.join("\n")}`
 
   //
   // Critique the card and return a structured JSON response
@@ -192,11 +188,13 @@ async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
   })
 
   const json = await res.json()
-  const data = json.choices[0].message.function_call.arguments as {
+  const data = JSON.parse(json.choices[0].message.function_call.arguments) as {
     initial_card: ValuesCard
     revised_card: ValuesCard
     critique: string
   }
+
+  console.log("Data, ", JSON.stringify(data))
 
   console.log(`Card after critique:\n${JSON.stringify(data.revised_card)}`)
   console.log(`Critique: ${data.critique}`)
@@ -206,9 +204,8 @@ async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
 
 /** Create a values card from a transcript of the conversation. */
 async function articulateValuesCard(
-  messages: ChatCompletionRequestMessage[],
-  session: SessionData
-): Promise<string> {
+  messages: ChatCompletionRequestMessage[]
+): Promise<ValuesCard> {
   console.log("Articulating values card...")
 
   const transcript = messages
@@ -231,56 +228,76 @@ async function articulateValuesCard(
   const data = await res.json()
   const card = JSON.parse(data.choices[0].message.function_call.arguments)
 
-  const improvedCard = await critiqueValuesCard(card)
-
-  // The "evaluation criteria" field is never shown to the user.
-  session.set("values_card", JSON.stringify(improvedCard))
-  delete improvedCard.evaluation_criteria
-
-  return JSON.stringify(card as [key: string])
+  const improvedCard = card // await critiqueValuesCard(card)
+  return improvedCard
 }
 
-async function submitValuesCard(
-  card: ValuesCard,
-  session: SessionData
-): Promise<string> {
-  //
-  // Append the evaluation criteria from the card stored in the session.
-  //
-  const sessionCard = session.get("values_card")
-
-  if (sessionCard) {
-    card.evaluation_criteria = JSON.parse(sessionCard).evaluation_criteria
-    session.unset("values_card")
-  }
-
+async function submitValuesCard(card: ValuesCard): Promise<string> {
   console.log(`Submitting values card\n\n${JSON.stringify(card)}`)
 
   // TODO - add card to server
   return "<the values card was submitted. The user has now submitted 1 value in total. Proceed to thank the user>"
 }
 
+async function createHeaders(
+  session: Session,
+  card?: ValuesCard | null
+): Promise<{ [key: string]: string }> {
+  const headers: { [key: string]: string } = {
+    "Set-Cookie": await auth.storage.commitSession(session),
+  }
+
+  if (card) {
+    headers["X-Values-Card"] = JSON.stringify(card)
+  }
+
+  return headers
+}
+
 /** Call the right function and return the resulting stream. */
 async function streamingFunctionCallResponse(
   func: ArticulateCardFunction | SubmitCardFunction,
   messages: any[] = [],
-  session: SessionData
+  session: Session
 ): Promise<StreamingTextResponse> {
   //
   // Call the right function.
   //
   let result: string = ""
+  let card: ValuesCard | null = null
 
   switch (func.name) {
     case "articulate_values_card": {
-      result = await articulateValuesCard(messages, session)
+      // Articulate the values card.
+      card = await articulateValuesCard(messages)
+
+      // Save the card in the session.
+      session.set("values_card", JSON.stringify(card))
+
+      result =
+        "A card was articulated and shown to the user. Here is what it looks like:\n\n" +
+        card.title +
+        "\n\n" +
+        card.instructions_short +
+        "\n\n" +
+        card.instructions_detailed
       break
     }
     case "submit_values_card": {
-      const valuesCard = JSON.parse(
-        (func as SubmitCardFunction).arguments.values_card
-      ) as ValuesCard
-      result = await submitValuesCard(valuesCard, session)
+      // Get the values card from the function call arguments.
+      const valuesCard = func.arguments as ValuesCard
+
+      // Append the evaluation criteria from the session and clear the session.
+      if (session.has("values_card")) {
+        valuesCard.evaluation_criteria = JSON.parse(
+          session.get("values_card")
+        ).evaluation_criteria
+
+        session.unset("values_card")
+      }
+
+      // Submit the values card.
+      result = await submitValuesCard(valuesCard)
       break
     }
     default: {
@@ -320,8 +337,9 @@ async function streamingFunctionCallResponse(
     stream: true,
   })
 
-  // Return the resulting stream.
-  return new StreamingTextResponse(OpenAIStream(res))
+  return new StreamingTextResponse(OpenAIStream(res), {
+    headers: await createHeaders(session, card),
+  })
 }
 
 export const action: ActionFunction = async ({
@@ -358,6 +376,6 @@ export const action: ActionFunction = async ({
 
   // ...otherwise, return the response.
   return new StreamingTextResponse(OpenAIStream(res), {
-    headers: { "Set-Cookie": await auth.storage.commitSession(session) },
+    headers: await createHeaders(session),
   })
 }
