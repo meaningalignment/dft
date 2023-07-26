@@ -35,7 +35,7 @@ Some general guidelines:
 
 export const articulationPrompt = `You are a meaning assistant, helping a user articulate a "values card" from a transcript of a conversation.
 
-A "values card" is a representation of a "source of meaning".
+A "values card" is a representation of a "source of meaning". The card has four fields: title, instructions_short, instructions_detailed, and evaluation_criteria. The first three are strings and the last is an array of strings.
 
 A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. These are more specific than big words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity.
 
@@ -45,7 +45,34 @@ A source of meaning is distinct from similar concepts:
 - A source of meaning is not a norm or a social expectation. A source of meaning is not something you do because you feel like you have to, or because you feel like you should. It is something the user does because it is intrinsically important to them.
 - A source of meaning is not an internalized norm – a norm the user has adopted outside of the original social context. It is a way of living that produces a sense of meaning for you, not a way of living that you think is "right" or "correct".
 
-The values card should be written from the perspective of how ChatGPT should respond to the girl asking for help. It should have a title, a short instruction for how ChatGPT should act based on this source of meaning, and a detailed instruction for how ChatGPT should act based on this source of meaning.`
+The values card should be written from the perspective of how ChatGPT should respond to the situation in the first message.
+
+# Example Values Cards
+
+{
+  "title":"Faith in People",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "evaluation_criteria":[
+    "CHANGES in people when entrusted with the work of self-determination",
+    "INSIGHTS that emerge through grappling with morally fraught questions",
+    "CAPACITIES that develop when a person tries to be free and self-directed",
+    "WISDOM that emerges in a discursive, responsible context",
+    ]
+}
+
+{
+  "title":"Embodied Justice",
+  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
+  "evaluation_criteria":[
+    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
+    "DISCREPANCIES between the status quo and her own moral compass",
+    "EMOTIONS that spark her agency and power",
+    "ACTIONS she could take that would address those emotions",
+    ]
+}
+`
 
 export const critiquePrompt = `In the user message, I’ll provide a “source of meaning card”, written in a certain format. Output a critique of that card, and, if possible, an improved card which addresses the critique.
 
