@@ -28,14 +28,18 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       initialMessages,
       onResponse: async (response) => {
         if (response.headers.has("X-Values-Card")) {
+          const valueCard = JSON.parse(
+            response.headers.get("X-Values-Card")!
+          ) as ValuesCardType
+
+          console.log(valueCard)
+
           setValueCards((prev) => [
             ...prev,
             {
               // The last user & assistant pair has not been appended yet.
               position: messages.length + 1,
-              card: JSON.parse(
-                response.headers.get("X-Values-Card")!
-              ) as ValuesCardType,
+              card: valueCard,
             },
           ])
         }
