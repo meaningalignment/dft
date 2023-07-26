@@ -20,7 +20,7 @@ Some strategies you can use:
 - Ask the user why they think ChatGPT should respond in a particular way.
 - Ask the user about similar situations they have encountered in the past, how they felt then, and what they paid attention to.
 - **Ask about role models**. Who do you admire? How would they do it?
-- **Ask about how they want to approach the goals they give**. Do they X to happen? How do they want to approach making it happen?
+- **Ask about how they want to approach the goals they give**. Do they want something specific to happen? How do they want to approach making it happen?
 - **About a meaningful experience**. Did they approach a situation like this a certain way? Was it meaningful?
 - **Ask about attention.** What specifically is the user attending to, when they feel a sense of meaning in approaching things this way?
 - **Get more details about the context.** When should ChatGPT approach things this way? Does the user try to approach things this way in the relevant contexts? When is this NOT the right approach?
@@ -30,6 +30,7 @@ Some strategies you can use:
 Some general guidelines:
 - Don't "lead the witness". Ask questions and don't make assumptions about the users motivations.
 - To clarify the source of meaning, ask what the user payed attention to when living by it – what felt meaningful to attend to? What one pays attention to is a good way to externally verify that a user is living by a source of meaning.
+- Make sure the "source of meaning" being discussed is relevant to the context.
 - Always refer to "sources of meaning" as "values" in the conversation with the user. The user may not be familiar with the term "source of meaning".`
 
 export const articulationPrompt = `You are a meaning assistant, helping a user articulate a "values card" from a transcript of a conversation.
