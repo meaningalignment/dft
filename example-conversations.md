@@ -8,4 +8,4 @@ Each line in a conversation is a user message that can be used in the chat.
 ### Conversation 1:
 she should do what she thinks is right
 Feeling into her body
-Yes you capture it perfectly
+Yes you capture it perfectly. Articulate a value

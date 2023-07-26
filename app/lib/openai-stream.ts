@@ -176,7 +176,6 @@ export function OpenAIStream(response: Response): ReadableStream<any> {
   if (!response.ok || !response.body) {
     const printBody = async () => {
       const body = await response.text()
-      console.log(body)
     }
     printBody()
     throw new Error(
