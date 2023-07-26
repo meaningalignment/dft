@@ -157,7 +157,7 @@ async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
   // by using a virtual "submit_critique" function.
   //
   const res = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo-0613",
+    model: "gpt-4-0613",
     messages: [
       { role: "system", content: critiquePrompt },
       { role: "user", content: message },
@@ -212,7 +212,7 @@ async function articulateValuesCard(
     .join("\n")
 
   const res = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo-0613",
+    model: "gpt-4-0613",
     messages: [
       { role: "system", content: articulationPrompt },
       { role: "user", content: transcript },
@@ -226,7 +226,7 @@ async function articulateValuesCard(
   const data = await res.json()
   const card = JSON.parse(data.choices[0].message.function_call.arguments)
 
-  const improvedCard = card // await critiqueValuesCard(card)
+  const improvedCard = card
   return improvedCard
 }
 
@@ -312,7 +312,7 @@ async function streamingFunctionCallResponse(
   // of the conversation.
   //
   const res = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo-0613",
+    model: "gpt-4-0613",
     messages: [
       ...messages,
       {
@@ -353,7 +353,7 @@ export const action: ActionFunction = async ({
 
   // Create stream for next chat message.
   const res = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo-0613",
+    model: "gpt-4-0613",
     messages: messages,
     temperature: 0.7,
     stream: true,
