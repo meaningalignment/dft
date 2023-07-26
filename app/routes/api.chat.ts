@@ -194,10 +194,8 @@ async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
     critique: string
   }
 
-  console.log("Data, ", JSON.stringify(data))
-
-  console.log(`Card after critique:\n${JSON.stringify(data.revised_card)}`)
   console.log(`Critique: ${data.critique}`)
+  console.log(`Card after critique:\n${JSON.stringify(data.revised_card)}`)
 
   return data.revised_card
 }
@@ -233,7 +231,7 @@ async function articulateValuesCard(
 }
 
 async function submitValuesCard(card: ValuesCard): Promise<string> {
-  console.log(`Submitting values card\n\n${JSON.stringify(card)}`)
+  console.log(`Submitting values card:\n\n${JSON.stringify(card)}`)
 
   // TODO - add card to server
   return "<the values card was submitted. The user has now submitted 1 value in total. Proceed to thank the user>"

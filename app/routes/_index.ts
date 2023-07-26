@@ -18,7 +18,6 @@ export default function Index() {
     if (!user) {
       navigate("/auth/login")
     } else {
-      console.log(user)
       navigate("/chat")
     }
   }, [user, navigate])
