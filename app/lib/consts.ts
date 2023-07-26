@@ -163,9 +163,19 @@ export const functions: ChatCompletionFunctions[] = [
     parameters: {
       type: "object",
       properties: {
-        values_card: {
+        title: {
           type: "string",
-          description: "The values card articulated by the assistant.",
+          description: "The title of the values card.",
+        },
+        instructions_short: {
+          type: "string",
+          description:
+            "A short instruction for how ChatGPT could act based on this source of meaning.",
+        },
+        instructions_detailed: {
+          type: "string",
+          description:
+            "A detailed instruction for how ChatGPT could act based on this source of meaning.",
         },
       },
       required: ["values_card"],

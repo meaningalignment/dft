@@ -17,11 +17,16 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     useChat({
       id,
       api: "/api/chat",
+      headers: {
+        "Content-Type": "application/json",
+      },
       initialMessages,
       onFinish(message) {
         console.log(message)
+        console.log("On Message!")
       },
       onResponse: async (response) => {
+        console.log("On Response!")
         if (response.status === 401) {
           toast.error(response.statusText)
         }

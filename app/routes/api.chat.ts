@@ -1,5 +1,10 @@
 import { Configuration, OpenAIApi } from "openai-edge"
-import { ActionArgs, ActionFunction } from "@remix-run/node"
+import {
+  ActionArgs,
+  ActionFunction,
+  Session,
+  SessionData,
+} from "@remix-run/node"
 import {
   functions,
   systemPrompt,
@@ -9,6 +14,8 @@ import {
 import { ChatCompletionRequestMessage } from "openai-edge"
 import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
 import { capitalize } from "~/utils"
+import { auth } from "~/config.server"
+
 // import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
 
 export const runtime = "edge"
@@ -35,7 +42,7 @@ type ValuesCard = {
   title: string
   instructions_short: string
   instructions_detailed: string
-  evaluation_criteria: string[]
+  evaluation_criteria?: string[]
 }
 
 /**
@@ -199,7 +206,8 @@ async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
 
 /** Create a values card from a transcript of the conversation. */
 async function articulateValuesCard(
-  messages: ChatCompletionRequestMessage[]
+  messages: ChatCompletionRequestMessage[],
+  session: SessionData
 ): Promise<string> {
   console.log("Articulating values card...")
 
@@ -223,17 +231,31 @@ async function articulateValuesCard(
   const data = await res.json()
   const card = JSON.parse(data.choices[0].message.function_call.arguments)
 
-  const improvedCard = (await critiqueValuesCard(card)) as {
-    [key: string]: any
-  }
+  const improvedCard = await critiqueValuesCard(card)
 
-  // TODO handle the `evaluation_criteria` property.
+  // The "evaluation criteria" field is never shown to the user.
+  session.set("values_card", JSON.stringify(improvedCard))
   delete improvedCard.evaluation_criteria
 
-  return JSON.stringify(card)
+  return JSON.stringify(card as [key: string])
 }
 
-async function submitValuesCard(valuesCard: string): Promise<string> {
+async function submitValuesCard(
+  card: ValuesCard,
+  session: SessionData
+): Promise<string> {
+  //
+  // Append the evaluation criteria from the card stored in the session.
+  //
+  const sessionCard = session.get("values_card")
+
+  if (sessionCard) {
+    card.evaluation_criteria = JSON.parse(sessionCard).evaluation_criteria
+    session.unset("values_card")
+  }
+
+  console.log(`Submitting values card\n\n${JSON.stringify(card)}`)
+
   // TODO - add card to server
   return "<the values card was submitted. The user has now submitted 1 value in total. Proceed to thank the user>"
 }
@@ -241,7 +263,8 @@ async function submitValuesCard(valuesCard: string): Promise<string> {
 /** Call the right function and return the resulting stream. */
 async function streamingFunctionCallResponse(
   func: ArticulateCardFunction | SubmitCardFunction,
-  messages: any[] = []
+  messages: any[] = [],
+  session: SessionData
 ): Promise<StreamingTextResponse> {
   //
   // Call the right function.
@@ -250,12 +273,14 @@ async function streamingFunctionCallResponse(
 
   switch (func.name) {
     case "articulate_values_card": {
-      result = await articulateValuesCard(messages)
+      result = await articulateValuesCard(messages, session)
       break
     }
     case "submit_values_card": {
-      const valuesCard = (func as SubmitCardFunction).arguments.values_card
-      result = await submitValuesCard(valuesCard)
+      const valuesCard = JSON.parse(
+        (func as SubmitCardFunction).arguments.values_card
+      ) as ValuesCard
+      result = await submitValuesCard(valuesCard, session)
       break
     }
     default: {
@@ -302,12 +327,15 @@ async function streamingFunctionCallResponse(
 export const action: ActionFunction = async ({
   request,
 }: ActionArgs): Promise<Response> => {
+  const session = await auth.storage.getSession(request.headers.get("Cookie"))
+
   const json = await request.json()
   let { messages } = json
 
   // Prepend the system message.
   messages = [{ role: "system", content: systemPrompt }, ...messages]
 
+  // Create stream for next chat message.
   const res = await openai.createChatCompletion({
     model: "gpt-3.5-turbo-0613",
     messages: messages,
@@ -322,12 +350,14 @@ export const action: ActionFunction = async ({
     throw body.error
   }
 
-  // If a function call is present, handle it...
+  // If a function call is present in the stream, handle it...
   const func = await getFunctionCall(res)
   if (func) {
-    return streamingFunctionCallResponse(func, messages)
+    return streamingFunctionCallResponse(func, messages, session)
   }
 
   // ...otherwise, return the response.
-  return new StreamingTextResponse(OpenAIStream(res))
+  return new StreamingTextResponse(OpenAIStream(res), {
+    headers: { "Set-Cookie": await auth.storage.commitSession(session) },
+  })
 }
