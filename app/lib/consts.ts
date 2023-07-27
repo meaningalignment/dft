@@ -48,27 +48,27 @@ The values card should be written from the perspective of how ChatGPT should res
 # Example Values Cards
 
 {
-  "title":"Faith in People",
-  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
-  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
   "evaluation_criteria":[
     "CHANGES in people when entrusted with the work of self-determination",
     "INSIGHTS that emerge through grappling with morally fraught questions",
     "CAPACITIES that develop when a person tries to be free and self-directed",
     "WISDOM that emerges in a discursive, responsible context",
-    ]
+  ],
+  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "title":"Faith in People"
 }
 
 {
-  "title":"Embodied Justice",
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
-  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
   "evaluation_criteria":[
     "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
     "DISCREPANCIES between the status quo and her own moral compass",
     "EMOTIONS that spark her agency and power",
     "ACTIONS she could take that would address those emotions",
-    ]
+  ],
+  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
+  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "title":"Embodied Justice"
 }
 `
 
@@ -95,15 +95,15 @@ The card has four fields: title, instructions_short, instructions_detailed, and 
 ### Card
 
 {
-  "title":"Faith in People",
-  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
-  "instructions_detailed":"ChatGPT can foster new leaders, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
   "evaluation_criteria":[
     "MOMENTS where people become leaders.",
     "INSIGHTS that emerge through grappling with morally fraught questions",
     "CAPACITIES that develop when a person tries to be free and self-directed",
     "WISDOM that emerges in a discursive, responsible context",
-    ]
+  ],
+  "instructions_detailed":"ChatGPT can foster new leaders, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "title":"Faith in People",
 }
 
 ### Critique
@@ -116,15 +116,15 @@ The card has four fields: title, instructions_short, instructions_detailed, and 
 ### Improved Card
 
 {
-  "title":"Faith in People",
-  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
-  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
   "evaluation_criteria":[
     "CHANGES in people when entrusted with the work of self-determination",
     "INSIGHTS that emerge through grappling with morally fraught questions",
     "CAPACITIES that develop when a person tries to be free and self-directed",
     "WISDOM that emerges in a discursive, responsible context",
-    ]
+  ],
+  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "title":"Faith in People",
 }
 
 ## Example 2
@@ -132,17 +132,16 @@ The card has four fields: title, instructions_short, instructions_detailed, and 
 ### Card
 
 {
-  "title":"Embodied Justice",
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
-  "instructions_detailed":"ChatGPT can help her find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.
-",
   "evaluation_criteria":[
     "COURSES she could take about the subject",
     "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
     "DISCREPANCIES between the status quo and her own moral compass",
     "EMOTIONS that spark her agency and power",
     "ACTIONS she could take that would address those emotions",
-    ]
+  ],
+  "instructions_detailed":"ChatGPT can help her find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take."
+  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "title":"Embodied Justice",
 }
 
 ### Critique
@@ -155,15 +154,15 @@ The card has four fields: title, instructions_short, instructions_detailed, and 
 ### Improved Card
 
 {
-  "title":"Embodied Justice",
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
-  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
   "evaluation_criteria":[
     "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
     "DISCREPANCIES between the status quo and her own moral compass",
     "EMOTIONS that spark her agency and power",
     "ACTIONS she could take that would address those emotions",
-    ]
+  ],
+  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
+  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "title":"Embodied Justice"
 }
 `
 
@@ -175,7 +174,7 @@ export const functions: ChatCompletionFunctions[] = [
   {
     name: "articulate_values_card",
     description:
-      "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do. Returns a formatted values card",
+      "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do, but has not yet articulated a values card or the articulated values card is not yet satisfactory to the user.",
     parameters: {
       type: "object",
       properties: {},
@@ -184,26 +183,10 @@ export const functions: ChatCompletionFunctions[] = [
   {
     name: "submit_values_card",
     description:
-      "Called when the assistant has helped the user clearly articulate a values card, and the user has confirmed the card.",
+      "Called when a values card has been articulated to the user, and the user is satisfied with the articulation.",
     parameters: {
       type: "object",
-      properties: {
-        title: {
-          type: "string",
-          description: "The title of the values card.",
-        },
-        instructions_short: {
-          type: "string",
-          description:
-            "A short instruction for how ChatGPT could act based on this source of meaning.",
-        },
-        instructions_detailed: {
-          type: "string",
-          description:
-            "A detailed instruction for how ChatGPT could act based on this source of meaning.",
-        },
-      },
-      required: ["values_card"],
+      properties: {},
     },
   },
 ]
