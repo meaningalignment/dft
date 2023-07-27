@@ -71,7 +71,7 @@ const formatCard = {
           type: "string",
         },
         description:
-          "A list of questions that can be used to evaluate whether ChatGPT is following this source of meaning.",
+          "A list of things to attend to that can be used to evaluate whether ChatGPT is following this source of meaning.",
       },
     },
     required: [
