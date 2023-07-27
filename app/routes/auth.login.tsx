@@ -34,7 +34,7 @@ export default function LoginScreen() {
         )}
 
         <button
-          className="w-full mt-3 px-5 py-1 rounded-md text-white bg-indigo-600 outline-none shadow-md focus:shadow-none focus:ring-2 ring-offset-2 ring-indigo-600 sm:mt-0 sm:w-auto disabled:bg-indigo-400 disabled:cursor-not-allowed"
+          className="w-full mt-3 mr-2 px-5 py-1 rounded-md text-white bg-indigo-600 outline-none shadow-md focus:shadow-none focus:ring-2 ring-offset-2 ring-indigo-600 sm:mt-0 sm:w-auto disabled:bg-indigo-400 disabled:cursor-not-allowed"
           type="submit"
         >
           Send me the code!

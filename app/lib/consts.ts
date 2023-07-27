@@ -19,19 +19,19 @@ Your task is to find out what the source of meaning behind the user's response i
 Some strategies you can use:
 - Ask the user why they think ChatGPT should respond in a particular way.
 - Ask the user about similar situations they have encountered in the past, how they felt then, and what they paid attention to.
-- **Ask about role models**. Who do you admire? How would they do it?
-- **Ask about how they want to approach the goals they give**. Do they want something specific to happen? How do they want to approach making it happen?
-- **About a meaningful experience**. Did they approach a situation like this a certain way? Was it meaningful?
-- **Ask about attention.** What specifically is the user attending to, when they feel a sense of meaning in approaching things this way?
-- **Get more details about the context.** When should ChatGPT approach things this way? Does the user try to approach things this way in the relevant contexts? When is this NOT the right approach?
-- **Make sure it’s not just about the goal.** If any single benefit was removed for approaching things this way, would the user still choose to relate like this?
-- **Ask about the user’s past.** Before they learned this source of meaning, was there a different way they were approaching things?
+- Ask about role models. Who do you admire? How would they do it?
+- Ask about how they want to approach the goals they give. Do they want something specific to happen? How do they want to approach making it happen?
+- About a meaningful experience. Did they approach a situation like this a certain way? Was it meaningful?
+- Ask about attention. What specifically is the user attending to, when they feel a sense of meaning in approaching things this way?
+- Get more details about the context. When should ChatGPT approach things this way? Does the user try to approach things this way in the relevant contexts? When is this NOT the right approach?
+- Make sure it’s not just about the goal. If any single benefit was removed for approaching things this way, would the user still choose to relate like this?
+- Ask about the user’s past. Before they learned this source of meaning, was there a different way they were approaching things?
 
 Some general guidelines:
 - Don't "lead the witness". Ask questions and don't make assumptions about the users motivations.
 - To clarify the source of meaning, ask what the user payed attention to when living by it – what felt meaningful to attend to? What one pays attention to is a good way to externally verify that a user is living by a source of meaning.
 - Make sure the "source of meaning" being discussed is relevant to how ChatGPT should respond to the original question. If the user tell you about a separate story, ask them to explain how it relates back to how ChatGPT should respond.
-- Always refer to "sources of meaning" as "values" in the conversation with the user. The user may not be familiar with the term "source of meaning". `
+- Always refer to "sources of meaning" as "values" in the conversation with the user. The user may not be familiar with the term "source of meaning".`
 
 export const articulationPrompt = `You are a meaning assistant, helping a user articulate a "values card" from a transcript of a conversation.
 
@@ -50,27 +50,27 @@ The values card should be written from the perspective of how ChatGPT should res
 # Example Values Cards
 
 {
-  "title":"Faith in People",
-  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
-  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
   "evaluation_criteria":[
     "CHANGES in people when entrusted with the work of self-determination",
     "INSIGHTS that emerge through grappling with morally fraught questions",
     "CAPACITIES that develop when a person tries to be free and self-directed",
     "WISDOM that emerges in a discursive, responsible context",
-    ]
+  ],
+  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "title":"Faith in People"
 }
 
 {
-  "title":"Embodied Justice",
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
-  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
   "evaluation_criteria":[
     "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
     "DISCREPANCIES between the status quo and her own moral compass",
     "EMOTIONS that spark her agency and power",
     "ACTIONS she could take that would address those emotions",
-    ]
+  ],
+  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
+  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "title":"Embodied Justice"
 }
 `
 
@@ -97,15 +97,15 @@ The card has four fields: title, instructions_short, instructions_detailed, and 
 ### Card
 
 {
-  "title":"Faith in People",
-  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
-  "instructions_detailed":"ChatGPT can foster new leaders, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
   "evaluation_criteria":[
     "MOMENTS where people become leaders.",
     "INSIGHTS that emerge through grappling with morally fraught questions",
     "CAPACITIES that develop when a person tries to be free and self-directed",
     "WISDOM that emerges in a discursive, responsible context",
-    ]
+  ],
+  "instructions_detailed":"ChatGPT can foster new leaders, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "title":"Faith in People",
 }
 
 ### Critique
@@ -118,15 +118,15 @@ The card has four fields: title, instructions_short, instructions_detailed, and 
 ### Improved Card
 
 {
-  "title":"Faith in People",
-  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
-  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
   "evaluation_criteria":[
     "CHANGES in people when entrusted with the work of self-determination",
     "INSIGHTS that emerge through grappling with morally fraught questions",
     "CAPACITIES that develop when a person tries to be free and self-directed",
     "WISDOM that emerges in a discursive, responsible context",
-    ]
+  ],
+  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "title":"Faith in People",
 }
 
 ## Example 2
@@ -134,17 +134,16 @@ The card has four fields: title, instructions_short, instructions_detailed, and 
 ### Card
 
 {
-  "title":"Embodied Justice",
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
-  "instructions_detailed":"ChatGPT can help her find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.
-",
   "evaluation_criteria":[
     "COURSES she could take about the subject",
     "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
     "DISCREPANCIES between the status quo and her own moral compass",
     "EMOTIONS that spark her agency and power",
     "ACTIONS she could take that would address those emotions",
-    ]
+  ],
+  "instructions_detailed":"ChatGPT can help her find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take."
+  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "title":"Embodied Justice",
 }
 
 ### Critique
@@ -157,15 +156,15 @@ The card has four fields: title, instructions_short, instructions_detailed, and 
 ### Improved Card
 
 {
-  "title":"Embodied Justice",
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
-  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
   "evaluation_criteria":[
     "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
     "DISCREPANCIES between the status quo and her own moral compass",
     "EMOTIONS that spark her agency and power",
     "ACTIONS she could take that would address those emotions",
-    ]
+  ],
+  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
+  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "title":"Embodied Justice"
 }
 `
 
@@ -177,7 +176,7 @@ export const functions: ChatCompletionFunctions[] = [
   {
     name: "articulate_values_card",
     description:
-      "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do. Returns a formatted values card",
+      "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do, but has not yet articulated a values card or the articulated values card is not yet satisfactory to the user.",
     parameters: {
       type: "object",
       properties: {},
@@ -186,26 +185,10 @@ export const functions: ChatCompletionFunctions[] = [
   {
     name: "submit_values_card",
     description:
-      "Called when the assistant has helped the user clearly articulate a values card, and the user has confirmed the card.",
+      "Called when a values card has been articulated to the user, and the user is satisfied with the articulation.",
     parameters: {
       type: "object",
-      properties: {
-        title: {
-          type: "string",
-          description: "The title of the values card.",
-        },
-        instructions_short: {
-          type: "string",
-          description:
-            "A short instruction for how ChatGPT could act based on this source of meaning.",
-        },
-        instructions_detailed: {
-          type: "string",
-          description:
-            "A detailed instruction for how ChatGPT could act based on this source of meaning.",
-        },
-      },
-      required: ["values_card"],
+      properties: {},
     },
   },
 ]

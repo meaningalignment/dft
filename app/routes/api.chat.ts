@@ -268,20 +268,22 @@ async function streamingFunctionCallResponse(
       break
     }
     case "submit_values_card": {
-      // Get the values card from the function call arguments.
-      const valuesCard = func.arguments as ValuesCard
+      // Get the values card from the session.
+      card = session.get("values_card")
 
-      // Append the evaluation criteria from the session and clear the session.
-      if (session.has("values_card")) {
-        valuesCard.evaluation_criteria = JSON.parse(
-          session.get("values_card")
-        ).evaluation_criteria
-
-        session.unset("values_card")
+      if (!card) {
+        throw Error("No values card in session")
       }
 
       // Submit the values card.
-      result = await submitValuesCard(valuesCard)
+      result = await submitValuesCard({ ...card })
+
+      // Don't send the card as a header.
+      card = null
+
+      // Clear the session.
+      session.unset("values_card")
+
       break
     }
     default: {
@@ -336,6 +338,8 @@ export const action: ActionFunction = async ({
 
   // Prepend the system message.
   messages = [{ role: "system", content: systemPrompt }, ...messages]
+
+  console.log("Messages:", JSON.stringify(messages))
 
   // Create stream for next chat message.
   const res = await openai.createChatCompletion({
