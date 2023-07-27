@@ -4,10 +4,7 @@ import { ChatCompletionFunctions } from "openai-edge"
 // Prompts.
 //
 
-
-const sourceOfMeaningDefinition = `A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. These are more specific than big words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity.
-
-A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. Something that you pay attention to in a choice. They are more specific than words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity, specified as a path of attention.
+const sourceOfMeaningDefinition = `A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. Something that you pay attention to in a choice. They are more specific than words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity, specified as a path of attention.
 
 A source of meaning is distinct from similar concepts:
 - A source of meaning is not a goal. A goal is something you want to achieve, like "become a doctor" or "get married". A source of meaning is a way of living, like "be a good friend" or "be a good listener".
