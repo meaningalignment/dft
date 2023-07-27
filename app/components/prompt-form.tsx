@@ -4,8 +4,9 @@ import { UseChatHelpers } from "ai/react"
 
 import { Button } from "./ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
-import { IconArrowElbow } from "./ui/icons"
+import { IconArrowElbow, IconArrowRight, IconRefresh } from "./ui/icons"
 import { useEnterSubmit } from "~/hooks/use-enter-submit"
+import { Link } from "@remix-run/react"
 
 export interface PromptProps
   extends Pick<UseChatHelpers, "input" | "setInput"> {
@@ -40,7 +41,30 @@ export function PromptForm({
       }}
       ref={formRef}
     >
-      <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-white pr-8 sm:rounded-md sm:border sm:pr-12">
+      <div className="flex flex-col items-center justify-center">
+        <p className="p-2 pb-4 text-md">
+          You have articulated{" "}
+          <a className="underline font-semibold cursor-pointer">1 value</a>.
+          Would you like to continue?
+        </p>
+        <div className="flex justify-center pt-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              throw Error("not implemented")
+            }}
+            className="bg-white"
+          >
+            <IconRefresh className="mr-2" />
+            Articulate Another Value
+          </Button>
+          <Button className="ml-2">
+            <IconArrowRight className="mr-2" />
+            <Link to="/rank">Continue</Link>
+          </Button>
+        </div>
+      </div>
+      {/* <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-white pr-8 sm:rounded-md sm:border sm:pr-12">
         <Textarea
           ref={inputRef}
           tabIndex={0}
@@ -67,7 +91,7 @@ export function PromptForm({
             <TooltipContent>Send message</TooltipContent>
           </Tooltip>
         </div>
-      </div>
+      </div> */}
     </form>
   )
 }

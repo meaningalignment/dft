@@ -1,10 +1,5 @@
 import { Configuration, OpenAIApi } from "openai-edge"
-import {
-  ActionArgs,
-  ActionFunction,
-  Session,
-  SessionData,
-} from "@remix-run/node"
+import { ActionArgs, ActionFunction, Session } from "@remix-run/node"
 import {
   functions,
   systemPrompt,
@@ -226,7 +221,7 @@ async function submitValuesCard(card: ValuesCard): Promise<string> {
   console.log(`Submitting values card:\n\n${JSON.stringify(card)}`)
 
   // TODO - add card to server
-  return "<the values card was submitted. The user has now submitted 1 value in total. Proceed to thank the user>"
+  return `<the values card (´${card.title}) was submitted. The user has now submitted 1 value in total. Proceed to thank the user for submitting their value.>`
 }
 
 async function createHeaders(
@@ -282,6 +277,9 @@ async function streamingFunctionCallResponse(
       card = null
 
       // Clear the session.
+      const cards = session.get("submitted_values_cards") ?? []
+      cards.push()
+      session.set("submitted_values_cards", JSON.stringify([card]))
       session.unset("values_card")
 
       break

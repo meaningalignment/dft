@@ -56,10 +56,6 @@ export function ChatPanel({
                   <IconRefresh className="mr-2" />
                   Regenerate response
                 </Button>
-                <Button className="ml-2">
-                  <IconArrowRight className="mr-2" />
-                  <Link to="/rank">Continue</Link>
-                </Button>
               </>
             )
           )}
