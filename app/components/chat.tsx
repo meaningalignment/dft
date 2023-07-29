@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react"
+import React, { useState } from "react"
 import { useChat, type Message } from "ai/react"
 import { cn } from "../utils"
 import { ChatList } from "./chat-list"
