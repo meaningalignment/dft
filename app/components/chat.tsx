@@ -21,6 +21,8 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   const [isFinished, setIsFinished] = useState(false)
 
   const onCardArticulation = (card: ValuesCard) => {
+    console.log("Card articulated:", card)
+
     setValueCards((prev) => [
       ...prev,
       {
@@ -31,7 +33,9 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     ])
   }
 
-  const onCardSubmission = (_: ValuesCard) => {
+  const onCardSubmission = (card: ValuesCard) => {
+    console.log("Card submitted:", card)
+
     setIsFinished(true)
   }
 
