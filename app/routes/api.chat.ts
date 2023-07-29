@@ -16,7 +16,7 @@ import { auth } from "~/config.server"
 
 export const runtime = "edge"
 
-const model = "gpt-3.5-turbo-0613"
+const model = "gpt-4-0613"
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -338,8 +338,6 @@ export const action: ActionFunction = async ({
 
   // Prepend the system message.
   messages = [{ role: "system", content: systemPrompt }, ...messages]
-
-  console.log("Messages:", JSON.stringify(messages))
 
   // Create stream for next chat message.
   const res = await openai.createChatCompletion({
