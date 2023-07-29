@@ -6,7 +6,7 @@ import { ChatPanel } from "./chat-panel"
 import { EmptyScreen } from "./empty-screen"
 import { ChatScrollAnchor } from "./chat-scroll-anchor"
 import { toast } from "react-hot-toast"
-import { ValuesCard as ValuesCardType } from "~/lib/consts"
+import { ValuesCard } from "~/lib/consts"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
@@ -15,40 +15,68 @@ export interface ChatProps extends React.ComponentProps<"div"> {
 
 export function Chat({ id, initialMessages, className }: ChatProps) {
   const [valueCards, setValueCards] = useState<
-    { position: number; card: ValuesCardType }[]
+    { position: number; card: ValuesCard }[]
   >([])
 
-  const { messages, append, reload, stop, isLoading, input, setInput } =
-    useChat({
-      id,
-      api: "/api/chat",
-      headers: {
-        "Content-Type": "application/json",
+  const [isFinished, setIsFinished] = useState(false)
+
+  const onCardArticulation = (card: ValuesCard) => {
+    console.log("Card articulated:", card)
+
+    setValueCards((prev) => [
+      ...prev,
+      {
+        // The last user & assistant pair has not been appended yet.
+        position: messages.length + 1,
+        card,
       },
-      initialMessages,
-      onResponse: async (response) => {
-        if (response.headers.has("X-Values-Card")) {
-          const valueCard = JSON.parse(
-            response.headers.get("X-Values-Card")!
-          ) as ValuesCardType
+    ])
+  }
 
-          console.log(valueCard)
+  const onCardSubmission = (card: ValuesCard) => {
+    console.log("Card submitted:", card)
 
-          setValueCards((prev) => [
-            ...prev,
-            {
-              // The last user & assistant pair has not been appended yet.
-              position: messages.length + 1,
-              card: valueCard,
-            },
-          ])
-        }
+    setIsFinished(true)
+  }
 
-        if (response.status === 401) {
-          toast.error(response.statusText)
-        }
-      },
-    })
+  const onReload = () => {
+    setIsFinished(false)
+    setValueCards([])
+    setMessages([...(initialMessages ?? [])])
+  }
+
+  const {
+    messages,
+    append,
+    reload,
+    stop,
+    isLoading,
+    input,
+    setInput,
+    setMessages,
+  } = useChat({
+    id,
+    api: "/api/chat",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    initialMessages,
+    onResponse: async (response) => {
+      const articulatedCard = response.headers.get("X-Articulated-Card")
+      if (articulatedCard) {
+        onCardArticulation(JSON.parse(articulatedCard) as ValuesCard)
+      }
+
+      const submittedCard = response.headers.get("X-Submitted-Card")
+      if (submittedCard) {
+        onCardSubmission(JSON.parse(submittedCard) as ValuesCard)
+      }
+
+      if (response.status === 401) {
+        toast.error(response.statusText)
+      }
+    },
+  })
 
   return (
     <>
@@ -67,12 +95,14 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       <ChatPanel
         id={id}
         isLoading={isLoading}
+        isFinished={isFinished}
         stop={stop}
         append={append}
         reload={reload}
         messages={messages}
         input={input}
         setInput={setInput}
+        onReload={onReload}
       />
     </>
   )

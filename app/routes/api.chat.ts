@@ -1,10 +1,5 @@
 import { Configuration, OpenAIApi } from "openai-edge"
-import {
-  ActionArgs,
-  ActionFunction,
-  Session,
-  SessionData,
-} from "@remix-run/node"
+import { ActionArgs, ActionFunction, Session } from "@remix-run/node"
 import {
   functions,
   systemPrompt,
@@ -20,6 +15,8 @@ import { auth } from "~/config.server"
 // import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
 
 export const runtime = "edge"
+
+const model = "gpt-4-0613"
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -150,7 +147,7 @@ async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
   // by using a virtual "submit_critique" function.
   //
   const res = await openai.createChatCompletion({
-    model: "gpt-4-0613",
+    model,
     messages: [
       { role: "system", content: critiquePrompt },
       { role: "user", content: JSON.stringify(valuesCard) },
@@ -205,7 +202,7 @@ async function articulateValuesCard(
     .join("\n")
 
   const res = await openai.createChatCompletion({
-    model: "gpt-4-0613",
+    model,
     messages: [
       { role: "system", content: articulationPrompt },
       { role: "user", content: transcript },
@@ -218,27 +215,31 @@ async function articulateValuesCard(
 
   const data = await res.json()
   const card = JSON.parse(data.choices[0].message.function_call.arguments)
-  const improvedCard = await critiqueValuesCard(card)
-  return improvedCard
+  return await critiqueValuesCard(card)
 }
 
 async function submitValuesCard(card: ValuesCard): Promise<string> {
   console.log(`Submitting values card:\n\n${JSON.stringify(card)}`)
 
   // TODO - add card to server
-  return "<the values card was submitted. The user has now submitted 1 value in total. Proceed to thank the user>"
+  return `<the values card (´${card.title}) was submitted. The user has now submitted 1 value in total. Proceed to thank the user for submitting their value.>`
 }
 
 async function createHeaders(
   session: Session,
-  card?: ValuesCard | null
+  articulatedCard?: ValuesCard | null,
+  submittedCard?: ValuesCard | null
 ): Promise<{ [key: string]: string }> {
   const headers: { [key: string]: string } = {
     "Set-Cookie": await auth.storage.commitSession(session),
   }
 
-  if (card) {
-    headers["X-Values-Card"] = JSON.stringify(card)
+  if (articulatedCard) {
+    headers["X-Articulated-Card"] = JSON.stringify(articulatedCard)
+  }
+
+  if (submittedCard) {
+    headers["X-Submitted-Card"] = JSON.stringify(submittedCard)
   }
 
   return headers
@@ -254,34 +255,32 @@ async function streamingFunctionCallResponse(
   // Call the right function.
   //
   let result: string = ""
-  let card: ValuesCard | null = null
+  let articulatedCard: ValuesCard | null = null
+  let submittedCard: ValuesCard | null = null
 
   switch (func.name) {
     case "articulate_values_card": {
       // Articulate the values card.
-      card = await articulateValuesCard(messages)
+      articulatedCard = await articulateValuesCard(messages)
 
       // Save the card in the session.
-      session.set("values_card", JSON.stringify(card))
+      session.set("values_card", JSON.stringify(articulatedCard))
 
-      result = `<A card (${card.title}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
+      result = `<A card (${articulatedCard.title}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
       break
     }
     case "submit_values_card": {
       // Get the values card from the session.
-      card = session.get("values_card")
+      submittedCard = session.get("values_card")
 
-      if (!card) {
+      if (!submittedCard) {
         throw Error("No values card in session")
       }
 
       // Submit the values card.
-      result = await submitValuesCard({ ...card })
+      result = await submitValuesCard({ ...submittedCard })
 
-      // Don't send the card as a header.
-      card = null
-
-      // Clear the session.
+      // Update the session.
       session.unset("values_card")
 
       break
@@ -300,7 +299,7 @@ async function streamingFunctionCallResponse(
   // of the conversation.
   //
   const res = await openai.createChatCompletion({
-    model: "gpt-4-0613",
+    model,
     messages: [
       ...messages,
       {
@@ -324,7 +323,7 @@ async function streamingFunctionCallResponse(
   })
 
   return new StreamingTextResponse(OpenAIStream(res), {
-    headers: await createHeaders(session, card),
+    headers: await createHeaders(session, articulatedCard, submittedCard),
   })
 }
 
@@ -339,11 +338,9 @@ export const action: ActionFunction = async ({
   // Prepend the system message.
   messages = [{ role: "system", content: systemPrompt }, ...messages]
 
-  console.log("Messages:", JSON.stringify(messages))
-
   // Create stream for next chat message.
   const res = await openai.createChatCompletion({
-    model: "gpt-4-0613",
+    model,
     messages: messages,
     temperature: 0.7,
     stream: true,
