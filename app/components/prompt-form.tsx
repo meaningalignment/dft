@@ -7,26 +7,35 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 import { IconArrowElbow, IconArrowRight, IconRefresh } from "./ui/icons"
 import { useEnterSubmit } from "~/hooks/use-enter-submit"
 import { Link } from "@remix-run/react"
-import { ValuesCard } from "~/lib/consts"
+import { useCurrentUserValues } from "~/root"
 
 export interface PromptProps
   extends Pick<UseChatHelpers, "input" | "setInput"> {
   onSubmit: (value: string) => Promise<void>
-  onReload: () => void
   isLoading: boolean
   isFinished?: boolean
 }
 
-const FinishedView = ({ onReload }: { onReload: () => void }) => {
+const FinishedView = () => {
+  const values = useCurrentUserValues()
+  const count = (values?.length ?? 0) + 1
+  const suffix = count === 1 ? "" : "s"
+
   return (
     <div className="flex flex-col items-center justify-center">
       <p className="p-2 pb-4 text-md">
         {"You have articulated "}
-        <a className="underline font-semibold cursor-pointer">1 value</a>. Would
-        you like to continue?
+        <a className="underline font-semibold cursor-pointer">
+          {count} value{suffix}
+        </a>
+        . Would you like to continue?
       </p>
       <div className="flex justify-center pt-2">
-        <Button variant="outline" className="bg-white" onClick={onReload}>
+        <Button
+          variant="outline"
+          className="bg-white"
+          onClick={() => window.location.reload()}
+        >
           <IconRefresh className="mr-2" />
           Articulate Another Value
         </Button>
@@ -41,7 +50,6 @@ const FinishedView = ({ onReload }: { onReload: () => void }) => {
 
 export function PromptForm({
   onSubmit,
-  onReload,
   input,
   setInput,
   isLoading,
@@ -68,7 +76,7 @@ export function PromptForm({
       }}
       ref={formRef}
     >
-      {(isFinished && <FinishedView onReload={onReload} />) || (
+      {(isFinished && <FinishedView />) || (
         <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-white pr-8 sm:rounded-md sm:border sm:pr-12">
           <Textarea
             ref={inputRef}

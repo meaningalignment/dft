@@ -2,7 +2,7 @@ datasource db {
   provider          = "postgres"
   url               = env("POSTGRES_PRISMA_URL") // uses connection pooling
   directUrl         = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
-  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING") // used for migrations
+  shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING_SHADOW") // used for migrations
 }
 
 generator client {
@@ -16,6 +16,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   role      String[] @default(["USER"])
+  chats     Chat[]
 }
 
 model EmailCodes {
@@ -26,4 +27,39 @@ model EmailCodes {
   loginCodeExpiresAt DateTime
   register           Boolean  @default(false)
   extraData          Json?
+}
+
+model ValuesCard {
+  id                   Int                  @id @default(autoincrement())
+  title                String
+  instructionsShort    String
+  instructionsDetailed String
+  evaluationCriteria   String[]
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  canonicalCardId      Int?
+  canonicalCard        CanonicalValuesCard? @relation(fields: [canonicalCardId], references: [id])
+  chatId               String               @unique
+  chat                 Chat                 @relation(fields: [chatId], references: [id])
+}
+
+model CanonicalValuesCard {
+  id                   Int          @id @default(autoincrement())
+  title                String
+  instructionsShort    String
+  instructionsDetailed String
+  evaluationCriteria   String[]
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  valuesCards          ValuesCard[]
+}
+
+model Chat {
+  id         String      @id
+  userId     Int
+  transcript Json
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  ValuesCard ValuesCard?
+  user       User        @relation(fields: [userId], references: [id])
 }

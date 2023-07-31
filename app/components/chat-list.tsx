@@ -2,12 +2,12 @@ import { type Message } from "ai"
 
 import { Separator } from "./ui/separator"
 import { ChatMessage } from "./chat-message"
-import { ValuesCard as ValuesCardType } from "~/lib/consts"
 import ValuesCard from "./ui/values-card"
+import { ValuesCardCandidate } from "~/lib/consts"
 
 export interface ChatList {
   messages: Message[]
-  valueCards: { position: number; card: ValuesCardType }[]
+  valueCards: { position: number; card: ValuesCardCandidate }[]
 }
 
 export function ChatList({ messages, valueCards }: ChatList) {

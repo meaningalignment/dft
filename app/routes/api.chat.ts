@@ -5,18 +5,18 @@ import {
   systemPrompt,
   articulationPrompt,
   critiquePrompt,
-  ValuesCard,
+  ValuesCardCandidate,
 } from "~/lib/consts"
 import { ChatCompletionRequestMessage } from "openai-edge"
 import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
 import { capitalize } from "~/utils"
-import { auth } from "~/config.server"
+import { auth, db } from "~/config.server"
 
 // import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
 
 export const runtime = "edge"
 
-const model = "gpt-4-0613"
+const model = "gpt-3.5-turbo-0613"
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -138,7 +138,9 @@ async function getFunctionCall(
 }
 
 /** Critique a values card and return an updated version in the format of the official schema. */
-async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
+async function critiqueValuesCard(
+  valuesCard: ValuesCardCandidate
+): Promise<ValuesCardCandidate> {
   console.log("Critiquing values card...")
   console.log(`Card before critique:\n${JSON.stringify(valuesCard)}`)
 
@@ -179,8 +181,8 @@ async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
 
   const json = await res.json()
   const data = JSON.parse(json.choices[0].message.function_call.arguments) as {
-    initial_card: ValuesCard
-    revised_card: ValuesCard
+    initial_card: ValuesCardCandidate
+    revised_card: ValuesCardCandidate
     critique: string
   }
 
@@ -193,7 +195,7 @@ async function critiqueValuesCard(valuesCard: ValuesCard): Promise<ValuesCard> {
 /** Create a values card from a transcript of the conversation. */
 async function articulateValuesCard(
   messages: ChatCompletionRequestMessage[]
-): Promise<ValuesCard> {
+): Promise<ValuesCardCandidate> {
   console.log("Articulating values card...")
 
   const transcript = messages
@@ -215,20 +217,35 @@ async function articulateValuesCard(
 
   const data = await res.json()
   const card = JSON.parse(data.choices[0].message.function_call.arguments)
-  return await critiqueValuesCard(card)
+  return card //await critiqueValuesCard(card)
 }
 
-async function submitValuesCard(card: ValuesCard): Promise<string> {
+async function submitValuesCard(
+  card: ValuesCardCandidate,
+  chatId: string
+): Promise<string> {
   console.log(`Submitting values card:\n\n${JSON.stringify(card)}`)
 
-  // TODO - add card to server
+  // Save the card in the database.
+  await db.valuesCard
+    .create({
+      data: {
+        title: card.title,
+        instructionsShort: card.instructions_short,
+        instructionsDetailed: card.instructions_detailed,
+        evaluationCriteria: card.evaluation_criteria,
+        chatId,
+      },
+    })
+    .catch((e) => console.error(e))
+
   return `<the values card (´${card.title}) was submitted. The user has now submitted 1 value in total. Proceed to thank the user for submitting their value.>`
 }
 
 async function createHeaders(
   session: Session,
-  articulatedCard?: ValuesCard | null,
-  submittedCard?: ValuesCard | null
+  articulatedCard?: ValuesCardCandidate | null,
+  submittedCard?: ValuesCardCandidate | null
 ): Promise<{ [key: string]: string }> {
   const headers: { [key: string]: string } = {
     "Set-Cookie": await auth.storage.commitSession(session),
@@ -249,14 +266,15 @@ async function createHeaders(
 async function streamingFunctionCallResponse(
   func: ArticulateCardFunction | SubmitCardFunction,
   messages: any[] = [],
-  session: Session
+  session: Session,
+  chatId: string
 ): Promise<StreamingTextResponse> {
   //
   // Call the right function.
   //
   let result: string = ""
-  let articulatedCard: ValuesCard | null = null
-  let submittedCard: ValuesCard | null = null
+  let articulatedCard: ValuesCardCandidate | null = null
+  let submittedCard: ValuesCardCandidate | null = null
 
   switch (func.name) {
     case "articulate_values_card": {
@@ -271,14 +289,16 @@ async function streamingFunctionCallResponse(
     }
     case "submit_values_card": {
       // Get the values card from the session.
-      submittedCard = session.get("values_card")
-
-      if (!submittedCard) {
+      if (!session.has("values_card")) {
         throw Error("No values card in session")
       }
 
+      submittedCard = JSON.parse(
+        session.get("values_card")
+      ) as ValuesCardCandidate
+
       // Submit the values card.
-      result = await submitValuesCard({ ...submittedCard })
+      result = await submitValuesCard(submittedCard, chatId)
 
       // Update the session.
       session.unset("values_card")
@@ -331,12 +351,26 @@ export const action: ActionFunction = async ({
   request,
 }: ActionArgs): Promise<Response> => {
   const session = await auth.storage.getSession(request.headers.get("Cookie"))
-
+  const userId = await auth.getUserId(request)
   const json = await request.json()
-  let { messages } = json
+
+  let { messages, chatId } = json
 
   // Prepend the system message.
   messages = [{ role: "system", content: systemPrompt }, ...messages]
+
+  // Save the transcript in the database.
+  await db.chat
+    .upsert({
+      where: { id: chatId },
+      update: { transcript: JSON.stringify(messages) },
+      create: {
+        id: chatId,
+        transcript: JSON.stringify(messages),
+        userId,
+      },
+    })
+    .catch((e) => console.error(e))
 
   // Create stream for next chat message.
   const res = await openai.createChatCompletion({
@@ -356,7 +390,7 @@ export const action: ActionFunction = async ({
   // If a function call is present in the stream, handle it...
   const func = await getFunctionCall(res)
   if (func) {
-    return streamingFunctionCallResponse(func, messages, session)
+    return streamingFunctionCallResponse(func, messages, session, chatId)
   }
 
   // ...otherwise, return the response.
