@@ -16,7 +16,7 @@ import { auth, db } from "~/config.server"
 
 export const runtime = "edge"
 
-const model = "gpt-3.5-turbo-0613"
+const model = "gpt-4-0613"
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -217,7 +217,7 @@ async function articulateValuesCard(
 
   const data = await res.json()
   const card = JSON.parse(data.choices[0].message.function_call.arguments)
-  return card //await critiqueValuesCard(card)
+  return await critiqueValuesCard(card)
 }
 
 async function submitValuesCard(
@@ -363,10 +363,10 @@ export const action: ActionFunction = async ({
   await db.chat
     .upsert({
       where: { id: chatId },
-      update: { transcript: JSON.stringify(messages) },
+      update: { transcript: messages },
       create: {
         id: chatId,
-        transcript: JSON.stringify(messages),
+        transcript: messages,
         userId,
       },
     })
