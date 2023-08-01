@@ -21,13 +21,7 @@ export async function action(args: ActionArgs) {
   return await auth.codeSubmitAction(args)
 }
 
-function CodeScreen({
-  children,
-  resent,
-}: {
-  children?: ReactNode
-  resent?: string
-}) {
+function CodeScreen({ children }: { children?: ReactNode; resent?: string }) {
   const [canResend, setCanResend] = useState<boolean>(false)
   const [searchParams] = useSearchParams()
   const { LOGIN_EMAIL_FROM } = useLoaderData<typeof loader>()

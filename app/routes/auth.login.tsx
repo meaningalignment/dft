@@ -1,24 +1,12 @@
 import { useState } from "react"
 import { ActionArgs } from "@remix-run/node"
-import {
-  Form,
-  isRouteErrorResponse,
-  useActionData,
-  useRouteError,
-  useSearchParams,
-} from "@remix-run/react"
+import { Form, useRouteError, useSearchParams } from "@remix-run/react"
 import { auth } from "~/config.server"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Checkbox } from "~/components/ui/checkbox"
-import { toast } from "react-hot-toast"
-import { formatDate } from "~/utils"
 
 export async function action(args: ActionArgs) {
-  const data = await args.request.clone().formData()
-  console.log(data)
-  const newUserOK = data.get("register") ? true : false
-  let email = data.get("email") as string
   return await auth.loginSubmitAction(args)
 }
 
