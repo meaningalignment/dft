@@ -32,7 +32,7 @@ function CodeScreen({
   const [searchParams] = useSearchParams()
   const { LOGIN_EMAIL_FROM } = useLoaderData<typeof loader>()
   useEffect(() => {
-    const timeout = setTimeout(() => setCanResend(true), 1)
+    const timeout = setTimeout(() => setCanResend(true), 10_000)
     return () => {
       clearTimeout(timeout)
     }
