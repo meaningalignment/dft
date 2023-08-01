@@ -191,7 +191,10 @@ export const functions: ChatCompletionFunctions[] = [
   },
 ]
 
-export type ValuesCard = {
+/**
+ * The type of the `parameters` field of the values card OpenAI functions.
+ */
+export type ValuesCardCandidate = {
   title: string
   instructions_short: string
   instructions_detailed: string

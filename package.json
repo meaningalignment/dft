@@ -41,13 +41,15 @@
     "react-textarea-autosize": "^8.5.2",
     "remark-gfm": "^3.0.1",
     "remark-math": "^5.1.1",
-    "tailwind-merge": "^1.14.0"
+    "tailwind-merge": "^1.14.0",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@remix-run/dev": "^1.19",
     "@types/react": "^18.0.35",
     "@types/react-dom": "^18.0.11",
     "@types/react-syntax-highlighter": "^15.5.7",
+    "@types/uuid": "^9.0.2",
     "prisma": "5",
     "tailwindcss": "latest",
     "typescript": "^5.1"

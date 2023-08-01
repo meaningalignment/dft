@@ -1,6 +1,8 @@
 import { Message } from "ai"
 import { Chat } from "../components/chat"
 import Header from "../components/header"
+import { v4 as uuid } from "uuid"
+import { useRef } from "react"
 
 const initialMessages: Message[] = [
   {
@@ -15,10 +17,12 @@ const initialMessages: Message[] = [
 ]
 
 export default function ChatScreen() {
+  const chatId = useRef(uuid()).current
+
   return (
     <div className="flex flex-col h-screen w-screen">
       <Header />
-      <Chat id={"chat"} initialMessages={initialMessages} />
+      <Chat id={chatId} initialMessages={initialMessages} />
     </div>
   )
 }

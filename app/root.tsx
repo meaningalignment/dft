@@ -17,7 +17,7 @@ import {
 import styles from "./tailwind.css"
 import { auth, db } from "./config.server"
 import { TooltipProvider } from "@radix-ui/react-tooltip"
-import { User } from "@prisma/client"
+import { User, ValuesCard } from "@prisma/client"
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -26,17 +26,30 @@ export const links: LinksFunction = () => [
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
+
   const user =
     userId &&
     ((await db.user.findUnique({
       where: { id: userId },
     })) as User | null)
-  return json({ user })
+
+  const values =
+    userId &&
+    ((await db.valuesCard.findMany({
+      where: { chat: { userId } },
+    })) as ValuesCard[] | null)
+
+  return json({ user, values })
 }
 
 export function useCurrentUser(): User | null {
   const { user } = useRouteLoaderData("root") as SerializeFrom<typeof loader>
   return user
+}
+
+export function useCurrentUserValues(): ValuesCard[] | null {
+  const { values } = useRouteLoaderData("root") as SerializeFrom<typeof loader>
+  return values
 }
 
 export default function App() {

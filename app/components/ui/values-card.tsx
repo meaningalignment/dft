@@ -1,6 +1,6 @@
-import { ValuesCard as ValuesCardType } from "~/lib/consts"
+import { ValuesCardCandidate } from "~/lib/consts"
 
-export default function ValuesCard({ card }: { card: ValuesCardType }) {
+export default function ValuesCard({ card }: { card: ValuesCardCandidate }) {
   return (
     <div className="my-4 border border-2 border-border rounded-xl p-8 max-w-[420px]">
       <p className="text-md font-bold">{card.title}</p>
