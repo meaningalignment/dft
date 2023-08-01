@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useChat, type Message } from "ai/react"
 import { cn } from "../utils"
 import { ChatList } from "./chat-list"
@@ -16,8 +16,18 @@ export interface ChatProps extends React.ComponentProps<"div"> {
 export function Chat({ id, initialMessages, className }: ChatProps) {
   const [valueCards, setValueCards] = useState<
     { position: number; card: ValuesCardCandidate }[]
-  >([])
-
+  >([
+    // {
+    //   position: 0,
+    //   card: {
+    //     title: "Embodied Truth",
+    //     instructions_short:
+    //       "ChatGPT should encourage the girl to listen to her body and sense into what feels right.",
+    //     instructions_detailed:
+    //       "ChatGPT can help the girl connect with her body, listen to her intuition, and sense into what feels right. By doing so, ChatGPT can support her in accessing the truth that is stored in her body.",
+    //   },
+    // },
+  ])
   const [isFinished, setIsFinished] = useState(false)
 
   const onCardArticulation = (card: ValuesCardCandidate) => {
@@ -37,6 +47,16 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     console.log("Card submitted:", card)
 
     setIsFinished(true)
+  }
+
+  const onManualSubmit = (_: ValuesCardCandidate) => {
+    append({
+      role: "assistant",
+      content: "",
+      function_call: {
+        name: "submit_values_card",
+      },
+    })
   }
 
   const {
@@ -84,7 +104,11 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       <div className={cn("pb-[200px] pt-4 md:pt-10", className)}>
         {messages.length ? (
           <>
-            <ChatList messages={messages} valueCards={valueCards} />
+            <ChatList
+              messages={messages}
+              valueCards={valueCards}
+              onManualSubmit={onManualSubmit}
+            />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
         ) : (
