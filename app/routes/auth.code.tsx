@@ -9,6 +9,8 @@ import {
 import { LoaderArgs, ActionArgs } from "@remix-run/node/dist"
 import { ReactNode, useEffect, useState } from "react"
 import { auth } from "~/config.server"
+import { Input } from "~/components/ui/input"
+import { Button } from "~/components/ui/button"
 
 export async function loader(args: LoaderArgs) {
   return await auth.codeLoader(args)
@@ -39,46 +41,44 @@ function CodeScreen({
   const successRedirect = searchParams.get("successRedirect") as string
 
   return (
-    <div className="grid h-screen place-items-center">
-      <Form method="post" className="flex flex-col gap-2 pt-12">
-        <h1>
-          {children || (
-            <>
-              Please check your email for a six digit code!
-              <br /> (Look for an email from {LOGIN_EMAIL_FROM})
-            </>
-          )}
-        </h1>
-        <input type="hidden" name="type" value="code" />
-        <input type="hidden" name="email" value={email} />
-        {successRedirect ? (
-          <input type="hidden" name="successRedirect" value={successRedirect} />
-        ) : null}
-        <input
-          placeholder="Six digit code"
-          type="input"
-          name="code"
-          className="rounded border border-stone-400 p-2"
-        />
-        <button
-          className="w-full mt-3 px-5 py-1 rounded-md text-white bg-indigo-600 outline-none shadow-md focus:shadow-none focus:ring-2 ring-offset-2 ring-indigo-600 sm:mt-0 sm:w-auto disabled:bg-indigo-400 disabled:cursor-not-allowed"
-          type="submit"
-        >
-          Let me in!
-        </button>
-      </Form>
-      <Form method="post">
-        <input type="hidden" name="resend" value="yes" />
-        <input type="hidden" name="email" value={email} />
-        <button
-          disabled={!canResend}
-          className="w-full mt-3 px-5 py-1 rounded-md text-white bg-indigo-600 outline-none shadow-md focus:shadow-none focus:ring-2 ring-offset-2 ring-indigo-600 sm:mt-0 sm:w-auto disabled:bg-indigo-400 disabled:cursor-not-allowed"
-          type="submit"
-        >
-          Resend code
-        </button>
-        {resent ? "Re-sent!" : null}
-      </Form>
+    <div className="grid h-screen place-items-center justify-around">
+      <div className="flex flex-col justify-around space-x-4">
+        <Form method="post" className="flex flex-col gap-2 pt-12">
+          <h1>
+            {children || (
+              <div className="mb-2">
+                <p className="text-lg font-medium ">
+                  Please check your email for a six digit code
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  (Look for an email from {LOGIN_EMAIL_FROM})
+                </p>
+              </div>
+            )}
+          </h1>
+          <input type="hidden" name="type" value="code" />
+          <input type="hidden" name="email" value={email} />
+          {successRedirect ? (
+            <input
+              type="hidden"
+              name="successRedirect"
+              value={successRedirect}
+            />
+          ) : null}
+          <Input placeholder="Six digit code" name="code" />
+          <Button type="submit">Submit</Button>
+        </Form>
+        <div className="flex justify-center items-center mt-12">
+          <Form method="post" style={{ marginLeft: 0 }}>
+            <input type="hidden" name="resend" value="yes" />
+            <input type="hidden" name="email" value={email} />
+            <Button disabled={!canResend} variant={"outline"} type="submit">
+              Resend code
+            </Button>
+            {resent ? "Re-sent!" : null}
+          </Form>
+        </div>
+      </div>
     </div>
   )
 }
@@ -92,6 +92,7 @@ export function ErrorBoundary() {
   const error = useRouteError()
   const actionData = useActionData<{ resent: boolean }>()
   const resent = actionData?.resent
+
   if (isRouteErrorResponse(error)) {
     return (
       <CodeScreen resent={resent ? "Resent!" : undefined}>

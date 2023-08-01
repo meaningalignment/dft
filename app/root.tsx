@@ -18,6 +18,7 @@ import styles from "./tailwind.css"
 import { auth, db } from "./config.server"
 import { TooltipProvider } from "@radix-ui/react-tooltip"
 import { User, ValuesCard } from "@prisma/client"
+import { Toaster } from "react-hot-toast"
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -67,6 +68,7 @@ export default function App() {
           <ScrollRestoration />
           <Scripts />
           <LiveReload />
+          <Toaster />
         </body>
       </html>
     </TooltipProvider>
