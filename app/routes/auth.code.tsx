@@ -11,6 +11,7 @@ import { ReactNode, useEffect, useState } from "react"
 import { auth } from "~/config.server"
 import { Input } from "~/components/ui/input"
 import { Button } from "~/components/ui/button"
+import toast from "react-hot-toast"
 
 export async function loader(args: LoaderArgs) {
   return await auth.codeLoader(args)
@@ -31,7 +32,7 @@ function CodeScreen({
   const [searchParams] = useSearchParams()
   const { LOGIN_EMAIL_FROM } = useLoaderData<typeof loader>()
   useEffect(() => {
-    const timeout = setTimeout(() => setCanResend(true), 10_000)
+    const timeout = setTimeout(() => setCanResend(true), 1)
     return () => {
       clearTimeout(timeout)
     }
@@ -72,10 +73,14 @@ function CodeScreen({
           <Form method="post" style={{ marginLeft: 0 }}>
             <input type="hidden" name="resend" value="yes" />
             <input type="hidden" name="email" value={email} />
-            <Button disabled={!canResend} variant={"outline"} type="submit">
+            <Button
+              disabled={!canResend}
+              variant={"outline"}
+              type="submit"
+              onClick={() => toast("Re-sent code")}
+            >
               Resend code
             </Button>
-            {resent ? "Re-sent!" : null}
           </Form>
         </div>
       </div>

@@ -1,15 +1,24 @@
 import { useState } from "react"
 import { ActionArgs } from "@remix-run/node"
-import { Form, useRouteError, useSearchParams } from "@remix-run/react"
+import {
+  Form,
+  isRouteErrorResponse,
+  useActionData,
+  useRouteError,
+  useSearchParams,
+} from "@remix-run/react"
 import { auth } from "~/config.server"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Checkbox } from "~/components/ui/checkbox"
-import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert"
-import { AlertCircle } from "lucide-react"
 import { toast } from "react-hot-toast"
+import { formatDate } from "~/utils"
 
 export async function action(args: ActionArgs) {
+  const data = await args.request.clone().formData()
+  console.log(data)
+  const newUserOK = data.get("register") ? true : false
+  let email = data.get("email") as string
   return await auth.loginSubmitAction(args)
 }
 
@@ -25,7 +34,7 @@ export default function LoginScreen(props: LoginScreenProps) {
 
   return (
     <div className="grid h-screen place-items-center">
-      <Form method="post" className="flex flex-col gap-2 pt-12 w-96">
+      <Form method="post" className="flex flex-col gap-2 pt-12 w-[32rem]">
         <div className="mb-2">
           <p className="text-lg font-medium ">Enter your email</p>
           <p className="text-sm text-muted-foreground">
@@ -45,7 +54,7 @@ export default function LoginScreen(props: LoginScreenProps) {
           />
           <div className="grid gap-1.5 leading-none">
             <label
-              htmlFor="terms1"
+              htmlFor="register"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               I'm a new user
@@ -57,7 +66,7 @@ export default function LoginScreen(props: LoginScreenProps) {
         </div>
 
         {props.errorMessage && (
-          <div className="text-red-500 mt-6 w-full center-text">
+          <div className="text-red-500 mt-6 w-full text-center">
             {props.errorMessage}
           </div>
         )}
@@ -70,11 +79,12 @@ export function ErrorBoundary() {
   const error = useRouteError() as Error
 
   if (error.message === "User not found") {
-    toast("User not found, please register.", {
-      id: "user-not-found",
-    })
-
-    return <LoginScreen isNewUser={true} />
+    return (
+      <LoginScreen
+        isNewUser={true}
+        errorMessage={"User not found, please register."}
+      />
+    )
   }
 
   return <LoginScreen errorMessage={error.message} />
