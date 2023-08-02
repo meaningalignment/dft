@@ -314,7 +314,7 @@ export const action: ActionFunction = async ({
     temperature: 0.7,
     stream: true,
     functions,
-    function_call: { name: "articulate_values_card" }, // function_call ?? "auto",
+    function_call: function_call ?? "auto",
   })
 
   if (!res.ok) {

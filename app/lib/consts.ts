@@ -235,29 +235,6 @@ export const formatCard: ChatCompletionFunctions = {
 }
 
 /**
- * A function declaration for asking a clarification question to the user in the transcript.
- */
-export const askClarificationQuestion: ChatCompletionFunctions = {
-  name: "ask_clarification_question",
-  description: `Called when there is not enough information in the conversation transcript to articulate a good values card.`,
-  parameters: {
-    type: "object",
-    properties: {
-      reason: {
-        type: "string",
-        description:
-          "A string describing the reason why a clarification is needed.",
-      },
-      clarifying_question: {
-        type: "string",
-        description:
-          "The clarifying question to ask the user in the transcript.",
-      },
-    },
-  },
-}
-
-/**
  * The type of the `parameters` field of the values card OpenAI functions.
  */
 export type ValuesCardCandidate = {
