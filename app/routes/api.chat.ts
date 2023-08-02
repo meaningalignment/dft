@@ -5,7 +5,6 @@ import {
   systemPrompt,
   articulationPrompt,
   ValuesCardCandidate,
-  askClarificationQuestion,
   formatCard,
 } from "~/lib/consts"
 import { ChatCompletionRequestMessage } from "openai-edge"
@@ -39,9 +38,9 @@ export type SubmitCardFunction = {
   }
 }
 
-type ClarifyingQuestion = {
-  question: string
-  reasoning: string
+export type ArticulateCardResponse = {
+  values_card: ValuesCardCandidate
+  critique?: string | null
 }
 
 //
@@ -52,7 +51,7 @@ type ClarifyingQuestion = {
 // If so, wait for the whole response and handle the function call.
 // Otherwise, return the stream as-is.
 //
-async function getFunctionCall(
+async function getFunctionCallFromStreamResponse(
   res: Response
 ): Promise<ArticulateCardFunction | SubmitCardFunction | null> {
   const stream = OpenAIStream(res.clone()) // .clone() since we don't want to consume the response.
@@ -101,68 +100,10 @@ async function getFunctionCall(
   return json as ArticulateCardFunction | SubmitCardFunction
 }
 
-// /** Critique a values card and return an updated version in the format of the official schema. */
-// async function critiqueValuesCard(
-//   valuesCard: ValuesCardCandidate
-// ): Promise<ValuesCardCandidate> {
-//   console.log("Critiquing values card...")
-//   console.log(`Card before critique:\n${JSON.stringify(valuesCard)}`)
-
-//   //
-//   // Critique the card and return a structured JSON response
-//   // by using a virtual "submit_critique" function.
-//   //
-//   const res = await openai.createChatCompletion({
-//     model,
-//     messages: [
-//       { role: "system", content: critiquePrompt },
-//       { role: "user", content: JSON.stringify(valuesCard) },
-//     ],
-//     functions: [
-//       {
-//         name: "submit_critique",
-//         description: "Critique a values card submitted by the user.",
-//         parameters: {
-//           type: "object",
-//           properties: {
-//             initial_card: formatCard.parameters,
-//             revised_card: formatCard.parameters,
-//             critique: {
-//               type: "string",
-//               description: "Critique of the initial card.",
-//             },
-//           },
-//           required: ["initial_card", "critique", "revised_card"],
-//         },
-//       },
-//     ],
-//     function_call: {
-//       name: "submit_critique",
-//     },
-//     temperature: 0.0,
-//     stream: false,
-//   })
-
-//   const json = await res.json()
-//   const data = JSON.parse(json.choices[0].message.function_call.arguments) as {
-//     initial_card: ValuesCardCandidate
-//     revised_card: ValuesCardCandidate
-//     critique: string
-//   }
-
-//   console.log(`Critique: ${data.critique}`)
-//   console.log(`Card after critique:\n${JSON.stringify(data.revised_card)}`)
-
-//   return data.revised_card
-// }
-
 /** Create a values card from a transcript of the conversation. */
 async function articulateValuesCard(
   messages: ChatCompletionRequestMessage[]
-): Promise<{
-  name: "format_card" | "ask_clarifying_question"
-  args: ValuesCardCandidate | ClarifyingQuestion
-}> {
+): Promise<ArticulateCardResponse> {
   console.log("Articulating values card...")
 
   const transcript = messages
@@ -176,26 +117,18 @@ async function articulateValuesCard(
       { role: "system", content: articulationPrompt },
       { role: "user", content: transcript },
     ],
-    functions: [formatCard, askClarificationQuestion],
-    function_call: "auto", // No way in API to enforce calling one of the two provided functions :(
+    functions: [formatCard],
+    function_call: { name: formatCard.name },
     temperature: 0.0,
     stream: false,
   })
 
   const data = await res.json()
+  const response = JSON.parse(
+    data.choices[0].message.function_call.arguments
+  ) as ArticulateCardResponse
 
-  if (!data.choices[0].message.function_call) {
-    throw new Error("Function call not present in response")
-  }
-
-  const name = data.choices[0].message.function_call.name as
-    | "format_card"
-    | "ask_clarifying_question"
-  const args = JSON.parse(data.choices[0].message.function_call.arguments) as
-    | ValuesCardCandidate
-    | ClarifyingQuestion
-
-  return { name, args }
+  return response
 }
 
 async function submitValuesCard(
@@ -259,21 +192,30 @@ async function streamingFunctionCallResponse(
       // Articulate the values card.
       const res = await articulateValuesCard(messages)
 
-      if (res.name === "ask_clarifying_question") {
-        const question = res.args as ClarifyingQuestion
-        result = `<A clarifying question was requested: "${question.question}" (${question.reasoning}).>`
-      } else if (res.name === "format_card") {
-        articulatedCard = res.args as ValuesCardCandidate
+      if (res.critique) {
+        result = `<A card was articulated, but it is not yet meeting the guidelines. The following critique was receieved: "${res.critique}". Continue the dialogue with the user until you are able to solve for the critique.>`
+      } else {
+        articulatedCard = res.values_card
 
         // Save the card in the session.
         session.set("values_card", JSON.stringify(articulatedCard))
 
         result = `<A card (${articulatedCard.title}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
-      } else {
-        throw new Error("Unknown result type: " + typeof res)
       }
 
       break
+    }
+    case "revise_values_card": {
+      // Get the values card from the session.
+      if (!session.has("values_card")) {
+        throw Error("No values card in session")
+      }
+
+      articulatedCard = JSON.parse(
+        session.get("values_card")
+      ) as ValuesCardCandidate
+
+      result = "The user has chosen to revise the card.\n\nOld Card: ${}"
     }
     case "submit_values_card": {
       // Get the values card from the session.
@@ -376,7 +318,8 @@ export const action: ActionFunction = async ({
   }
 
   // If a function call is present in the stream, handle it...
-  const func = await getFunctionCall(res)
+  const func = await getFunctionCallFromStreamResponse(res)
+
   if (func) {
     return streamingFunctionCallResponse(func, messages, session, chatId)
   }

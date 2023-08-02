@@ -159,21 +159,8 @@ Below are some critiques of values cards, and how they could be improved by foll
   "title":"Embodied Justice"
 }
 
-# Functions
 
-You are provided with two functions: \`ask_clarification_question\` and \`format_card\`. 
-
-You should return a function call in response to the \`articulate_values_card\` function if:
-- It is unclear if the source of meaning discussed in the transcript is really a source of meaning, and not a goal, moral principle, norm, or internalized norm.
-- It is not possible to articulate a good values card that meets all of the above guidelines.
-
-This will send a new message to the user in the transcript.
-
-You should return a function call in response to the \`format_card\` function if:
-- It is possible to articulate a values card that meets all of the above guidelines.
-- The source of meaning discussed in the transcript is clearly a source of meaning, and not a goal, moral principle, norm, or internalized norm.
-
-Always respond with a function call.`
+In your response, include a critique of the articulated "values_card" if it does not meet the guidelines above.`
 
 //
 // OpenAI function declarations.
@@ -205,44 +192,45 @@ export const functions: ChatCompletionFunctions[] = [
  */
 export const formatCard: ChatCompletionFunctions = {
   name: "format_card",
-  description: "Format an articulated values card.",
+  description:
+    "Attempt to format a values card. Append a critique and clarifying_question it applicable.",
   parameters: {
     type: "object",
     properties: {
-      clarifying_question: {
-        type: "string",
-        description:
-          "Another question that could be posed to the user in order to clarify and/or disambiguate the source of meaning the values card is referring to.",
-      },
-      evaluation_criteria: {
-        type: "array",
-        items: {
-          type: "string",
+      values_card: {
+        type: "object",
+        properties: {
+          evaluation_criteria: {
+            type: "array",
+            items: {
+              type: "string",
+            },
+            description:
+              "A list of things to attend to that can be used to evaluate whether ChatGPT is following this source of meaning.",
+          },
+          instructions_detailed: {
+            type: "string",
+            description:
+              "A detailed instruction for how ChatGPT could act based on this source of meaning.",
+          },
+          instructions_short: {
+            type: "string",
+            description:
+              "A short instruction for how ChatGPT could act based on this source of meaning.",
+          },
+          title: {
+            type: "string",
+            description: "The title of the values card.",
+          },
         },
-        description:
-          "A list of things to attend to that can be used to evaluate whether ChatGPT is following this source of meaning.",
       },
-      instructions_detailed: {
+      critique: {
         type: "string",
         description:
-          "A detailed instruction for how ChatGPT could act based on this source of meaning.",
-      },
-      instructions_short: {
-        type: "string",
-        description:
-          "A short instruction for how ChatGPT could act based on this source of meaning.",
-      },
-      title: {
-        type: "string",
-        description: "The title of the values card.",
+          "A critique of the values card, if the values card is not following the provided guidelines.",
       },
     },
-    required: [
-      "evaluation_criteria",
-      "instructions_detailed",
-      "instructions_short",
-      "title",
-    ],
+    required: ["values_card"],
   },
 }
 
