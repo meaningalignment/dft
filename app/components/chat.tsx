@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useChat, type Message } from "ai/react"
 import { cn } from "../utils"
 import { ChatList } from "./chat-list"
@@ -17,7 +17,6 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   const [valueCards, setValueCards] = useState<
     { position: number; card: ValuesCardCandidate }[]
   >([])
-
   const [isFinished, setIsFinished] = useState(false)
 
   const onCardArticulation = (card: ValuesCardCandidate) => {
@@ -39,52 +38,63 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     setIsFinished(true)
   }
 
-  const {
-    messages,
-    append,
-    reload,
-    stop,
-    isLoading,
-    input,
-    setInput,
-    setMessages,
-  } = useChat({
-    id,
-    api: "/api/chat",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: {
-      chatId: id,
-    },
-    initialMessages,
-    onResponse: async (response) => {
-      const articulatedCard = response.headers.get("X-Articulated-Card")
-      if (articulatedCard) {
-        onCardArticulation(JSON.parse(articulatedCard) as ValuesCardCandidate)
+  const onManualSubmit = () => {
+    append(
+      {
+        role: "user",
+        content: "Submit Card",
+      },
+      {
+        function_call: {
+          name: "submit_values_card",
+        },
       }
+    )
+  }
 
-      const submittedCard = response.headers.get("X-Submitted-Card")
-      if (submittedCard) {
-        onCardSubmission(JSON.parse(submittedCard) as ValuesCardCandidate)
-      }
+  const { messages, append, reload, stop, isLoading, input, setInput } =
+    useChat({
+      id,
+      api: "/api/chat",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: {
+        chatId: id,
+      },
+      initialMessages,
+      onResponse: async (response) => {
+        const articulatedCard = response.headers.get("X-Articulated-Card")
+        if (articulatedCard) {
+          onCardArticulation(JSON.parse(articulatedCard) as ValuesCardCandidate)
+        }
 
-      if (response.status === 401) {
-        toast.error(response.statusText)
-      }
-    },
-    onFinish(message) {
-      console.log("Chat finished:", message)
-      console.log("messages:", messages)
-    },
-  })
+        const submittedCard = response.headers.get("X-Submitted-Card")
+        if (submittedCard) {
+          onCardSubmission(JSON.parse(submittedCard) as ValuesCardCandidate)
+        }
+
+        if (response.status === 401) {
+          toast.error(response.statusText)
+        }
+      },
+      onFinish(message) {
+        console.log("Chat finished:", message)
+        console.log("messages:", messages)
+      },
+    })
 
   return (
     <>
       <div className={cn("pb-[200px] pt-4 md:pt-10", className)}>
         {messages.length ? (
           <>
-            <ChatList messages={messages} valueCards={valueCards} />
+            <ChatList
+              messages={messages}
+              isFinished={isFinished}
+              valueCards={valueCards}
+              onManualSubmit={onManualSubmit}
+            />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
         ) : (
