@@ -9,9 +9,15 @@ export interface ChatList {
   messages: Message[]
   valueCards: { position: number; card: ValuesCardCandidate }[]
   onManualSubmit: (card: ValuesCardCandidate) => void
+  isFinished: boolean
 }
 
-export function ChatList({ messages, valueCards, onManualSubmit }: ChatList) {
+export function ChatList({
+  messages,
+  valueCards,
+  onManualSubmit,
+  isFinished,
+}: ChatList) {
   if (!messages.length) {
     return null
   }
@@ -25,13 +31,11 @@ export function ChatList({ messages, valueCards, onManualSubmit }: ChatList) {
       {messages.map((message, index) => (
         <div key={index}>
           {valueCard(index) && (
-            <>
-              <ValuesCard
-                card={valueCard(index)!.card}
-                onSubmit={onManualSubmit}
-              />
-              <div className="my-8" />
-            </>
+            <ValuesCard
+              card={valueCard(index)!.card}
+              onSubmit={onManualSubmit}
+              isFinished={isFinished}
+            />
           )}
           <ChatMessage message={message} />
           {index < messages.length - 1 && (

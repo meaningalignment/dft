@@ -217,7 +217,7 @@ async function articulateValuesCard(
 
   const data = await res.json()
   const card = JSON.parse(data.choices[0].message.function_call.arguments)
-  return await critiqueValuesCard(card)
+  return card //await critiqueValuesCard(card)
 }
 
 async function submitValuesCard(
@@ -354,7 +354,7 @@ export const action: ActionFunction = async ({
   const userId = await auth.getUserId(request)
   const json = await request.json()
 
-  let { messages, chatId } = json
+  let { messages, chatId, function_call } = json
 
   // Prepend the system message.
   messages = [{ role: "system", content: systemPrompt }, ...messages]
@@ -379,7 +379,7 @@ export const action: ActionFunction = async ({
     temperature: 0.7,
     stream: true,
     functions,
-    function_call: "auto",
+    function_call: function_call ?? "auto",
   })
 
   if (!res.ok) {
