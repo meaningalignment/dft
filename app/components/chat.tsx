@@ -92,6 +92,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
             <ChatList
               messages={messages}
               isFinished={isFinished}
+              isLoading={isLoading}
               valueCards={valueCards}
               onManualSubmit={onManualSubmit}
             />
