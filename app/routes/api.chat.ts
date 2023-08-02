@@ -205,18 +205,6 @@ async function streamingFunctionCallResponse(
 
       break
     }
-    case "revise_values_card": {
-      // Get the values card from the session.
-      if (!session.has("values_card")) {
-        throw Error("No values card in session")
-      }
-
-      articulatedCard = JSON.parse(
-        session.get("values_card")
-      ) as ValuesCardCandidate
-
-      result = "The user has chosen to revise the card.\n\nOld Card: ${}"
-    }
     case "submit_values_card": {
       // Get the values card from the session.
       if (!session.has("values_card")) {
