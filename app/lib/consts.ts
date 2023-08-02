@@ -39,11 +39,22 @@ Some general guidelines:
 
 export const articulationPrompt = `You are a meaning assistant, helping a user articulate a "values card" from a transcript of a conversation.
 
-A "values card" is a representation of a "source of meaning". The card has four fields: title, instructions_short, instructions_detailed, and evaluation_criteria. The first three are strings and the last is an array of strings.
+A "values card" is a representation of a "source of meaning". A values card has four fields: "title", "instructions_short", "instructions_detailed", and "evaluation_criteria". The first three are strings and the last is an array of strings.
 
 ${sourceOfMeaningDefinition}
 
 The values card should be written from the perspective of how ChatGPT should respond to the situation in the first message. They should reflect the user's sources of meaning, not yours or those of ChatGPT's creators.
+
+# Card Guidelines
+
+1. **Cards should be indeterminate.** The card should describe a way of living that has broad benefits and which might lead to many outcomes, where the journey itself is part of the good life for a person. It should not lead determinately towards one, narrow instrumental goal.
+2. **Cards should not be about meeting others’ expectations.** They should be the kind of thing that is meaningful to someone.
+3. **Cards should be positively stated**. The stuff in the “how” section should be things ChatGPT SHOULD attend to.
+4. **Cards should use clear, simple language**. Anyone in the relevant context should be able to see what you mean about what to attend to. The instructions should be clear enough that you could use them in a survey to see whether or not someone was attending to those things.
+5. **Cards should be as general as possible.** Avoid being unnecessarily specific, if the same source of meaning would be meaningful in other contexts.
+6. **Cards should not have unnecessary elements.** All elements of the source of meaning should be required, and work together, in the context.
+7. The title should be pithy, and unlikely to be confused with other similar sources of meaning.
+
 
 # Example Values Cards
 
@@ -70,27 +81,10 @@ The values card should be written from the perspective of how ChatGPT should res
   "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
   "title":"Embodied Justice"
 }
-`
 
-export const critiquePrompt = `In the user message, I’ll provide a “source of meaning card”, written in a certain format. Output a critique of that card, and, if possible, an improved card which addresses the critique.
+# Card Critiques
 
-# Format of Source of Meaning Cards
-
-The card has four fields: title, instructions_short, instructions_detailed, and evaluation_criteria. The first three are strings and the last is an array of strings.
-
-# How to Critique the Cards
-
-1. **Cards should be indeterminate.** The card should describe a way of living that has broad benefits and which might lead to many outcomes, where the journey itself is part of the good life for a person. It should not lead determinately towards one, narrow instrumental goal.
-2. **Cards should not be about meeting others’ expectations.** They should be the kind of thing that is meaningful to someone.
-3. **Cards should be positively stated**. The stuff in the “how” section should be things ChatGPT SHOULD attend to.
-4. **Cards should use clear, simple language**. Anyone in the relevant context should be able to see what you mean about what to attend to. The instructions should be clear enough that you could use them in a survey to see whether or not someone was attending to those things.
-5. **Cards should be as general as possible.** Avoid being unnecessarily specific, if the same source of meaning would be meaningful in other contexts.
-6. **Cards should not have unnecessary elements.** All elements of the source of meaning should be required, and work together, in the context.
-7. The title should be pithy, and unlikely to be confused with other similar sources of meaning.
-
-# Example Critiques
-
-## Example 1
+Below are some critiques of values cards, and how they could be improved by following the guidelines above. This will help you better understand what makes a good values card.
 
 ### Card
 
@@ -164,7 +158,22 @@ The card has four fields: title, instructions_short, instructions_detailed, and 
   "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
   "title":"Embodied Justice"
 }
-`
+
+# Functions
+
+You are provided with two functions: \`ask_clarification_question\` and \`format_card\`. 
+
+You should return a function call in response to the \`articulate_values_card\` function if:
+- It is unclear if the source of meaning discussed in the transcript is really a source of meaning, and not a goal, moral principle, norm, or internalized norm.
+- It is not possible to articulate a good values card that meets all of the above guidelines.
+
+This will send a new message to the user in the transcript.
+
+You should return a function call in response to the \`format_card\` function if:
+- It is possible to articulate a values card that meets all of the above guidelines.
+- The source of meaning discussed in the transcript is clearly a source of meaning, and not a goal, moral principle, norm, or internalized norm.
+
+Always respond with a function call.`
 
 //
 // OpenAI function declarations.
@@ -190,6 +199,75 @@ export const functions: ChatCompletionFunctions[] = [
     },
   },
 ]
+
+/**
+ * A function declaration for a virtual function that outputs a values cards JSON.
+ */
+export const formatCard: ChatCompletionFunctions = {
+  name: "format_card",
+  description: "Format an articulated values card.",
+  parameters: {
+    type: "object",
+    properties: {
+      clarifying_question: {
+        type: "string",
+        description:
+          "Another question that could be posed to the user in order to clarify and/or disambiguate the source of meaning the values card is referring to.",
+      },
+      evaluation_criteria: {
+        type: "array",
+        items: {
+          type: "string",
+        },
+        description:
+          "A list of things to attend to that can be used to evaluate whether ChatGPT is following this source of meaning.",
+      },
+      instructions_detailed: {
+        type: "string",
+        description:
+          "A detailed instruction for how ChatGPT could act based on this source of meaning.",
+      },
+      instructions_short: {
+        type: "string",
+        description:
+          "A short instruction for how ChatGPT could act based on this source of meaning.",
+      },
+      title: {
+        type: "string",
+        description: "The title of the values card.",
+      },
+    },
+    required: [
+      "evaluation_criteria",
+      "instructions_detailed",
+      "instructions_short",
+      "title",
+    ],
+  },
+}
+
+/**
+ * A function declaration for asking a clarification question to the user in the transcript.
+ */
+export const askClarificationQuestion: ChatCompletionFunctions = {
+  name: "ask_clarification_question",
+  description: `Called when there is not enough information in the conversation transcript to articulate a good values card.`,
+  parameters: {
+    type: "object",
+    properties: {
+      reason: {
+        type: "string",
+        description:
+          "A string describing the reason why a clarification is needed.",
+      },
+      clarifying_question: {
+        type: "string",
+        description:
+          "The clarifying question to ask the user in the transcript.",
+      },
+    },
+  },
+}
 
 /**
  * The type of the `parameters` field of the values card OpenAI functions.

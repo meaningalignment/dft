@@ -4,8 +4,9 @@ import {
   functions,
   systemPrompt,
   articulationPrompt,
-  critiquePrompt,
   ValuesCardCandidate,
+  askClarificationQuestion,
+  formatCard,
 } from "~/lib/consts"
 import { ChatCompletionRequestMessage } from "openai-edge"
 import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
@@ -38,46 +39,9 @@ export type SubmitCardFunction = {
   }
 }
 
-/**
- * A function declaration for a virtual function that outputs a values cards JSON.
- */
-const formatCard = {
-  name: "submit",
-  description:
-    "Submit an articulated values card based on a source of meaning.",
-  parameters: {
-    type: "object",
-    properties: {
-      title: {
-        type: "string",
-        description: "The title of the values card.",
-      },
-      instructions_short: {
-        type: "string",
-        description:
-          "A short instruction for how ChatGPT could act based on this source of meaning.",
-      },
-      instructions_detailed: {
-        type: "string",
-        description:
-          "A detailed instruction for how ChatGPT could act based on this source of meaning.",
-      },
-      evaluation_criteria: {
-        type: "array",
-        items: {
-          type: "string",
-        },
-        description:
-          "A list of things to attend to that can be used to evaluate whether ChatGPT is following this source of meaning.",
-      },
-    },
-    required: [
-      "title",
-      "instructions_short",
-      "instructions_detailed",
-      "evaluation_criteria",
-    ],
-  },
+type ClarifyingQuestion = {
+  question: string
+  reasoning: string
 }
 
 //
@@ -137,65 +101,68 @@ async function getFunctionCall(
   return json as ArticulateCardFunction | SubmitCardFunction
 }
 
-/** Critique a values card and return an updated version in the format of the official schema. */
-async function critiqueValuesCard(
-  valuesCard: ValuesCardCandidate
-): Promise<ValuesCardCandidate> {
-  console.log("Critiquing values card...")
-  console.log(`Card before critique:\n${JSON.stringify(valuesCard)}`)
+// /** Critique a values card and return an updated version in the format of the official schema. */
+// async function critiqueValuesCard(
+//   valuesCard: ValuesCardCandidate
+// ): Promise<ValuesCardCandidate> {
+//   console.log("Critiquing values card...")
+//   console.log(`Card before critique:\n${JSON.stringify(valuesCard)}`)
 
-  //
-  // Critique the card and return a structured JSON response
-  // by using a virtual "submit_critique" function.
-  //
-  const res = await openai.createChatCompletion({
-    model,
-    messages: [
-      { role: "system", content: critiquePrompt },
-      { role: "user", content: JSON.stringify(valuesCard) },
-    ],
-    functions: [
-      {
-        name: "submit_critique",
-        description: "Critique a values card submitted by the user.",
-        parameters: {
-          type: "object",
-          properties: {
-            initial_card: formatCard.parameters,
-            revised_card: formatCard.parameters,
-            critique: {
-              type: "string",
-              description: "Critique of the initial card.",
-            },
-          },
-          required: ["initial_card", "critique", "revised_card"],
-        },
-      },
-    ],
-    function_call: {
-      name: "submit_critique",
-    },
-    temperature: 0.0,
-    stream: false,
-  })
+//   //
+//   // Critique the card and return a structured JSON response
+//   // by using a virtual "submit_critique" function.
+//   //
+//   const res = await openai.createChatCompletion({
+//     model,
+//     messages: [
+//       { role: "system", content: critiquePrompt },
+//       { role: "user", content: JSON.stringify(valuesCard) },
+//     ],
+//     functions: [
+//       {
+//         name: "submit_critique",
+//         description: "Critique a values card submitted by the user.",
+//         parameters: {
+//           type: "object",
+//           properties: {
+//             initial_card: formatCard.parameters,
+//             revised_card: formatCard.parameters,
+//             critique: {
+//               type: "string",
+//               description: "Critique of the initial card.",
+//             },
+//           },
+//           required: ["initial_card", "critique", "revised_card"],
+//         },
+//       },
+//     ],
+//     function_call: {
+//       name: "submit_critique",
+//     },
+//     temperature: 0.0,
+//     stream: false,
+//   })
 
-  const json = await res.json()
-  const data = JSON.parse(json.choices[0].message.function_call.arguments) as {
-    initial_card: ValuesCardCandidate
-    revised_card: ValuesCardCandidate
-    critique: string
-  }
+//   const json = await res.json()
+//   const data = JSON.parse(json.choices[0].message.function_call.arguments) as {
+//     initial_card: ValuesCardCandidate
+//     revised_card: ValuesCardCandidate
+//     critique: string
+//   }
 
-  console.log(`Critique: ${data.critique}`)
-  console.log(`Card after critique:\n${JSON.stringify(data.revised_card)}`)
+//   console.log(`Critique: ${data.critique}`)
+//   console.log(`Card after critique:\n${JSON.stringify(data.revised_card)}`)
 
-  return data.revised_card
-}
+//   return data.revised_card
+// }
 
 /** Create a values card from a transcript of the conversation. */
 async function articulateValuesCard(
   messages: ChatCompletionRequestMessage[]
-): Promise<ValuesCardCandidate> {
+): Promise<{
+  name: "format_card" | "ask_clarifying_question"
+  args: ValuesCardCandidate | ClarifyingQuestion
+}> {
   console.log("Articulating values card...")
 
   const transcript = messages
@@ -209,15 +176,26 @@ async function articulateValuesCard(
       { role: "system", content: articulationPrompt },
       { role: "user", content: transcript },
     ],
-    functions: [formatCard],
-    function_call: { name: formatCard.name },
+    functions: [formatCard, askClarificationQuestion],
+    function_call: "auto", // No way in API to enforce calling one of the two provided functions :(
     temperature: 0.0,
     stream: false,
   })
 
   const data = await res.json()
-  const card = JSON.parse(data.choices[0].message.function_call.arguments)
-  return card //await critiqueValuesCard(card)
+
+  if (!data.choices[0].message.function_call) {
+    throw new Error("Function call not present in response")
+  }
+
+  const name = data.choices[0].message.function_call.name as
+    | "format_card"
+    | "ask_clarifying_question"
+  const args = JSON.parse(data.choices[0].message.function_call.arguments) as
+    | ValuesCardCandidate
+    | ClarifyingQuestion
+
+  return { name, args }
 }
 
 async function submitValuesCard(
@@ -279,12 +257,22 @@ async function streamingFunctionCallResponse(
   switch (func.name) {
     case "articulate_values_card": {
       // Articulate the values card.
-      articulatedCard = await articulateValuesCard(messages)
+      const res = await articulateValuesCard(messages)
 
-      // Save the card in the session.
-      session.set("values_card", JSON.stringify(articulatedCard))
+      if (res.name === "ask_clarifying_question") {
+        const question = res.args as ClarifyingQuestion
+        result = `<A clarifying question was requested: "${question.question}" (${question.reasoning}).>`
+      } else if (res.name === "format_card") {
+        articulatedCard = res.args as ValuesCardCandidate
 
-      result = `<A card (${articulatedCard.title}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
+        // Save the card in the session.
+        session.set("values_card", JSON.stringify(articulatedCard))
+
+        result = `<A card (${articulatedCard.title}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
+      } else {
+        throw new Error("Unknown result type: " + typeof res)
+      }
+
       break
     }
     case "submit_values_card": {
@@ -359,8 +347,8 @@ export const action: ActionFunction = async ({
   // Prepend the system message.
   messages = [{ role: "system", content: systemPrompt }, ...messages]
 
-  // Save the transcript in the database.
-  await db.chat
+  // Save the transcript in the database asynchonously.
+  db.chat
     .upsert({
       where: { id: chatId },
       update: { transcript: messages },
