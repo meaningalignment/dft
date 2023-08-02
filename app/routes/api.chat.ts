@@ -102,14 +102,19 @@ async function getFunctionCallFromStreamResponse(
 
 /** Create a values card from a transcript of the conversation. */
 async function articulateValuesCard(
-  messages: ChatCompletionRequestMessage[]
+  messages: ChatCompletionRequestMessage[],
+  previousCard: ValuesCardCandidate | null
 ): Promise<ArticulateCardResponse> {
   console.log("Articulating values card...")
 
-  const transcript = messages
+  let transcript = messages
     .filter((m) => m.role === "assistant" || m.role === "user")
     .map((m) => `${capitalize(m.role)}: ${m.content}`)
     .join("\n")
+
+  if (previousCard) {
+    transcript += `Previous card: ${JSON.stringify(previousCard)}`
+  }
 
   const res = await openai.createChatCompletion({
     model,
@@ -189,8 +194,15 @@ async function streamingFunctionCallResponse(
 
   switch (func.name) {
     case "articulate_values_card": {
+      // Get the previously articulated card from the session.
+      if (session.has("values_card")) {
+        articulatedCard = JSON.parse(
+          session.get("values_card")
+        ) as ValuesCardCandidate
+      }
+
       // Articulate the values card.
-      const res = await articulateValuesCard(messages)
+      const res = await articulateValuesCard(messages, articulatedCard)
 
       if (res.critique) {
         result = `<A card was articulated, but it is not yet meeting the guidelines. The following critique was receieved: "${res.critique}". Continue the dialogue with the user until you are able to solve for the critique.>`
@@ -274,6 +286,11 @@ export const action: ActionFunction = async ({
 
   let { messages, chatId, function_call } = json
 
+  // Clear values card from previous session.
+  if (messages.length === 2) {
+    session.unset("values_card")
+  }
+
   // Prepend the system message.
   messages = [{ role: "system", content: systemPrompt }, ...messages]
 
@@ -297,7 +314,7 @@ export const action: ActionFunction = async ({
     temperature: 0.7,
     stream: true,
     functions,
-    function_call: function_call ?? "auto",
+    function_call: { name: "articulate_values_card" }, // function_call ?? "auto",
   })
 
   if (!res.ok) {
