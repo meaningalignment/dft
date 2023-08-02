@@ -4,8 +4,8 @@ import {
   functions,
   systemPrompt,
   articulationPrompt,
-  critiquePrompt,
   ValuesCardCandidate,
+  formatCard,
 } from "~/lib/consts"
 import { ChatCompletionRequestMessage } from "openai-edge"
 import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
@@ -38,46 +38,9 @@ export type SubmitCardFunction = {
   }
 }
 
-/**
- * A function declaration for a virtual function that outputs a values cards JSON.
- */
-const formatCard = {
-  name: "submit",
-  description:
-    "Submit an articulated values card based on a source of meaning.",
-  parameters: {
-    type: "object",
-    properties: {
-      title: {
-        type: "string",
-        description: "The title of the values card.",
-      },
-      instructions_short: {
-        type: "string",
-        description:
-          "A short instruction for how ChatGPT could act based on this source of meaning.",
-      },
-      instructions_detailed: {
-        type: "string",
-        description:
-          "A detailed instruction for how ChatGPT could act based on this source of meaning.",
-      },
-      evaluation_criteria: {
-        type: "array",
-        items: {
-          type: "string",
-        },
-        description:
-          "A list of things to attend to that can be used to evaluate whether ChatGPT is following this source of meaning.",
-      },
-    },
-    required: [
-      "title",
-      "instructions_short",
-      "instructions_detailed",
-      "evaluation_criteria",
-    ],
-  },
+export type ArticulateCardResponse = {
+  values_card: ValuesCardCandidate
+  critique?: string | null
 }
 
 //
@@ -88,7 +51,7 @@ const formatCard = {
 // If so, wait for the whole response and handle the function call.
 // Otherwise, return the stream as-is.
 //
-async function getFunctionCall(
+async function getFunctionCallFromStreamResponse(
   res: Response
 ): Promise<ArticulateCardFunction | SubmitCardFunction | null> {
   const stream = OpenAIStream(res.clone()) // .clone() since we don't want to consume the response.
@@ -137,71 +100,21 @@ async function getFunctionCall(
   return json as ArticulateCardFunction | SubmitCardFunction
 }
 
-/** Critique a values card and return an updated version in the format of the official schema. */
-async function critiqueValuesCard(
-  valuesCard: ValuesCardCandidate
-): Promise<ValuesCardCandidate> {
-  console.log("Critiquing values card...")
-  console.log(`Card before critique:\n${JSON.stringify(valuesCard)}`)
-
-  //
-  // Critique the card and return a structured JSON response
-  // by using a virtual "submit_critique" function.
-  //
-  const res = await openai.createChatCompletion({
-    model,
-    messages: [
-      { role: "system", content: critiquePrompt },
-      { role: "user", content: JSON.stringify(valuesCard) },
-    ],
-    functions: [
-      {
-        name: "submit_critique",
-        description: "Critique a values card submitted by the user.",
-        parameters: {
-          type: "object",
-          properties: {
-            initial_card: formatCard.parameters,
-            revised_card: formatCard.parameters,
-            critique: {
-              type: "string",
-              description: "Critique of the initial card.",
-            },
-          },
-          required: ["initial_card", "critique", "revised_card"],
-        },
-      },
-    ],
-    function_call: {
-      name: "submit_critique",
-    },
-    temperature: 0.0,
-    stream: false,
-  })
-
-  const json = await res.json()
-  const data = JSON.parse(json.choices[0].message.function_call.arguments) as {
-    initial_card: ValuesCardCandidate
-    revised_card: ValuesCardCandidate
-    critique: string
-  }
-
-  console.log(`Critique: ${data.critique}`)
-  console.log(`Card after critique:\n${JSON.stringify(data.revised_card)}`)
-
-  return data.revised_card
-}
-
 /** Create a values card from a transcript of the conversation. */
 async function articulateValuesCard(
-  messages: ChatCompletionRequestMessage[]
-): Promise<ValuesCardCandidate> {
+  messages: ChatCompletionRequestMessage[],
+  previousCard: ValuesCardCandidate | null
+): Promise<ArticulateCardResponse> {
   console.log("Articulating values card...")
 
-  const transcript = messages
+  let transcript = messages
     .filter((m) => m.role === "assistant" || m.role === "user")
     .map((m) => `${capitalize(m.role)}: ${m.content}`)
     .join("\n")
+
+  if (previousCard) {
+    transcript += `Previous card: ${JSON.stringify(previousCard)}`
+  }
 
   const res = await openai.createChatCompletion({
     model,
@@ -216,8 +129,11 @@ async function articulateValuesCard(
   })
 
   const data = await res.json()
-  const card = JSON.parse(data.choices[0].message.function_call.arguments)
-  return card //await critiqueValuesCard(card)
+  const response = JSON.parse(
+    data.choices[0].message.function_call.arguments
+  ) as ArticulateCardResponse
+
+  return response
 }
 
 async function submitValuesCard(
@@ -278,13 +194,27 @@ async function streamingFunctionCallResponse(
 
   switch (func.name) {
     case "articulate_values_card": {
+      // Get the previously articulated card from the session.
+      if (session.has("values_card")) {
+        articulatedCard = JSON.parse(
+          session.get("values_card")
+        ) as ValuesCardCandidate
+      }
+
       // Articulate the values card.
-      articulatedCard = await articulateValuesCard(messages)
+      const res = await articulateValuesCard(messages, articulatedCard)
 
-      // Save the card in the session.
-      session.set("values_card", JSON.stringify(articulatedCard))
+      if (res.critique) {
+        result = `<A card was articulated, but it is not yet meeting the guidelines. The following critique was receieved: "${res.critique}". Continue the dialogue with the user until you are able to solve for the critique.>`
+      } else {
+        articulatedCard = res.values_card
 
-      result = `<A card (${articulatedCard.title}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
+        // Save the card in the session.
+        session.set("values_card", JSON.stringify(articulatedCard))
+
+        result = `<A card (${articulatedCard.title}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
+      }
+
       break
     }
     case "submit_values_card": {
@@ -356,11 +286,16 @@ export const action: ActionFunction = async ({
 
   let { messages, chatId, function_call } = json
 
+  // Clear values card from previous session.
+  if (messages.length === 2) {
+    session.unset("values_card")
+  }
+
   // Prepend the system message.
   messages = [{ role: "system", content: systemPrompt }, ...messages]
 
-  // Save the transcript in the database.
-  await db.chat
+  // Save the transcript in the database in the background.
+  db.chat
     .upsert({
       where: { id: chatId },
       update: { transcript: messages },
@@ -388,7 +323,8 @@ export const action: ActionFunction = async ({
   }
 
   // If a function call is present in the stream, handle it...
-  const func = await getFunctionCall(res)
+  const func = await getFunctionCallFromStreamResponse(res)
+
   if (func) {
     return streamingFunctionCallResponse(func, messages, session, chatId)
   }

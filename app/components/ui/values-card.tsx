@@ -17,7 +17,7 @@ export default function ValuesCard({ card, onSubmit, isFinished }: Props) {
       <p className="text-md text-neutral-500">{card.instructions_short}</p>
       <p className="text-sm font-bold pt-2 font-bold text-stone-300">HOW?</p>
       <p className="text-sm text-neutral-500">{card.instructions_detailed}</p>
-      <div className="w-full flex flex-row">
+      <div className="w-full flex flex-row mt-2">
         <div className="flex-grow" />
         <Button
           onClick={() => {
