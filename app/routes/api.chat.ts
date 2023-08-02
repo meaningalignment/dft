@@ -277,7 +277,7 @@ export const action: ActionFunction = async ({
   // Prepend the system message.
   messages = [{ role: "system", content: systemPrompt }, ...messages]
 
-  // Save the transcript in the database asynchonously.
+  // Save the transcript in the database in the background.
   db.chat
     .upsert({
       where: { id: chatId },
