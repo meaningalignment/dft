@@ -217,7 +217,7 @@ async function articulateValuesCard(
 
   const data = await res.json()
   const card = JSON.parse(data.choices[0].message.function_call.arguments)
-  return await critiqueValuesCard(card)
+  return card //await critiqueValuesCard(card)
 }
 
 async function submitValuesCard(
