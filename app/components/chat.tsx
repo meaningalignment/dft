@@ -78,6 +78,21 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
           toast.error(response.statusText)
         }
       },
+      onError: async (error) => {
+        console.error(error)
+        toast.error(error.message)
+        const res = await fetch(`/api/messages/${id}`)
+        const json = await res.json()
+        if (json && json.messages) {
+          const messages = json.messages as Message[]
+          const lastMessage = messages[messages.length - 1]
+          console.log("messages:", messages)
+          console.log("lastMessage:", lastMessage)
+          if (lastMessage.role === "user") {
+            setInput(lastMessage.content)
+          }
+        }
+      },
       onFinish(message) {
         console.log("Chat finished:", message)
         console.log("messages:", messages)

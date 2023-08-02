@@ -295,7 +295,7 @@ export const action: ActionFunction = async ({
   messages = [{ role: "system", content: systemPrompt }, ...messages]
 
   // Save the transcript in the database in the background.
-  db.chat
+  const updateDbPromise = db.chat
     .upsert({
       where: { id: chatId },
       update: { transcript: messages },
@@ -307,8 +307,9 @@ export const action: ActionFunction = async ({
     })
     .catch((e) => console.error(e))
 
+
   // Create stream for next chat message.
-  const res = await openai.createChatCompletion({
+  const completionPromise = openai.createChatCompletion({
     model,
     messages: messages,
     temperature: 0.7,
@@ -316,6 +317,9 @@ export const action: ActionFunction = async ({
     functions,
     function_call: function_call ?? "auto",
   })
+
+  // Wait for both the database update and the OpenAI API call to finish.
+  const [res, _] = await Promise.all([completionPromise, updateDbPromise])
 
   if (!res.ok) {
     const body = await res.json()
