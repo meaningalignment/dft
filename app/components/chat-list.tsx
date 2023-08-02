@@ -1,7 +1,7 @@
 import { type Message } from "ai"
 
 import { Separator } from "./ui/separator"
-import { ChatMessage } from "./chat-message"
+import { ChatMessage, LoadingChatMessage } from "./chat-message"
 import ValuesCard from "./ui/values-card"
 import { ValuesCardCandidate } from "~/lib/consts"
 
@@ -10,6 +10,7 @@ export interface ChatList {
   valueCards: { position: number; card: ValuesCardCandidate }[]
   onManualSubmit: (card: ValuesCardCandidate) => void
   isFinished: boolean
+  isLoading: boolean
 }
 
 export function ChatList({
@@ -17,6 +18,7 @@ export function ChatList({
   valueCards,
   onManualSubmit,
   isFinished,
+  isLoading,
 }: ChatList) {
   if (!messages.length) {
     return null
@@ -43,6 +45,12 @@ export function ChatList({
           )}
         </div>
       ))}
+      {isLoading && messages[messages.length - 1]?.role === "user" && (
+        <>
+          <Separator className="my-4 md:my-8" />
+          <LoadingChatMessage />
+        </>
+      )}
     </div>
   )
 }
