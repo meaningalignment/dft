@@ -193,7 +193,7 @@ export const functions: ChatCompletionFunctions[] = [
 export const formatCard: ChatCompletionFunctions = {
   name: "format_card",
   description:
-    "Attempt to format a values card. Include a critique it applicable.",
+    "Attempt to format a values card. Include a critique if applicable.",
   parameters: {
     type: "object",
     properties: {
