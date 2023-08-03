@@ -1,6 +1,11 @@
 import { Configuration, OpenAIApi } from "openai-edge"
 import { ActionArgs, ActionFunction, Session } from "@remix-run/node"
-import { chatFunctions, systemPrompt, ValuesCardCandidate } from "~/lib/consts"
+import {
+  articulateCardFunction,
+  submitCardFunction,
+  systemPrompt,
+  ValuesCardCandidate,
+} from "~/lib/consts"
 import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
 import { auth, db } from "~/config.server"
 import { FunctionsService } from "~/services/functions"
@@ -71,7 +76,7 @@ export const action: ActionFunction = async ({
     messages: messages,
     temperature: 0.7,
     stream: true,
-    functions: chatFunctions,
+    functions: [articulateCardFunction, submitCardFunction],
     function_call: function_call ?? "auto",
   })
 
