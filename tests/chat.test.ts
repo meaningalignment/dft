@@ -232,7 +232,7 @@ test("After a long tangent, the assistant refers the user back to the original q
     messages,
     temperature: 0.0,
     functions: [articulateCardFunction, submitCardFunction],
-    function_call: "none",
+    function_call: "none", // TODO: Arguably shouldn't be here.
   })
 
   const data = await response.json()
