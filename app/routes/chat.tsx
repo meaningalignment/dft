@@ -14,7 +14,7 @@ export default function ChatScreen() {
 
   return (
     <div className="flex flex-col h-screen w-screen">
-      <Header />
+      <Header chatId={chatId} />
       <Chat id={chatId} initialMessages={initialMessages} />
     </div>
   )
