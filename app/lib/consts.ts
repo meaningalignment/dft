@@ -166,31 +166,30 @@ In your response, include a critique of the articulated "values_card" if it does
 // OpenAI function declarations available in main chat prompt.
 //
 
-export const chatFunctions: ChatCompletionFunctions[] = [
-  {
-    name: "articulate_values_card",
-    description:
-      "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do, but has not yet articulated a values card or the articulated values card is not yet satisfactory to the user.",
-    parameters: {
-      type: "object",
-      properties: {},
-    },
+export const articulateCardFunction: ChatCompletionFunctions = {
+  name: "articulate_values_card",
+  description:
+    "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do, but has not yet articulated a values card or the articulated values card is not yet satisfactory to the user.",
+  parameters: {
+    type: "object",
+    properties: {},
   },
-  {
-    name: "submit_values_card",
-    description:
-      "Called when a values card has been articulated to the user, and the user is satisfied with the articulation.",
-    parameters: {
-      type: "object",
-      properties: {},
-    },
+}
+
+export const submitCardFunction: ChatCompletionFunctions = {
+  name: "submit_values_card",
+  description:
+    "Called when a values card has been articulated to the user, and the user is satisfied with the articulation.",
+  parameters: {
+    type: "object",
+    properties: {},
   },
-]
+}
 
 /**
  * A function declaration for a virtual function that outputs a values cards JSON.
  */
-export const formatCard: ChatCompletionFunctions = {
+export const formatCardFunction: ChatCompletionFunctions = {
   name: "format_card",
   description:
     "Attempt to format a values card. Include a critique if applicable.",
@@ -227,7 +226,7 @@ export const formatCard: ChatCompletionFunctions = {
       critique: {
         type: "string",
         description:
-          "A critique of the values card, if the values card is not following the provided guidelines.",
+          "A critique of the values card, if the values card is not following the provided guidelines, or is too ambiguous given the story in the transcript.",
       },
     },
     required: ["values_card"],

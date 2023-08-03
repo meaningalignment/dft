@@ -3,34 +3,34 @@ import { Session, SessionData } from "@remix-run/node"
 import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge/types/api"
 import {
   ValuesCardCandidate,
+  articulateCardFunction,
   articulationPrompt,
-  chatFunctions,
-  formatCard,
+  formatCardFunction,
+  submitCardFunction,
 } from "~/lib/consts"
 import { OpenAIStream } from "~/lib/openai-stream"
 import { capitalize } from "~/utils"
 
 // import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
 
-export type ArticulateCardFunction = {
+type ArticulateCardFunction = {
   name: string
   arguments: {}
 }
 
-export type SubmitCardFunction = {
+type SubmitCardFunction = {
   name: string
-  arguments: {
-    title: string
-    instructions_short: string
-    instructions_detailed: string
-  }
+  arguments: {}
 }
 
-export type ArticulateCardResponse = {
+type ArticulateCardResponse = {
   values_card: ValuesCardCandidate
   critique?: string | null
 }
 
+/**
+ * A service for handling function calls in the chat.
+ */
 export class FunctionsService {
   private openai: OpenAIApi
   private model: string
@@ -97,7 +97,7 @@ export class FunctionsService {
     //
     const json = JSON.parse(result)["function_call"]
 
-    //   is needed due to tokens being streamed with escape characters.
+    // The following is needed due to tokens being streamed with escape characters.
     json["arguments"] = JSON.parse(json["arguments"])
 
     return json as ArticulateCardFunction | SubmitCardFunction
@@ -121,7 +121,7 @@ export class FunctionsService {
     let submittedCard: ValuesCardCandidate | null = null
 
     switch (func.name) {
-      case "articulate_values_card": {
+      case articulateCardFunction.name: {
         // Get the previously articulated card from the session.
         if (session.has("values_card")) {
           articulatedCard = JSON.parse(
@@ -145,7 +145,7 @@ export class FunctionsService {
 
         break
       }
-      case "submit_values_card": {
+      case submitCardFunction.name: {
         // Get the values card from the session.
         if (!session.has("values_card")) {
           throw Error("No values card in session")
@@ -195,7 +195,7 @@ export class FunctionsService {
         },
       ],
       temperature: 0.0,
-      functions: chatFunctions,
+      functions: [articulateCardFunction, submitCardFunction],
       function_call: "none", // Prevent recursion.
       stream: true,
     })
@@ -247,8 +247,8 @@ export class FunctionsService {
         { role: "system", content: articulationPrompt },
         { role: "user", content: transcript },
       ],
-      functions: [formatCard],
-      function_call: { name: formatCard.name },
+      functions: [formatCardFunction],
+      function_call: { name: formatCardFunction.name },
       temperature: 0.0,
       stream: false,
     })
