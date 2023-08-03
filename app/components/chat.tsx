@@ -7,6 +7,9 @@ import { EmptyScreen } from "./empty-screen"
 import { ChatScrollAnchor } from "./chat-scroll-anchor"
 import { toast } from "react-hot-toast"
 import { ValuesCardCandidate } from "~/lib/consts"
+import ValuesDialog from "./values-dialog"
+import { DialogTrigger } from "./ui/dialog"
+import { Button } from "./ui/button"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
@@ -17,7 +20,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   const [valueCards, setValueCards] = useState<
     { position: number; card: ValuesCardCandidate }[]
   >([])
-  const [isFinished, setIsFinished] = useState(false)
+  const [isFinished, setIsFinished] = useState(true)
 
   const onCardArticulation = (card: ValuesCardCandidate) => {
     console.log("Card articulated:", card)

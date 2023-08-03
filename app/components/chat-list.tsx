@@ -4,6 +4,19 @@ import { Separator } from "./ui/separator"
 import { ChatMessage, LoadingChatMessage } from "./chat-message"
 import ValuesCard from "./ui/values-card"
 import { ValuesCardCandidate } from "~/lib/consts"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog"
+import { Button } from "./ui/button"
+import { Label } from "./ui/label"
+import { Input } from "./ui/input"
+import ValuesDialog from "./values-dialog"
 
 export interface ChatList {
   messages: Message[]
@@ -51,6 +64,9 @@ export function ChatList({
           <LoadingChatMessage />
         </>
       )}
+      <ValuesDialog>
+        <Button>Edit profile</Button>
+      </ValuesDialog>
     </div>
   )
 }

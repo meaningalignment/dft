@@ -8,6 +8,16 @@ import { IconArrowElbow, IconArrowRight, IconRefresh } from "./ui/icons"
 import { useEnterSubmit } from "~/hooks/use-enter-submit"
 import { Link } from "@remix-run/react"
 import { useCurrentUserValues } from "~/root"
+import { Dialog, DialogTrigger } from "./ui/dialog"
+
+import {
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@radix-ui/react-dialog"
+import { DialogFooter, DialogHeader } from "./ui/dialog"
+import { Label } from "@radix-ui/react-label"
+import { Input } from "./ui/input"
 
 export interface PromptProps
   extends Pick<UseChatHelpers, "input" | "setInput"> {
@@ -25,9 +35,11 @@ const FinishedView = () => {
     <div className="flex flex-col items-center justify-center">
       <p className="p-2 pb-4 text-md">
         {"You have articulated "}
-        <a className="underline font-semibold cursor-pointer">
-          {count} value{suffix}
-        </a>
+        <DialogTrigger asChild>
+          <a className="underline font-semibold cursor-pointer">
+            {count} value{suffix}
+          </a>
+        </DialogTrigger>
         . Would you like to continue?
       </p>
       <div className="flex justify-center pt-2">
