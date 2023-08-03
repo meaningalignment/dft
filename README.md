@@ -23,6 +23,16 @@ Let's say you want to add a table to the db. Just run `bunx prisma db push` to t
 
 Pushing to the github repo should automatically deploy at `dft.meaningalignment.org`.
 
+## Testing
+
+There are some tests using GPT-4 to evaluate dialogues. 
+
+To run these
+
+`npm run test`
+
+They are very compute-heavy – only run them once in a while!
+
 ## Development
 
 - [Remix Docs](https://remix.run/docs)
