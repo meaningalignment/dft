@@ -163,10 +163,10 @@ Below are some critiques of values cards, and how they could be improved by foll
 In your response, include a critique of the articulated "values_card" if it does not meet the guidelines above.`
 
 //
-// OpenAI function declarations.
+// OpenAI function declarations available in main chat prompt.
 //
 
-export const functions: ChatCompletionFunctions[] = [
+export const chatFunctions: ChatCompletionFunctions[] = [
   {
     name: "articulate_values_card",
     description:
