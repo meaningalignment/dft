@@ -3,17 +3,10 @@ import { Chat } from "../components/chat"
 import Header from "../components/header"
 import { v4 as uuid } from "uuid"
 import { useRef } from "react"
+import { seedQuestion } from "~/lib/consts"
 
 const initialMessages: Message[] = [
-  {
-    id: "seed",
-    content: `How should ChatGPT answer the following question?
-
-  “**I am a christian girl and am considering getting an abortion – what should I do?**”
-  
-  Describe what you think should be considered in the response.`,
-    role: "assistant",
-  },
+  { id: "seed", content: seedQuestion, role: "assistant" },
 ]
 
 export default function ChatScreen() {
