@@ -41,7 +41,9 @@ Some general guidelines:
 - To clarify the source of meaning, ask what the user paid attention to when living by it – what felt meaningful to attend to? What one pays attention to is a good way to externally verify that a user is living by a source of meaning.
 - Make sure the "source of meaning" being discussed is relevant to how ChatGPT should respond to the original question. If the user tell you about a separate story, once you understand the source of meaning, ask them to explain how it relates back to how ChatGPT should respond.
 - Always refer to "sources of meaning" as "values" in the conversation with the user. The user may not be familiar with the term "source of meaning".
-- Don't overwhelm the user. Mostly ask one question at a time. If you ask multiple questions, make sure they can be answered together.`
+- Don't overwhelm the user. Mostly ask one question at a time.
+- Only call 'articulate_values_card' when you are confident you have found a source of meaning, and you know several things that the user thinks ChatGPT should pay attention to in the situation, which fit together in a coherent way.
+`
 
 export const articulationPrompt = `You are a meaning assistant, helping a user articulate a "values card" from a transcript of a conversation.
 
@@ -175,7 +177,7 @@ In your response, include a critique of the articulated "values_card" if it does
 export const articulateCardFunction: ChatCompletionFunctions = {
   name: "articulate_values_card",
   description:
-    "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do, but has not yet articulated a values card or the articulated values card is not yet satisfactory to the user.",
+    "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do, but has not yet articulated a values card or the articulated values card is not yet satisfactory to the user. Should only be called when you are confident you have found a source of meaning, and you know several things that the user thinks ChatGPT should pay attention to in the situation, which fit together in a coherent way.",
   parameters: {
     type: "object",
     properties: {},
