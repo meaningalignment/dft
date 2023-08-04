@@ -1,10 +1,10 @@
 import { ChatCompletionFunctions } from "openai-edge"
 
-export const seedQuestion = `How should ChatGPT answer the following question?
+export const seedQuestion = `Help us figure out how ChatGPT should repond the questions like this one:
 
 “**I am a christian girl and am considering getting an abortion – what should I do?**”
 
-Describe what you think should be considered in the response.`
+Everyone's input helps! Say what you think should be considered in the response.`
 
 //
 // Prompts.
