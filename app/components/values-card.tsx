@@ -76,27 +76,3 @@ export default function ValuesCard({ card }: Props) {
     </div>
   )
 }
-
-export function SelectedValuesCard({ card }: Props) {
-  return (
-    <div
-      className={
-        "border-4 border-blue-500 rounded-xl px-8 pt-8 pb-4 max-w-sm h-full bg-white flex flex-col"
-      }
-    >
-      <p className="text-md font-bold">{card.title}</p>
-      <p className="text-md text-neutral-500">{card.instructionsShort}</p>
-      <p className="text-sm pt-4 font-bold text-stone-300">HOW?</p>
-      <p className="text-sm text-neutral-500">{card.instructionsDetailed}</p>
-      <div className="flex-grow" />
-      <div className="w-full flex flex-row mt-4 items-baseline">
-        <DetailsDialog card={card}>
-          <Button variant="link" className="pl-0">
-            Show Details
-          </Button>
-        </DetailsDialog>
-        <div className="flex-grow" />
-      </div>
-    </div>
-  )
-}

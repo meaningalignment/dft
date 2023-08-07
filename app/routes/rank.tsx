@@ -14,20 +14,14 @@ export async function loader({ request }: LoaderArgs) {
   return json({ values })
 }
 
-function CheckmarkCircle() {
-  return (
-    <div className="bg-blue-500 h-8 w-8 rounded-full flex flex-col justify-center items-center">
-      <IconCheck className="h-6 w-6 text-white" />
-    </div>
-  )
-}
-
-function SelectedValuesCardTest({ value }: { value: DataModel }) {
+function SelectedValuesCard({ value }: { value: DataModel }) {
   return (
     <div className="relative h-full w-full">
       <div className="w-full h-full border-4 border-blue-500 rounded-xl z-10 absolute" />
-      <div className="absolute -bottom-2 -right-2 z-20">
-        <CheckmarkCircle />
+      <div className="absolute -bottom-2.5 -right-2.5 z-20">
+        <div className="bg-blue-500 h-8 w-8 rounded-full flex flex-col justify-center items-center">
+          <IconCheck className="h-6 w-6 text-white" />
+        </div>
       </div>
       <ValuesCard card={value as any} />
     </div>
@@ -49,7 +43,7 @@ function SelectableValue({
       className={"cursor-pointer hover:opacity-80 active:opacity-70"}
     >
       {isSelected ? (
-        <SelectedValuesCardTest value={value} />
+        <SelectedValuesCard value={value} />
       ) : (
         <ValuesCard card={value as any} />
       )}
@@ -74,7 +68,7 @@ export default function RankScreen() {
   return (
     <div className="flex flex-col h-screen w-screen">
       <Header />
-      <div className="grid flex-grow place-items-center space-y-4 py-12 px-8">
+      <div className="grid flex-grow place-items-center space-y-4 my-12 px-8">
         <div className="max-w-2xl">
           <ChatMessage
             message={{
@@ -87,12 +81,16 @@ export default function RankScreen() {
         </div>
         <div className="grid xl:grid-cols-3 lg:grid-cols-2 mx-auto gap-4">
           {values.map((value) => (
-            <SelectableValue
-              key={value.id}
-              isSelected={selectedValues.includes(value.id)}
-              onSelect={() => onSelectValue(value.id)}
-              value={value as any}
-            />
+            <div
+              onClick={() => onSelectValue(value.id)}
+              className={"cursor-pointer hover:opacity-80 active:opacity-70"}
+            >
+              {selectedValues.includes(value.id) ? (
+                <SelectedValuesCard value={value as any} />
+              ) : (
+                <ValuesCard card={value as any} />
+              )}
+            </div>
           ))}
         </div>
         <div className="flex flex-col justify-center items-center">
@@ -100,7 +98,7 @@ export default function RankScreen() {
             <Link to="/link">Continue</Link>
           </Button>
 
-          <div className="flex flex-col justify-center items-center mt-4 h-4">
+          <div className="flex flex-col justify-center items-center my-4 h-4">
             {selectedValues.length < 3 && (
               <p className="text-stone-300">
                 {`Select ${3 - selectedValues.length} more value${
