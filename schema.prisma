@@ -56,6 +56,7 @@ model CanonicalValuesCard {
   valuesCards          ValuesCard[]
   linksFrom            Link[]       @relation("FromValuesRelation")
   linksTo              Link[]       @relation("ToValueRelation")
+  Vote                 Vote[]
 }
 
 model Chat {
@@ -69,17 +70,20 @@ model Chat {
 }
 
 model Vote {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  options   Json
-  user      User     @relation(fields: [userId], references: [id])
+  id           Int                 @id @default(autoincrement())
+  userId       Int
+  valuesCardId Int
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  drawId       String // A uuid that is generated for a draw. Each vote is made as part of a draw and can be linked to other votes in the same draw through this property.
+  options      Json
+  valuesCard   CanonicalValuesCard @relation(fields: [valuesCardId], references: [id])
+  user         User                @relation(fields: [userId], references: [id])
 }
 
 model Link {
   id          Int                 @id @default(autoincrement())
-  linkType    String // TODO: enum
+  linkType    String
   fromValueId Int
   toValueId   Int
   userId      Int
