@@ -17,6 +17,8 @@ model User {
   updatedAt DateTime @updatedAt
   role      String[] @default(["USER"])
   chats     Chat[]
+  Vote      Vote[]
+  Link      Link[]
 }
 
 model EmailCodes {
@@ -38,9 +40,9 @@ model ValuesCard {
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   canonicalCardId      Int?
-  canonicalCard        CanonicalValuesCard? @relation(fields: [canonicalCardId], references: [id])
   chatId               String               @unique
   chat                 Chat                 @relation(fields: [chatId], references: [id])
+  canonicalCard        CanonicalValuesCard? @relation(fields: [canonicalCardId], references: [id])
 }
 
 model CanonicalValuesCard {
@@ -52,6 +54,8 @@ model CanonicalValuesCard {
   createdAt            DateTime     @default(now())
   updatedAt            DateTime     @updatedAt
   valuesCards          ValuesCard[]
+  linksFrom            Link[]       @relation("FromValuesRelation")
+  linksTo              Link[]       @relation("ToValueRelation")
 }
 
 model Chat {
@@ -62,4 +66,26 @@ model Chat {
   updatedAt  DateTime    @updatedAt
   ValuesCard ValuesCard?
   user       User        @relation(fields: [userId], references: [id])
+}
+
+model Vote {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  options   Json
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Link {
+  id          Int                 @id @default(autoincrement())
+  linkType    String // TODO: enum
+  fromValueId Int
+  toValueId   Int
+  userId      Int
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  user        User                @relation(fields: [userId], references: [id])
+  fromValue   CanonicalValuesCard @relation("FromValuesRelation", fields: [fromValueId], references: [id])
+  toValue     CanonicalValuesCard @relation("ToValueRelation", fields: [toValueId], references: [id])
 }
