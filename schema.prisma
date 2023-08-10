@@ -3,10 +3,12 @@ datasource db {
   url               = env("POSTGRES_PRISMA_URL") // uses connection pooling
   directUrl         = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
   shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING_SHADOW") // used for migrations
+  extensions        = [pgvector(map: "vector", schema: "extensions")] // Add the pgvector extension
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"] // Enable the postgresqlExtensions. Currently in preview
 }
 
 model User {
@@ -75,7 +77,7 @@ model Vote {
   valuesCardId Int
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
-  drawId       String // A uuid that is generated for a draw. Each vote is made as part of a draw and can be linked to other votes in the same draw through this property.
+  drawId       String // uuid for each draw of 6 values to be voted on.
   options      Json
   valuesCard   CanonicalValuesCard @relation(fields: [valuesCardId], references: [id])
   user         User                @relation(fields: [userId], references: [id])
@@ -83,7 +85,7 @@ model Vote {
 
 model Link {
   id          Int                 @id @default(autoincrement())
-  linkType    String
+  type        String
   fromValueId Int
   toValueId   Int
   userId      Int
