@@ -34,31 +34,33 @@ model EmailCodes {
 }
 
 model ValuesCard {
-  id                   Int                  @id @default(autoincrement())
+  id                   Int                          @id @default(autoincrement())
   title                String
   instructionsShort    String
   instructionsDetailed String
   evaluationCriteria   String[]
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
+  createdAt            DateTime                     @default(now())
+  updatedAt            DateTime                     @updatedAt
   canonicalCardId      Int?
-  chatId               String               @unique
-  chat                 Chat                 @relation(fields: [chatId], references: [id])
-  canonicalCard        CanonicalValuesCard? @relation(fields: [canonicalCardId], references: [id])
+  chatId               String                       @unique
+  chat                 Chat                         @relation(fields: [chatId], references: [id])
+  canonicalCard        CanonicalValuesCard?         @relation(fields: [canonicalCardId], references: [id])
+  embedding            Unsupported("vector(1536)")?
 }
 
 model CanonicalValuesCard {
-  id                   Int          @id @default(autoincrement())
+  id                   Int                          @id @default(autoincrement())
   title                String
   instructionsShort    String
   instructionsDetailed String
   evaluationCriteria   String[]
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
+  createdAt            DateTime                     @default(now())
+  updatedAt            DateTime                     @updatedAt
   valuesCards          ValuesCard[]
-  linksFrom            Link[]       @relation("FromValuesRelation")
-  linksTo              Link[]       @relation("ToValueRelation")
+  linksFrom            Link[]                       @relation("FromValuesRelation")
+  linksTo              Link[]                       @relation("ToValueRelation")
   Vote                 Vote[]
+  embedding            Unsupported("vector(1536)")?
 }
 
 model Chat {
