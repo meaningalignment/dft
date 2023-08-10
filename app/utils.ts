@@ -24,14 +24,3 @@ export function isFirstWordUppercase(str: string) {
     str.split(" ").slice(0, 1)[0].toUpperCase()
   )
 }
-
-export function embeddingFromSql(value: any): number[] {
-  return value
-    .substring(1, value.length - 1)
-    .split(",")
-    .map((v: any) => parseFloat(v))
-}
-
-export function embeddingToSql(embedding: number[]): string {
-  return JSON.stringify(embedding)
-}
