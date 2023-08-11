@@ -15,11 +15,6 @@ test("Test averaging over embedding vectors fails if different dims", () => {
     [1, 2, 3, 4],
     [5, 6, 7, 8, 9],
   ]
-
-  try {
-    calculateAverageEmbedding(embeddings)
-    expect(false)
-  } catch (error) {
-    expect(true)
-  }
+  const call = () => calculateAverageEmbedding(embeddings)
+  expect(call).toThrowError()
 })
