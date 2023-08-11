@@ -1,4 +1,4 @@
-import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
+import { PrismaClient } from "@prisma/client"
 import { cowpunkify } from "cowpunk-auth"
 
 export const db = new PrismaClient()

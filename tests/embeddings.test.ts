@@ -1,4 +1,4 @@
-// This file can be used to run one-off commands.
+// // This file can be used to run one-off commands.
 
 // import { PrismaClient } from "@prisma/client"
 // import { Configuration, OpenAIApi } from "openai-edge"
@@ -16,5 +16,19 @@
 // })
 
 // test(`This test can be used to run a one-off command`, async () => {
-//   await service.embedAllCards()
+//   const userId = 1
+
+//   const res = (await db.$queryRaw`
+//   SELECT embedding::text
+//   FROM "ValuesCard" vc
+//   INNER JOIN "Chat" c
+//   ON vc."chatId" = c."id"
+//   WHERE c."userId" = ${userId}
+//   AND vc."embedding" IS NOT NULL`) as { embedding: any }[]
+
+//   const embeddings = res.map((r) =>
+//     JSON.parse(r.embedding).map((f: any) => parseFloat(f))
+//   )
+
+//   console.log(embeddings)
 // }, 60_000)
