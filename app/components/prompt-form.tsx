@@ -41,7 +41,7 @@ const FinishedView = () => {
         </Button>
         <Button className="ml-2">
           <IconArrowRight className="mr-2" />
-          <Link to="/rank">Continue</Link>
+          <Link to="/select">Continue</Link>
         </Button>
       </div>
     </div>

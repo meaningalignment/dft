@@ -2,7 +2,7 @@ import { type Message } from "ai"
 
 import { Separator } from "./ui/separator"
 import { ChatMessage, LoadingChatMessage } from "./chat-message"
-import ValuesCard from "./ui/values-card"
+import ChatValuesCard from "./chat-values-card"
 import { ValuesCardCandidate } from "~/lib/consts"
 
 export interface ChatList {
@@ -33,7 +33,7 @@ export function ChatList({
       {messages.map((message, index) => (
         <div key={index}>
           {valueCard(index) && (
-            <ValuesCard
+            <ChatValuesCard
               card={valueCard(index)!.card}
               onSubmit={onManualSubmit}
               isFinished={isFinished}

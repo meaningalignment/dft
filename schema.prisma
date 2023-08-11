@@ -3,10 +3,12 @@ datasource db {
   url               = env("POSTGRES_PRISMA_URL") // uses connection pooling
   directUrl         = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
   shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING_SHADOW") // used for migrations
+  extensions        = [pgvector(map: "vector", schema: "extensions")] // Add the pgvector extension
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"] // Enable the postgresqlExtensions. Currently in preview
 }
 
 model User {
@@ -17,6 +19,8 @@ model User {
   updatedAt DateTime @updatedAt
   role      String[] @default(["USER"])
   chats     Chat[]
+  Vote      Vote[]
+  Link      Link[]
 }
 
 model EmailCodes {
@@ -30,28 +34,33 @@ model EmailCodes {
 }
 
 model ValuesCard {
-  id                   Int                  @id @default(autoincrement())
+  id                   Int                          @id @default(autoincrement())
   title                String
   instructionsShort    String
   instructionsDetailed String
   evaluationCriteria   String[]
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
+  createdAt            DateTime                     @default(now())
+  updatedAt            DateTime                     @updatedAt
   canonicalCardId      Int?
-  canonicalCard        CanonicalValuesCard? @relation(fields: [canonicalCardId], references: [id])
-  chatId               String               @unique
-  chat                 Chat                 @relation(fields: [chatId], references: [id])
+  chatId               String                       @unique
+  chat                 Chat                         @relation(fields: [chatId], references: [id])
+  canonicalCard        CanonicalValuesCard?         @relation(fields: [canonicalCardId], references: [id])
+  embedding            Unsupported("vector(1536)")?
 }
 
 model CanonicalValuesCard {
-  id                   Int          @id @default(autoincrement())
+  id                   Int                          @id @default(autoincrement())
   title                String
   instructionsShort    String
   instructionsDetailed String
   evaluationCriteria   String[]
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
+  createdAt            DateTime                     @default(now())
+  updatedAt            DateTime                     @updatedAt
   valuesCards          ValuesCard[]
+  linksFrom            Link[]                       @relation("FromValuesRelation")
+  linksTo              Link[]                       @relation("ToValueRelation")
+  Vote                 Vote[]
+  embedding            Unsupported("vector(1536)")?
 }
 
 model Chat {
@@ -62,4 +71,29 @@ model Chat {
   updatedAt  DateTime    @updatedAt
   ValuesCard ValuesCard?
   user       User        @relation(fields: [userId], references: [id])
+}
+
+model Vote {
+  id           Int                 @id @default(autoincrement())
+  userId       Int
+  valuesCardId Int
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  draw         Json
+  drawId       String // uuid for each draw of 6 values to be voted on.
+  valuesCard   CanonicalValuesCard @relation(fields: [valuesCardId], references: [id])
+  user         User                @relation(fields: [userId], references: [id])
+}
+
+model Link {
+  id          Int                 @id @default(autoincrement())
+  type        String
+  fromValueId Int
+  toValueId   Int
+  userId      Int
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  user        User                @relation(fields: [userId], references: [id])
+  fromValue   CanonicalValuesCard @relation("FromValuesRelation", fields: [fromValueId], references: [id])
+  toValue     CanonicalValuesCard @relation("ToValueRelation", fields: [toValueId], references: [id])
 }

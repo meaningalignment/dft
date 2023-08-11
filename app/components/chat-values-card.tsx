@@ -1,5 +1,5 @@
 import { ValuesCardCandidate } from "~/lib/consts"
-import { Button } from "./button"
+import { Button } from "./ui/button"
 import {
   Dialog,
   DialogContent,
@@ -7,9 +7,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./dialog"
+} from "./ui/dialog"
 import { useState } from "react"
-import { isUppercase } from "~/utils"
+import { isFirstWordUppercase } from "~/utils"
 
 type Props = {
   card: ValuesCardCandidate
@@ -17,15 +17,8 @@ type Props = {
   isFinished: boolean
 }
 
-export default function ValuesCard({ card, onSubmit, isFinished }: Props) {
+export default function ChatValuesCard({ card, onSubmit, isFinished }: Props) {
   const [isSubmitted, setIsSubmitted] = useState(false)
-
-  const isFirstWordUppercase = (str: string) => {
-    return (
-      str.split(" ").slice(0, 1)[0] ===
-      str.split(" ").slice(0, 1)[0].toUpperCase()
-    )
-  }
 
   return (
     <div className="my-8 border-2 border-border rounded-xl px-8 pt-8 pb-4 max-w-[420px]">
