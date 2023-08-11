@@ -6,3 +6,5 @@ node_modules.nosync
 /public/build
 .env
 /notes
+
+tests/script.test.ts

@@ -37,7 +37,11 @@ export default class SelectionRoutingService {
     ORDER BY "_distance" DESC
     LIMIT 30;`
 
-    console.log("Got candidates: ", candidates)
+    console.log(
+      `Got selection candidates for user ${userId}: ${candidates.map(
+        (c) => c.id
+      )}}`
+    )
 
     // Get a random draw of `drawSize` from the 30 canidates.
     return candidates.sort(() => 0.5 - Math.random()).slice(0, drawSize)

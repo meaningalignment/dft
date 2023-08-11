@@ -17,13 +17,14 @@ export default class EmbeddingService {
 
   private formatCard(card: ValuesCard | CanonicalValuesCard) {
     return (
-      "short instruction: " +
+      "Short Instruction: " +
       card.instructionsShort +
       "\n" +
-      "long instruction: " +
+      "Long Instruction: " +
       card.instructionsDetailed +
       "\n" +
       "In order to evaluate whether or not ChatGPT is following this value, it could look for: " +
+      "\n" +
       card.evaluationCriteria.join("\n")
     )
   }
