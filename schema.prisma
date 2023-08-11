@@ -79,8 +79,8 @@ model Vote {
   valuesCardId Int
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
+  draw         Json
   drawId       String // uuid for each draw of 6 values to be voted on.
-  options      Json
   valuesCard   CanonicalValuesCard @relation(fields: [valuesCardId], references: [id])
   user         User                @relation(fields: [userId], references: [id])
 }

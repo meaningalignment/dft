@@ -8,10 +8,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog"
-import { ValuesCard as DataModel } from "@prisma/client"
+import { ValuesCard as DataModel, CanonicalValuesCard } from "@prisma/client"
 
 type Props = {
-  card: DataModel
+  card: DataModel | CanonicalValuesCard
 }
 
 function DetailsDialog({
@@ -19,7 +19,7 @@ function DetailsDialog({
   card,
 }: {
   children: React.ReactNode
-  card: DataModel
+  card: DataModel | CanonicalValuesCard
 }) {
   return (
     <Dialog>

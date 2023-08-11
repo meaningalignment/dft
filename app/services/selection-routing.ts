@@ -24,8 +24,8 @@ export default class SelectionRoutingService {
     ).map((r) => JSON.parse(r.embedding).map((v: any) => parseFloat(v)))
     const userVector = calculateAverageEmbedding(userEmbeddings)
 
-    // Get 30 candidate canonical values furthest away from the user vector
-    // that have not been synthesized from a user value.
+    // Get 30 candidate canonical values furthest away from the user's values semantically,
+    // that have not been synthesized from one of the user's values.
     const candidates = await this.db.$queryRaw<Array<CanonicalValuesCard>>`
     SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${JSON.stringify(
       userVector
@@ -35,8 +35,9 @@ export default class SelectionRoutingService {
     INNER JOIN "Chat" c ON vc."chatId" = c."id"
     WHERE c."userId" != ${userId}
     ORDER BY "_distance" DESC
-    LIMIT 30;
-  `
+    LIMIT 30;`
+
+    console.log("Got candidates: ", candidates)
 
     // Get a random draw of `drawSize` from the 30 canidates.
     return candidates.sort(() => 0.5 - Math.random()).slice(0, drawSize)
