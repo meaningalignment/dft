@@ -12,5 +12,5 @@ beforeAll(() => {
 test(`Test routing service`, async () => {
   const draw = await service.getDraw(1)
   expect(draw).toBeDefined()
-  expect(draw.length === 6)
+  expect(draw.length).toBeGreaterThan(3)
 }, 60_000)
