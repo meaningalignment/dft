@@ -15,14 +15,14 @@ const routing = new SelectionRoutingService(db)
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
-  const values = await routing.getDraw(userId)
-  return json({ values })
+  const draw = await routing.getDraw(userId)
+  return json({ draw })
 }
 
 export async function action({ request }: ActionArgs) {
   const userId = await auth.getUserId(request)
   const body = await request.json()
-  const { values, selected, drawId } = body
+  const { draw, selected, drawId } = body
 
   console.log(
     `Submitting votes (${selected}) for user ${userId} and draw ${drawId}`
@@ -34,10 +34,7 @@ export async function action({ request }: ActionArgs) {
 
   let promises = []
   for (const id of selected) {
-    const value = values.find((v: CanonicalValuesCard) => v.id === id)
-    const draw = values.map((v: CanonicalValuesCard) => {
-      return { id: v.id, title: v.title }
-    })
+    const value = draw.find((v: CanonicalValuesCard) => v.id === id)
     const valuesCardId = value.id
 
     if (!value) {
@@ -46,10 +43,12 @@ export async function action({ request }: ActionArgs) {
 
     const promise = db.vote.create({
       data: {
-        draw,
         userId,
         drawId,
         valuesCardId,
+        draw: draw.map((v: CanonicalValuesCard) => {
+          return { id: v.id, title: v.title }
+        }),
       },
     })
 
@@ -77,7 +76,7 @@ function SelectedValuesCard({ value }: { value: CanonicalValuesCard }) {
 
 export default function SelectScreen() {
   const drawId = useRef(uuid()).current
-  const { values } = useLoaderData<typeof loader>()
+  const { draw } = useLoaderData<typeof loader>()
   const [selected, setSelected] = useState<number[]>([])
 
   const onSelectValue = (id: number) => {
@@ -89,7 +88,7 @@ export default function SelectScreen() {
   }
 
   const onSubmit = async () => {
-    const body = { values, selected, drawId }
+    const body = { draw, selected, drawId }
 
     const response = await fetch("/select", {
       method: "POST",
@@ -105,7 +104,7 @@ export default function SelectScreen() {
     }
   }
 
-  const minRequiredVotes = values.length / 2
+  const minRequiredVotes = draw.length / 2
 
   return (
     <div className="flex flex-col h-screen w-screen">
@@ -122,7 +121,7 @@ export default function SelectScreen() {
           />
         </div>
         <div className="grid xl:grid-cols-3 lg:grid-cols-2 mx-auto gap-4">
-          {values.map((value) => (
+          {draw.map((value) => (
             <div
               key={value.id}
               onClick={() => onSelectValue(value.id)}
