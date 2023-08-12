@@ -1,6 +1,6 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
-import { Link, useLoaderData } from "@remix-run/react"
+import { Link, useLoaderData, useNavigate } from "@remix-run/react"
 import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"

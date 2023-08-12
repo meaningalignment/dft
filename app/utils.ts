@@ -60,3 +60,11 @@ export function calculateAverageEmbedding(embeddings: number[][]): number[] {
 
   return averageVector
 }
+
+export function splitToPairs<T>(arr: T[]): T[][] {
+  return (
+    Array.from({ length: Math.ceil(arr.length / 2) }, (_, i) =>
+      arr.slice(i * 2, i * 2 + 2)
+    ).filter((p) => p.length == 2) ?? []
+  )
+}

@@ -1,6 +1,6 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
-import { useLoaderData } from "@remix-run/react"
+import { useLoaderData, useNavigate, useRevalidator } from "@remix-run/react"
 import { LoaderArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import { ChatMessage } from "~/components/chat-message"
@@ -12,17 +12,40 @@ import {
 } from "@prisma/client"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Label } from "~/components/ui/label"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { splitToPairs } from "~/utils"
+import toast from "react-hot-toast"
+
+type ValuesPair = [CanonicalValuesCard, CanonicalValuesCard]
+
+type Relationship =
+  | "a_more_comprehensive"
+  | "b_more_comprehensive"
+  | "incommensurable"
+  | "dont_know"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
+
+  // Get 10 values (2 per draw, 5 draws) that have not been
+  // linked together by the user yet.
   const values = (await db.canonicalValuesCard.findMany({
-    take: 2,
+    take: 10,
+    where: {
+      edgesFrom: { none: { userId } },
+      edgesTo: { none: { userId } },
+    },
   })) as CanonicalValuesCard[]
 
-  const edges = (await db.edge.findMany({ where: { userId } })) as Edge[]
+  const draw: ValuesPair[] = splitToPairs(values).map((p) => p as ValuesPair)
 
-  return json({ values, edges })
+  console.log(
+    `Got linking draw: ${draw.map(
+      (p) => p[0].id.toString() + ", " + p[1].id
+    )} for user: ${userId}`
+  )
+
+  return json({ draw })
 }
 
 export async function action({ request }: LoaderArgs) {
@@ -68,47 +91,71 @@ export async function action({ request }: LoaderArgs) {
   return json({})
 }
 
-type Relationship =
-  | "a_more_comprehensive"
-  | "b_more_comprehensive"
-  | "incommensurable"
-  | "dont_know"
-
 export default function LinkScreen() {
-  const { values, edges } = useLoaderData<typeof loader>()
-  const [relationship, setRelationship] = useState<Relationship | null>(null)
+  const navigate = useNavigate()
+  const { draw } = useLoaderData<typeof loader>()
+  const [currentPairIndex, setCurrentPairIndex] = useState<number>(0)
+  const [currentRelationship, setCurrentRelationship] =
+    useState<Relationship | null>(null)
+
+  // If there are no values in the draw, continue to next step.
+  useEffect(() => {
+    if (draw.length === 0) {
+      navigate("/finished")
+    }
+  }, [draw])
 
   const onSubmit = async () => {
-    const body = { values, relationship }
+    const index = currentPairIndex
+    const body = { values: draw[index], relationship: currentRelationship }
 
-    const response = await fetch("/api/relationship", {
+    // Post the relationship to the server in the background,
+    // and reset in case it fails.
+    fetch("/link", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
+    }).then(async (response) => {
+      if (!response.ok) {
+        toast.error("Failed to submit relationship.")
+
+        // Reset.
+        setCurrentPairIndex(index)
+        setCurrentRelationship(null)
+
+        const text = await response.json()
+        console.error(text)
+      }
     })
 
-    if (!response.ok) {
-      const text = await response.json()
-      throw new Error("Failed to submit relationship: " + text)
+    // If we're at the end of the draw, navigate to the finish screen.
+    if (index === draw.length - 1) {
+      return navigate("/finished")
     }
 
-    // Reload page.
-    window.location.reload()
+    console.log("Updating!")
+
+    // Move to the next pair.
+    setCurrentPairIndex((i) => i + 1)
+    setCurrentRelationship(null)
   }
 
   const isMoreComprehensive = (card: CanonicalValuesCard) => {
-    if (values[0].id === card.id) {
-      return relationship === "a_more_comprehensive"
+    const [a, b] = draw[currentPairIndex]
+    if (a.id === card.id) {
+      return currentRelationship === "a_more_comprehensive"
     }
 
-    if (values[1].id === card.id) {
-      return relationship === "b_more_comprehensive"
+    if (b.id === card.id) {
+      return currentRelationship === "b_more_comprehensive"
     }
 
     return false
   }
+
+  console.log(currentRelationship)
 
   return (
     <div className="flex flex-col h-screen w-screen">
@@ -125,12 +172,12 @@ export default function LinkScreen() {
           />
         </div>
         <div className="grid md:grid-cols-2 mx-auto gap-4">
-          {values.map((value, idx) => (
+          {draw[currentPairIndex]?.map((value, idx) => (
             <div
               style={{
                 opacity:
-                  relationship !== null &&
-                  relationship !== "incommensurable" &&
+                  currentRelationship !== null &&
+                  currentRelationship !== "incommensurable" &&
                   !isMoreComprehensive(value as any)
                     ? 0.5
                     : 1,
@@ -153,11 +200,12 @@ export default function LinkScreen() {
         <div className="flex flex-col justify-center items-center">
           <RadioGroup
             className="mb-12"
-            onValueChange={(value: Relationship) => setRelationship(value)}
+            value={currentRelationship || "undefined"}
+            onValueChange={(r: Relationship) => setCurrentRelationship(r)}
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="a_more_comprehensive" id="1" />
-              <Label htmlFor="r1">It is enough to only consider A</Label>
+              <Label htmlFor="1">It is enough to only consider A</Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="b_more_comprehensive" id="2" />
@@ -173,18 +221,19 @@ export default function LinkScreen() {
             </div>
           </RadioGroup>
 
-          <Button disabled={relationship === null} onClick={() => onSubmit()}>
-            Continue
+          <Button
+            disabled={currentRelationship === null}
+            onClick={() => onSubmit()}
+          >
+            {draw.length - currentPairIndex === 1 ? "Finish" : "Continue"}
           </Button>
         </div>
         <div className="flex flex-col justify-center items-center my-4 h-4">
-          {edges.length < 5 && (
-            <p className="text-stone-300">
-              {`Submit ${5 - edges.length} more relationship${
-                edges.length === 4 ? "" : "s"
-              } to finish`}
-            </p>
-          )}
+          <p className="text-stone-300">
+            {`Submit ${draw.length - currentPairIndex} more relationship${
+              draw.length - currentPairIndex === 1 ? "" : "s"
+            } to finish`}
+          </p>
         </div>
       </div>
     </div>
