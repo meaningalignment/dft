@@ -12,6 +12,7 @@ import { ValuesCard as DataModel, CanonicalValuesCard } from "@prisma/client"
 
 type Props = {
   card: DataModel | CanonicalValuesCard
+  header?: React.ReactNode
 }
 
 function DetailsDialog({
@@ -53,13 +54,14 @@ function DetailsDialog({
   )
 }
 
-export default function ValuesCard({ card }: Props) {
+export default function ValuesCard({ card, header }: Props) {
   return (
     <div
       className={
         "border-2 border-border rounded-xl px-8 pt-8 pb-4 max-w-sm h-full bg-white flex flex-col"
       }
     >
+      {header && header}
       <p className="text-md font-bold">{card.title}</p>
       <p className="text-md text-neutral-500">{card.instructionsShort}</p>
       <p className="text-sm pt-4 font-bold text-stone-300">HOW?</p>

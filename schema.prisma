@@ -19,8 +19,8 @@ model User {
   updatedAt DateTime @updatedAt
   role      String[] @default(["USER"])
   chats     Chat[]
-  Vote      Vote[]
-  Link      Link[]
+  votes     Vote[]
+  edges     Edge[]
 }
 
 model EmailCodes {
@@ -57,8 +57,8 @@ model CanonicalValuesCard {
   createdAt            DateTime                     @default(now())
   updatedAt            DateTime                     @updatedAt
   valuesCards          ValuesCard[]
-  linksFrom            Link[]                       @relation("FromValuesRelation")
-  linksTo              Link[]                       @relation("ToValueRelation")
+  edgesFrom            Edge[]                       @relation("FromValuesRelation")
+  edgesTo              Edge[]                       @relation("ToValueRelation")
   Vote                 Vote[]
   embedding            Unsupported("vector(1536)")?
 }
@@ -85,15 +85,21 @@ model Vote {
   user         User                @relation(fields: [userId], references: [id])
 }
 
-model Link {
-  id          Int                 @id @default(autoincrement())
-  type        String
-  fromValueId Int
-  toValueId   Int
-  userId      Int
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  user        User                @relation(fields: [userId], references: [id])
-  fromValue   CanonicalValuesCard @relation("FromValuesRelation", fields: [fromValueId], references: [id])
-  toValue     CanonicalValuesCard @relation("ToValueRelation", fields: [toValueId], references: [id])
+model Edge {
+  id           Int                 @id @default(autoincrement())
+  userId       Int
+  fromValueId  Int
+  toValueId    Int
+  relationship Relationship
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  user         User                @relation(fields: [userId], references: [id])
+  fromValue    CanonicalValuesCard @relation("FromValuesRelation", fields: [fromValueId], references: [id])
+  toValue      CanonicalValuesCard @relation("ToValueRelation", fields: [toValueId], references: [id])
+}
+
+enum Relationship {
+  more_comprehensive
+  incommensurable
+  dont_know
 }
