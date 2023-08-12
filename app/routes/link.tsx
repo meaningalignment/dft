@@ -135,8 +135,6 @@ export default function LinkScreen() {
       return navigate("/finished")
     }
 
-    console.log("Updating!")
-
     // Move to the next pair.
     setCurrentPairIndex((i) => i + 1)
     setCurrentRelationship(null)
@@ -154,8 +152,6 @@ export default function LinkScreen() {
 
     return false
   }
-
-  console.log(currentRelationship)
 
   return (
     <div className="flex flex-col h-screen w-screen">
