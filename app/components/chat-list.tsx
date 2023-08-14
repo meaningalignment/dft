@@ -3,12 +3,12 @@ import { type Message } from "ai"
 import { Separator } from "./ui/separator"
 import { ChatMessage, LoadingChatMessage } from "./chat-message"
 import ChatValuesCard from "./chat-values-card"
-import { ValuesCardCandidate } from "~/lib/consts"
+import { ValuesCardData } from "~/lib/consts"
 
 export interface ChatList {
   messages: Message[]
-  valueCards: { position: number; card: ValuesCardCandidate }[]
-  onManualSubmit: (card: ValuesCardCandidate) => void
+  valueCards: { position: number; card: ValuesCardData }[]
+  onManualSubmit: (card: ValuesCardData) => void
   isFinished: boolean
   isLoading: boolean
 }

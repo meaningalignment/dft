@@ -1,8 +1,8 @@
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient, ValuesCard } from "@prisma/client"
 import { Session, SessionData } from "@remix-run/node"
 import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge/types/api"
 import {
-  ValuesCardCandidate,
+  ValuesCardData,
   articulateCardFunction,
   articulationPrompt,
   formatCardFunction,
@@ -10,6 +10,8 @@ import {
 } from "~/lib/consts"
 import { OpenAIStream } from "~/lib/openai-stream"
 import { capitalize } from "~/utils"
+import EmbeddingService from "./embedding"
+import DeduplicationService from "./deduplication"
 
 // import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
 
@@ -24,7 +26,7 @@ type SubmitCardFunction = {
 }
 
 type ArticulateCardResponse = {
-  values_card: ValuesCardCandidate
+  values_card: ValuesCardData
   critique?: string | null
 }
 
@@ -35,15 +37,18 @@ export class FunctionsService {
   private openai: OpenAIApi
   private model: string
   private db: PrismaClient
+  private embeddings: EmbeddingService
 
   constructor(
     openai: OpenAIApi,
     model: string = "gpt-4-0613",
-    db: PrismaClient
+    db: PrismaClient,
+    embeddings: EmbeddingService
   ) {
     this.openai = openai
     this.model = model
     this.db = db
+    this.embeddings = embeddings
   }
 
   //
@@ -110,15 +115,15 @@ export class FunctionsService {
     chatId: string
   ): Promise<{
     functionResponse: Response
-    articulatedCard: ValuesCardCandidate | null
-    submittedCard: ValuesCardCandidate | null
+    articulatedCard: ValuesCardData | null
+    submittedCard: ValuesCardData | null
   }> {
     //
     // Call the right function.
     //
     let result: string = ""
-    let articulatedCard: ValuesCardCandidate | null = null
-    let submittedCard: ValuesCardCandidate | null = null
+    let articulatedCard: ValuesCardData | null = null
+    let submittedCard: ValuesCardData | null = null
 
     switch (func.name) {
       case articulateCardFunction.name: {
@@ -126,7 +131,7 @@ export class FunctionsService {
         if (session.has("values_card")) {
           articulatedCard = JSON.parse(
             session.get("values_card")
-          ) as ValuesCardCandidate
+          ) as ValuesCardData
         }
 
         // Articulate the values card.
@@ -151,9 +156,7 @@ export class FunctionsService {
           throw Error("No values card in session")
         }
 
-        submittedCard = JSON.parse(
-          session.get("values_card")
-        ) as ValuesCardCandidate
+        submittedCard = JSON.parse(session.get("values_card")) as ValuesCardData
 
         // Submit the values card.
         result = await this.submitValuesCard(submittedCard, chatId)
@@ -204,13 +207,13 @@ export class FunctionsService {
   }
 
   async submitValuesCard(
-    card: ValuesCardCandidate,
+    card: ValuesCardData,
     chatId: string
   ): Promise<string> {
     console.log(`Submitting values card:\n\n${JSON.stringify(card)}`)
 
     // Save the card in the database.
-    await this.db.valuesCard
+    const result = (await this.db.valuesCard
       .create({
         data: {
           title: card.title,
@@ -220,7 +223,10 @@ export class FunctionsService {
           chatId,
         },
       })
-      .catch((e) => console.error(e))
+      .catch((e) => console.error(e))) as ValuesCard
+
+    // Embed card.
+    await this.embeddings.embedNonCanonicalCard(result)
 
     return `<the values card (´${card.title}) was submitted. The user has now submitted 1 value in total. Proceed to thank the user for submitting their value.>`
   }
@@ -228,7 +234,7 @@ export class FunctionsService {
   /** Create a values card from a transcript of the conversation. */
   async articulateValuesCard(
     messages: ChatCompletionRequestMessage[],
-    previousCard: ValuesCardCandidate | null
+    previousCard: ValuesCardData | null
   ): Promise<ArticulateCardResponse> {
     console.log("Articulating values card...")
 
