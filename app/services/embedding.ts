@@ -1,5 +1,6 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { OpenAIApi } from "openai-edge"
+import { ValuesCardCandidate } from "~/lib/consts"
 
 /**
  * This service is responsible for embedding cards.
@@ -62,6 +63,17 @@ export default class EmbeddingService {
     )}::vector WHERE id = ${card.id};`
   }
 
+  async embedCandidate(card: ValuesCardCandidate): Promise<number[]> {
+    const syntheticCard = {
+      instructionsShort: card.instructions_short,
+      instructionsDetailed: card.instructions_detailed,
+      evaluationCriteria: card.evaluation_criteria ?? [],
+    } as ValuesCard
+
+    const input = this.formatCard(syntheticCard)
+    return this.embed(input)
+  }
+
   async getNonCanonicalCardsWithoutEmbedding(): Promise<Array<ValuesCard>> {
     return (await this.db
       .$queryRaw`SELECT id, title, "instructionsShort", "instructionsDetailed", "evaluationCriteria" FROM "ValuesCard" WHERE "ValuesCard".embedding IS NULL`) as ValuesCard[]
@@ -72,6 +84,19 @@ export default class EmbeddingService {
   > {
     return (await this.db
       .$queryRaw`SELECT id, title, "instructionsShort", "instructionsDetailed", "evaluationCriteria", embedding::text FROM "CanonicalValuesCard" WHERE "CanonicalValuesCard".embedding IS NULL`) as CanonicalValuesCard[]
+  }
+
+  async similaritySearch(
+    vector: number[],
+    limit: number = 10
+  ): Promise<Array<CanonicalValuesCard>> {
+    return this.db.$queryRaw<Array<CanonicalValuesCard>>`
+    SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${JSON.stringify(
+      vector
+    )}::vector as "_distance" 
+    FROM "CanonicalValuesCard" cvc
+    ORDER BY "_distance" DESC
+    LIMIT ${limit};`
   }
 
   async embedAllCards() {
