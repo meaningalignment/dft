@@ -16,7 +16,7 @@ export default class EmbeddingService {
     this.db = db
   }
 
-  private formatCard(card: ValuesCard | CanonicalValuesCard) {
+  private toEmbeddingString(card: ValuesCard | CanonicalValuesCard) {
     return (
       "Short Instruction: " +
       card.instructionsShort +
@@ -41,7 +41,7 @@ export default class EmbeddingService {
 
   async embedCanonicalCard(card: CanonicalValuesCard): Promise<void> {
     // Embed card.
-    const input = this.formatCard(card)
+    const input = this.toEmbeddingString(card)
     const embedding = await this.embed(input)
 
     // Update in DB.
@@ -53,7 +53,7 @@ export default class EmbeddingService {
 
   async embedNonCanonicalCard(card: ValuesCard): Promise<void> {
     // Embed card.
-    const input = this.formatCard(card)
+    const input = this.toEmbeddingString(card)
     const embedding = await this.embed(input)
 
     // Update in DB.
@@ -70,7 +70,7 @@ export default class EmbeddingService {
       evaluationCriteria: card.evaluation_criteria ?? [],
     } as ValuesCard
 
-    const input = this.formatCard(syntheticCard)
+    const input = this.toEmbeddingString(syntheticCard)
     return this.embed(input)
   }
 }
