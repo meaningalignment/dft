@@ -1,5 +1,7 @@
+import { CanonicalValuesCard, ValuesCard } from "@prisma/client"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { ValuesCardData } from "./lib/consts"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
