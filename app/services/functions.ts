@@ -9,7 +9,7 @@ import {
   submitCardFunction,
 } from "~/lib/consts"
 import { OpenAIStream } from "~/lib/openai-stream"
-import { capitalize, toData } from "~/utils"
+import { capitalize, toDataModel } from "~/utils"
 import EmbeddingService from "./embedding"
 import DeduplicationService from "./deduplication"
 
@@ -153,7 +153,7 @@ export class FunctionsService {
 
             if (canonical) {
               session.set("canonical_card_id", canonical.id)
-              articulatedCard = toData(canonical)
+              articulatedCard = toDataModel(canonical)
             }
           }
 

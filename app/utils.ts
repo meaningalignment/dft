@@ -71,7 +71,12 @@ export function splitToPairs<T>(arr: T[]): T[][] {
   )
 }
 
-export function toData(card: ValuesCard | CanonicalValuesCard): ValuesCardData {
+/**
+ * Convert a DB card into the data model used in OpenAI functions.
+ */
+export function toDataModel(
+  card: ValuesCard | CanonicalValuesCard
+): ValuesCardData {
   return {
     title: card.title,
     instructions_short: card.instructionsShort,

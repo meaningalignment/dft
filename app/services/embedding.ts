@@ -39,13 +39,6 @@ export default class EmbeddingService {
     return body.data[0].embedding
   }
 
-  async hasEmbeddings(cards: ValuesCard[]): Promise<{id: }[]> {
-    const result = await this.db
-      .$executeRaw`SELECT "ValuesCard".id FROM "ValuesCard" WHERE id = ${card.id} AND embedding IS NOT NULL`
-
-    return result == 1
-  }
-
   async embedCanonicalCard(card: CanonicalValuesCard): Promise<void> {
     // Embed card.
     const input = this.formatCard(card)

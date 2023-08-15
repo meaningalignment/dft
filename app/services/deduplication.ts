@@ -2,6 +2,11 @@ import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import EmbeddingService from "./embedding"
 import { ValuesCardData } from "~/lib/consts"
 import { ChatCompletionFunctions, OpenAIApi } from "openai-edge"
+import { toDataModel } from "~/utils"
+
+//
+// Prompts.
+//
 
 const sourceOfMeaningDefinition = `### Source of Meaning
 A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. Something that you pay attention to in a choice. They are more specific than words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity, specified as a path of attention.`
@@ -13,7 +18,7 @@ const deduplicationInstructions = `### Deduplication Instructions
 To determine if two or more values cards are about the same source of meaning, we can look at the "evaluation_criteria" field. The evaluation criteria specity a path of attention that the person with this card follow in relevant contexts. If two cards have the same evaluation criteria, even if worded very differently, or if one card has a subset of another card's evaluation criteria where the rest of the set "fit together" with the subset into a coherent value, they are still the same source of meaning.
 The "title", "instructions_short" and "instructions_detailed" can be different even if two cards point towards the same source of meaning.`
 
-const prompt_1 = `You are a 'values card' deduplicator. You are given a list of 'sources of meaning', formatted as 'values cards'. Your job is to take this list and output a canonical list of values cards, which summarizes 'values cards' that are about the same source of meaning.
+const clusterDuplicatesPrompt = `You are a 'values card' deduplicator. You are given a list of 'sources of meaning', formatted as 'values cards'. Your job is to take this list and output a canonical list of values cards, which summarizes 'values cards' that are about the same source of meaning.
 
 ${sourceOfMeaningDefinition}
 
@@ -26,7 +31,7 @@ Your output should be a list of values cards, where each card has a "from_ids" p
 The fields of each output card should be identical to the fields of *one* of the input cards referenced in the "from_ids" property – the one that best represents the shared source of meaning the card is about.
 If a values card is about a unique source of meaning, it should be included in the output as is, with only one id in the "from_ids" property.`
 
-const prompt_2 = `You are a 'values card' deduplicator. You are given an input source of meaning, formatted as a 'values card', and a list of other, canonical values cards. Your task is to determine if the source of meaning in the input values card is already represented by one of the canonical values. If so, you should output the id of the canonical values card that represents the source of meaning. If not, you should output null.
+const findMatchingCanonicalCardPrompt = `You are a 'values card' deduplicator. You are given an input source of meaning, formatted as a 'values card', and a list of other, canonical values cards. Your task is to determine if the source of meaning in the input values card is already represented by one of the canonical values. If so, you should output the id of the canonical values card that represents the source of meaning. If not, you should output null.
 
 ${sourceOfMeaningDefinition}
 
@@ -37,7 +42,11 @@ ${deduplicationInstructions}
 ### Output
 Your output should be the id of the canonical values card that represents the source of meaning of the provided non-canonical values card, or null if no such card exists.`
 
-const submitMatchingCanonicalValuesCard: ChatCompletionFunctions = {
+//
+// Functions.
+//
+
+const submitMatchingCanonicalCard: ChatCompletionFunctions = {
   name: "submit_matching_canonical_values_card",
   description:
     "Submit a canonical values card that is about the same source of meaning as the provided non-canonical values card. If no such card exists, submit null.",
@@ -101,6 +110,10 @@ const submitCanonicalValuesCards: ChatCompletionFunctions = {
   },
 }
 
+//
+// Types.
+//
+
 type SynthesizedCard = ValuesCardData & {
   from_ids: number[]
 }
@@ -133,6 +146,7 @@ export default class DeduplicationService {
     vector: number[],
     limit: number = 10
   ): Promise<Array<CanonicalValuesCard>> {
+    // @TODO include a minimum distance
     return this.db.$queryRaw<Array<CanonicalValuesCard>>`
     SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${JSON.stringify(
       vector
@@ -142,7 +156,10 @@ export default class DeduplicationService {
     LIMIT ${limit};`
   }
 
-  private async canonicalize(data: ValuesCardData) {
+  /**
+   * Create an entry in `CanonicalValuesCard`.
+   */
+  private async createCanonicalCard(data: ValuesCardData) {
     // Create a canonical values card.
     const canonical = await this.db.canonicalValuesCard.create({
       data: {
@@ -169,7 +186,7 @@ export default class DeduplicationService {
     const response = await this.openai.createChatCompletion({
       model: this.model,
       messages: [
-        { role: "system", content: prompt_1 },
+        { role: "system", content: clusterDuplicatesPrompt },
         { role: "user", content: message },
       ],
       function_call: { name: submitCanonicalValuesCards.name },
@@ -208,17 +225,22 @@ export default class DeduplicationService {
     //
     const message = JSON.stringify({
       input_values_card: candidate,
-      canonical_values_cards: canonical.map((c) => this.formatContent(c)),
+      canonical_values_cards: canonical.map((c) => {
+        return {
+          id: c.id,
+          ...toDataModel(c),
+        }
+      }),
     })
 
     const response = await this.openai.createChatCompletion({
       model: this.model,
       messages: [
-        { role: "system", content: prompt_2 },
+        { role: "system", content: findMatchingCanonicalCardPrompt },
         { role: "user", content: message },
       ],
-      functions: [submitMatchingCanonicalValuesCard],
-      function_call: { name: submitMatchingCanonicalValuesCard.name },
+      functions: [submitMatchingCanonicalCard],
+      function_call: { name: submitMatchingCanonicalCard.name },
     })
     const data = await response.json()
     const matchingId: number | null = JSON.parse(
@@ -234,7 +256,7 @@ export default class DeduplicationService {
    *
    * Long operation that should be run in the background.
    */
-  async deduplicateValuesCards() {
+  async deduplicateAll() {
     // Get all non-canonicalized submitted values cards.
     const cards = (await this.db.valuesCard.findMany({
       where: {
@@ -263,7 +285,7 @@ export default class DeduplicationService {
 
       // If no canonical card exists, create one.
       if (!canonical) {
-        canonical = await this.canonicalize(card)
+        canonical = await this.createCanonicalCard(card)
       }
 
       // Link the non-canonical cards to the canonical card.
