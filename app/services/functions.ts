@@ -1,5 +1,5 @@
 import { PrismaClient, ValuesCard } from "@prisma/client"
-import { Session, SessionData } from "@remix-run/node"
+import { Session } from "@remix-run/node"
 import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge/types/api"
 import {
   ValuesCardData,
@@ -9,7 +9,7 @@ import {
   submitCardFunction,
 } from "~/lib/consts"
 import { OpenAIStream } from "~/lib/openai-stream"
-import { capitalize } from "~/utils"
+import { capitalize, toData } from "~/utils"
 import EmbeddingService from "./embedding"
 import DeduplicationService from "./deduplication"
 
@@ -34,21 +34,24 @@ type ArticulateCardResponse = {
  * A service for handling function calls in the chat.
  */
 export class FunctionsService {
-  private openai: OpenAIApi
-  private model: string
-  private db: PrismaClient
+  private deduplication: DeduplicationService
   private embeddings: EmbeddingService
+  private openai: OpenAIApi
+  private db: PrismaClient
+  private model: string
 
   constructor(
+    deduplication: DeduplicationService,
+    embeddings: EmbeddingService,
     openai: OpenAIApi,
-    model: string = "gpt-4-0613",
     db: PrismaClient,
-    embeddings: EmbeddingService
+    model: string = "gpt-4-0613"
   ) {
+    this.deduplication = deduplication
+    this.embeddings = embeddings
     this.openai = openai
     this.model = model
     this.db = db
-    this.embeddings = embeddings
   }
 
   //
@@ -142,9 +145,19 @@ export class FunctionsService {
         } else {
           articulatedCard = res.values_card
 
-          // Save the card in the session.
-          session.set("values_card", JSON.stringify(articulatedCard))
+          // Override the card with a canonical duplicate if one exists.
+          if (!session.has("values_card") && !res.critique) {
+            const canonical = await this.deduplication.fetchCanonicalDuplicate(
+              res.values_card
+            )
 
+            if (canonical) {
+              session.set("canonical_card_id", canonical.id)
+              articulatedCard = toData(canonical)
+            }
+          }
+
+          session.set("values_card", JSON.stringify(articulatedCard))
           result = `<A card (${articulatedCard.title}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
         }
 
@@ -158,11 +171,18 @@ export class FunctionsService {
 
         submittedCard = JSON.parse(session.get("values_card")) as ValuesCardData
 
+        const canonicalCardId = session.get("canonical_card_id") as number
+
         // Submit the values card.
-        result = await this.submitValuesCard(submittedCard, chatId)
+        result = await this.submitValuesCard(
+          submittedCard,
+          chatId,
+          canonicalCardId
+        )
 
         // Update the session.
         session.unset("values_card")
+        session.unset("canonical_card_id")
 
         break
       }
@@ -208,7 +228,8 @@ export class FunctionsService {
 
   async submitValuesCard(
     card: ValuesCardData,
-    chatId: string
+    chatId: string,
+    canonicalCardId?: number
   ): Promise<string> {
     console.log(`Submitting values card:\n\n${JSON.stringify(card)}`)
 
@@ -221,6 +242,7 @@ export class FunctionsService {
           instructionsDetailed: card.instructions_detailed,
           evaluationCriteria: card.evaluation_criteria,
           chatId,
+          canonicalCardId: canonicalCardId ?? null,
         },
       })
       .catch((e) => console.error(e))) as ValuesCard

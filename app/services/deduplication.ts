@@ -126,20 +126,6 @@ export default class DeduplicationService {
     this.db = db
   }
 
-  private formatContent(
-    card: ValuesCard | CanonicalValuesCard
-  ): ValuesCardData & {
-    id: number
-  } {
-    return {
-      id: card.id,
-      title: card.title,
-      instructions_short: card.instructionsShort,
-      instructions_detailed: card.instructionsDetailed,
-      evaluation_criteria: card.evaluationCriteria,
-    }
-  }
-
   /**
    * Perform a cosine similarity search on `CanonicalValuesCard`.
    */

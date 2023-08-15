@@ -70,3 +70,12 @@ export function splitToPairs<T>(arr: T[]): T[][] {
     ).filter((p) => p.length == 2) ?? []
   )
 }
+
+export function toData(card: ValuesCard | CanonicalValuesCard): ValuesCardData {
+  return {
+    title: card.title,
+    instructions_short: card.instructionsShort,
+    instructions_detailed: card.instructionsDetailed,
+    evaluation_criteria: card.evaluationCriteria,
+  }
+}
