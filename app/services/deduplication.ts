@@ -18,7 +18,7 @@ const deduplicationInstructions = `### Deduplication Instructions
 To determine if two or more values cards are about the same source of meaning, we can look at the "evaluation_criteria" field. The evaluation criteria specity a path of attention that the person with this card follow in relevant contexts. If two cards have the same evaluation criteria, even if worded very differently, or if one card has a subset of another card's evaluation criteria where the rest of the set "fit together" with the subset into a coherent value, they are still the same source of meaning.
 The "title", "instructions_short" and "instructions_detailed" can be different even if two cards point towards the same source of meaning.`
 
-const clusterDuplicatesPrompt = `You are a 'values card' deduplicator. You are given a list of 'sources of meaning', formatted as 'values cards'. Your job is to take this list and output a canonical list of values cards, which summarizes 'values cards' that are about the same source of meaning.
+const clusterPrompt = `You are a 'values card' deduplicator. You are given a list of 'sources of meaning', formatted as 'values cards'. Your job is to take this list and output a list of values cards clusters, where each cluster is about the same source of meaning.
 
 ${sourceOfMeaningDefinition}
 
@@ -27,11 +27,11 @@ ${valuesCardDefinition}
 ${deduplicationInstructions}
 
 ### Output
-Your output should be a list of values cards, where each card has a "from_ids" property, referencing which "id"'s where summarized in the card. All cards provided by the user should have one, and only one, corresponding card in the output. 
-The fields of each output card should be identical to the fields of *one* of the input cards referenced in the "from_ids" property – the one that best represents the shared source of meaning the card is about.
-If a values card is about a unique source of meaning, it should be included in the output as is, with only one id in the "from_ids" property.`
+Your output should be a nested list of integers, where each nested list is a cluster of values cards ids that all point towards the same source of meaning.
+If a values card is about a unique source of meaning, it should be included in the list as a list with only one element (the id of the values card).
+Every card in the output should be included in one and only one cluster.`
 
-const findMatchingCanonicalCardPrompt = `You are a 'values card' deduplicator. You are given an input source of meaning, formatted as a 'values card', and a list of other, canonical values cards. Your task is to determine if the source of meaning in the input values card is already represented by one of the canonical values. If so, you should output the id of the canonical values card that represents the source of meaning. If not, you should output null.
+const dedupePrompt = `You are a 'values card' deduplicator. You are given an input source of meaning, formatted as a 'values card', and a list of other, canonical values cards. Your task is to determine if the source of meaning in the input values card is already represented by one of the canonical values. If so, you should output the id of the canonical values card that represents the source of meaning. If not, you should output null.
 
 ${sourceOfMeaningDefinition}
 
@@ -42,9 +42,129 @@ ${deduplicationInstructions}
 ### Output
 Your output should be the id of the canonical values card that represents the source of meaning of the provided non-canonical values card, or null if no such card exists.`
 
+const bestValuesCardPrompt = `You are a "values card" assistant. You will be provided with a list of "values card" representing the same "source of meaning". Your task is to return the "id" of the "values card" that is best formulated according to the guidelines and critique examples below.
+
+A "values card" is a representation of a "source of meaning". A values card has five fields: "id", "title", "instructions_short", "instructions_detailed", and "evaluation_criteria". The first one is an integer, the following three are strings and the last is an array of strings.
+
+A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. Something that you pay attention to in a choice. They are more specific than words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity, specified as a path of attention.
+
+A source of meaning is distinct from similar concepts:
+- A source of meaning is not a goal. A goal is something you want to achieve, like "become a doctor" or "get married". A source of meaning is a way of living, like "be a good friend" or "be a good listener".
+- A source of meaning is not a moral principle. A source of meaning is not a rule that you think everyone should follow. It is a way of living that is important to the user, but not necessarily to others.
+- A source of meaning is not a norm or a social expectation. A source of meaning is not something you do because you feel like you have to, or because you feel like you should. It is something the user does because it is intrinsically important to them.
+- A source of meaning is not an internalized norm – a norm the user has adopted outside of the original social context. It is a way of living that produces a sense of meaning for you, not a way of living that you think is "right" or "correct".
+
+# Card Guidelines
+
+1. **Cards should be indeterminate.** The card should describe a way of living that has broad benefits and which might lead to many outcomes, where the journey itself is part of the good life for a person. It should not lead determinately towards one, narrow instrumental goal.
+2. **Cards should not be about meeting others’ expectations.** They should be the kind of thing that is meaningful to someone.
+3. **Cards should be positively stated**. The stuff in the “how” section should be things ChatGPT SHOULD attend to.
+4. **Cards should use clear, simple language**. Anyone in the relevant context should be able to see what you mean about what to attend to. The instructions should be clear enough that you could use them in a survey to see whether or not someone was attending to those things.
+5. **Cards should be as general as possible.** Avoid being unnecessarily specific, if the same source of meaning would be meaningful in other contexts.
+6. **Cards should not have unnecessary elements.** All elements of the source of meaning should be required, and work together, in the context.
+7. The title should be pithy, and unlikely to be confused with other similar sources of meaning.
+8. The values card should be written from the perspective of how ChatGPT should respond to the situation in the first message. They should reflect the user's sources of meaning, not yours or those of ChatGPT's creators.
+
+
+# Card Critiques
+
+Below are some critiques of values cards, and how they could be improved by following the guidelines above. This will help you better understand what makes a good values card.
+
+### Card
+
+{{
+  "evaluation_criteria":[
+    "MOMENTS where people become leaders.",
+    "INSIGHTS that emerge through grappling with morally fraught questions",
+    "CAPACITIES that develop when a person tries to be free and self-directed",
+    "WISDOM that emerges in a discursive, responsible context",
+  ],
+  "instructions_detailed":"ChatGPT can foster new leaders, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "title":"Faith in People",
+}}
+
+### Critique
+
+- **Cards should be indeterminate:**
+
+    The “new leaders” / “Moments” entries seems useful only if it leads to that one outcome.
+
+
+### Improved Card
+
+{{
+  "evaluation_criteria":[
+    "CHANGES in people when entrusted with the work of self-determination",
+    "INSIGHTS that emerge through grappling with morally fraught questions",
+    "CAPACITIES that develop when a person tries to be free and self-directed",
+    "WISDOM that emerges in a discursive, responsible context",
+  ],
+  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "title":"Faith in People",
+}}
+
+## Example 2
+
+### Card
+
+{{
+  "evaluation_criteria":[
+    "COURSES she could take about the subject",
+    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
+    "DISCREPANCIES between the status quo and her own moral compass",
+    "EMOTIONS that spark her agency and power",
+    "ACTIONS she could take that would address those emotions",
+  ],
+  "instructions_detailed":"ChatGPT can help her find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take."
+  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "title":"Embodied Justice",
+}}
+
+### Critique
+
+- **Cards should not have unnecessary elements.**
+
+    Courses are unrelated to this value.
+
+
+### Improved Card
+
+{{
+  "evaluation_criteria":[
+    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
+    "DISCREPANCIES between the status quo and her own moral compass",
+    "EMOTIONS that spark her agency and power",
+    "ACTIONS she could take that would address those emotions",
+  ],
+  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
+  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "title":"Embodied Justice"
+}}
+
+# Output
+
+You should return the "id" of the "values card" that is best formulated according to the guidelines and critique examples above.`
+
 //
 // Functions.
 //
+
+const submitBestValuesCard: ChatCompletionFunctions = {
+  name: "submit_best_values_card",
+  description: "Submit the best formatted values card.",
+  parameters: {
+    type: "object",
+    properties: {
+      values_card_id: {
+        type: "integer",
+        description: "The id of the values card that is best formatted.",
+      },
+    },
+    required: ["values_card_id"],
+  },
+}
 
 const submitMatchingCanonicalCard: ChatCompletionFunctions = {
   name: "submit_matching_canonical_values_card",
@@ -62,60 +182,27 @@ const submitMatchingCanonicalCard: ChatCompletionFunctions = {
   },
 }
 
-const submitCanonicalValuesCards: ChatCompletionFunctions = {
-  name: "submit_canonical_values_cards",
+const submitClusters: ChatCompletionFunctions = {
+  name: "submit_clusters",
   description:
-    "Submit a list of canonical values cards. Each card should have a title, instructions_short, instructions_detailed, evaluation_criteria and from_ids fields. The from_ids field should be a list of ids of the cards that were summarized in this card.",
+    "Submit a list of values card clusters, where each cluster is about a unique source of meaning.",
   parameters: {
     type: "object",
     properties: {
-      cards: {
+      clusters: {
         type: "array",
+        description:
+          "A list of clusters, where each cluster is a list of values card ids.",
         items: {
-          type: "object",
-          properties: {
-            from_ids: {
-              type: "array",
-              items: {
-                type: "number",
-              },
-            },
-            evaluation_criteria: {
-              type: "array",
-              items: {
-                type: "string",
-              },
-              description:
-                "A list of things to attend to that can be used to evaluate whether ChatGPT is following this source of meaning.",
-            },
-            instructions_detailed: {
-              type: "string",
-              description:
-                "A detailed instruction for how ChatGPT could act based on this source of meaning.",
-            },
-            instructions_short: {
-              type: "string",
-              description:
-                "A short instruction for how ChatGPT could act based on this source of meaning.",
-            },
-            title: {
-              type: "string",
-              description: "The title of the values card.",
-            },
+          type: "array",
+          items: {
+            type: "number",
+            description: "A values card id.",
           },
         },
       },
     },
-    required: ["cards"],
   },
-}
-
-//
-// Types.
-//
-
-type SynthesizedCard = ValuesCardData & {
-  from_ids: number[]
 }
 
 /**
@@ -123,20 +210,20 @@ type SynthesizedCard = ValuesCardData & {
  */
 export default class DeduplicationService {
   private embeddings: EmbeddingService
-  private model: string
   private openai: OpenAIApi
   private db: PrismaClient
+  private model: string
 
   constructor(
     embeddings: EmbeddingService,
     openai: OpenAIApi,
-    model: string = "gpt-4",
-    db: PrismaClient
+    db: PrismaClient,
+    model: string = "gpt-4"
   ) {
     this.embeddings = embeddings
     this.openai = openai
-    this.model = model
     this.db = db
+    this.model = model
   }
 
   /**
@@ -179,26 +266,68 @@ export default class DeduplicationService {
   /**
    * Deduplicate a set of values cards using a prompt.
    */
-  private async deduplicate(cards: ValuesCard[]): Promise<SynthesizedCard[]> {
-    const message = JSON.stringify(cards.map((c) => this.formatContent(c)))
+  private async cluster(cards: ValuesCard[]): Promise<ValuesCard[][]> {
+    const message = JSON.stringify(
+      cards.map((c) => {
+        return {
+          id: c.id,
+          ...toDataModel(c),
+        }
+      })
+    )
 
     // Call prompt.
     const response = await this.openai.createChatCompletion({
       model: this.model,
       messages: [
-        { role: "system", content: clusterDuplicatesPrompt },
+        { role: "system", content: clusterPrompt },
         { role: "user", content: message },
       ],
-      function_call: { name: submitCanonicalValuesCards.name },
-      functions: [submitCanonicalValuesCards],
+      function_call: { name: submitClusters.name },
+      functions: [submitClusters],
     })
     const data = await response.json()
 
-    const deduplicatedCards = JSON.parse(
+    const clusters = JSON.parse(
       data.choices[0].message.function_call.arguments
-    ).cards as SynthesizedCard[]
+    ).clusters
 
-    return deduplicatedCards
+    // Return a list of clustered values cards.
+    return clusters.map((cluster: number[]) =>
+      cluster.map((id: number) => cards.find((c) => c.id === id) as ValuesCard)
+    )
+  }
+
+  /**
+   * Get the best values card according to a prompt from a cluster of cards.
+   */
+  async getBestValuesCard(
+    cards: CanonicalValuesCard[]
+  ): Promise<CanonicalValuesCard> {
+    const message = JSON.stringify(
+      cards.map((c) => {
+        return {
+          id: c.id,
+          ...toDataModel(c),
+        }
+      })
+    )
+
+    const response = await this.openai.createChatCompletion({
+      model: this.model,
+      messages: [
+        { role: "system", content: dedupePrompt },
+        { role: "user", content: message },
+      ],
+      functions: [submitBestValuesCard],
+      function_call: { name: submitBestValuesCard.name },
+    })
+    const data = await response.json()
+    const id: number = JSON.parse(
+      data.choices[0].message.function_call.arguments
+    ).values_card_id
+
+    return cards.find((c) => c.id === id) as CanonicalValuesCard
   }
 
   /**
@@ -236,14 +365,14 @@ export default class DeduplicationService {
     const response = await this.openai.createChatCompletion({
       model: this.model,
       messages: [
-        { role: "system", content: findMatchingCanonicalCardPrompt },
+        { role: "system", content: dedupePrompt },
         { role: "user", content: message },
       ],
       functions: [submitMatchingCanonicalCard],
       function_call: { name: submitMatchingCanonicalCard.name },
     })
     const data = await response.json()
-    const matchingId: number | null = JSON.parse(
+    const matchingId: number | null | undefined = JSON.parse(
       data.choices[0].message.function_call.arguments
     ).canonical_card_id
 
@@ -262,7 +391,7 @@ export default class DeduplicationService {
       where: {
         canonicalCardId: null,
       },
-      take: 10, // Set a limit to 10 cards per run to prevent overflowing the context window.
+      take: 20, // Set a limit to 20 cards per run to prevent overflowing the context window.
     })) as ValuesCard[]
 
     if (cards.length === 0) {
@@ -270,8 +399,12 @@ export default class DeduplicationService {
       return
     }
 
-    // Deduplicate the non-canonicalized cards with a prompt.
-    const deduplicated = await this.deduplicate(cards)
+    console.log("Getting clusters...")
+
+    // Cluster the non-canonicalized cards with a prompt.
+    const clusters = await this.cluster(cards)
+
+    console.log(`Deduplicating ${clusters.length} clusters.`)
 
     //
     // For each deduplicated non-canonical card, find canonical cards that are essentially
@@ -279,22 +412,46 @@ export default class DeduplicationService {
     //
     // If no such cards exist, canonicalize the duplicated non-canonical card.
     //
-    for (const card of deduplicated) {
+    for (const cluster of clusters) {
+      console.log(`Deduplicating cluster of size ${cluster.length}.`)
+
+      const representative = toDataModel(await this.getBestValuesCard(cluster))
+
+      console.log(
+        `Selected representative for cluster of size ${cluster.length}: ${representative.title}`
+      )
+
       // Find a canonical card that is essentially the same value.
-      let canonical = await this.fetchCanonicalDuplicate(card)
+      let canonical = await this.fetchCanonicalDuplicate(representative)
 
       // If no canonical card exists, create one.
       if (!canonical) {
-        canonical = await this.createCanonicalCard(card)
+        console.log(
+          `No matching canonical card exists for representative. Canonicalizing ${representative.title}...`
+        )
+
+        canonical = await this.createCanonicalCard(representative)
+
+        console.log(`Created canonical card with id ${canonical.id}`)
+      } else {
+        console.log(
+          `Found matching canonical card for representative: ${canonical.id}`
+        )
       }
 
-      // Link the non-canonical cards to the canonical card.
+      console.log(
+        `Linking ${cluster.length} cards to canonical card with id ${canonical.id}...`
+      )
+
+      // Link the clustered cards to the canonical card.
       await this.db.valuesCard.updateMany({
         where: {
-          id: { in: card.from_ids },
+          id: { in: cluster.map((c) => c.id) },
         },
         data: { canonicalCardId: canonical.id },
       })
+
+      console.log(`Linked ${cluster.length} cards to canonical card.`)
     }
   }
 }
