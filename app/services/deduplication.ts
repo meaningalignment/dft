@@ -420,8 +420,10 @@ export default class DeduplicationService {
 
 export const deduplicate = inngest.createFunction(
   { name: "Deduplicate" },
-  { event: "deduplicate" },
-  async ({ event, step, logger }) => {
+  { cron: "0 */3 * * * " },
+  async ({ step, logger }) => {
+    console.log("Running deduplication...")
+
     //
     // Prepare the service.
     //
@@ -439,8 +441,9 @@ export const deduplicate = inngest.createFunction(
     )) as any as ValuesCard[]
 
     if (cards.length === 0) {
-      console.log("No cards to deduplicate.")
-      return
+      return {
+        message: "No cards to deduplicate.",
+      }
     }
 
     // Cluster the non-canonicalized cards with a prompt.
