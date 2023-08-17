@@ -240,7 +240,7 @@ export default class DeduplicationService {
       vector
     )}::vector as "_distance" 
     FROM "CanonicalValuesCard" cvc
-    ORDER BY "_distance" DESC
+    ORDER BY "_distance" ASC
     LIMIT ${limit};`
   }
 
@@ -305,6 +305,10 @@ export default class DeduplicationService {
   async getBestValuesCard(
     cards: CanonicalValuesCard[]
   ): Promise<ValuesCardData> {
+    if (cards.length === 1) {
+      return toDataModel(cards[0])
+    }
+
     const message = JSON.stringify(
       cards.map((c) => {
         return {
@@ -339,7 +343,8 @@ export default class DeduplicationService {
    */
   async fetchCanonicalCard(
     candidate: ValuesCardData,
-    limit: number = 3
+    limit: number = 3,
+    logger?: any
   ): Promise<CanonicalValuesCard | null> {
     // Embed the candidate.
     const embeddings = await this.embeddings.embedCandidate(candidate)
@@ -349,6 +354,7 @@ export default class DeduplicationService {
 
     // If we have no canonical cards, we can't deduplicate.
     if (canonical.length === 0) {
+      logger?.info("No canonical cards found for candidate.")
       return null
     }
 
@@ -487,5 +493,9 @@ export const deduplicate = inngest.createFunction(
     }
 
     logger.info(`Done. Deduplicated ${cards.length} cards.`)
+
+    return {
+      message: `Deduplicated ${cards.length} cards.`,
+    }
   }
 )

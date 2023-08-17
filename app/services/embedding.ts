@@ -1,5 +1,6 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
-import { OpenAIApi } from "openai-edge"
+import { Configuration, OpenAIApi } from "openai-edge"
+import { db, inngest } from "~/config.server"
 import { ValuesCardData } from "~/lib/consts"
 
 /**
@@ -18,13 +19,18 @@ export default class EmbeddingService {
 
   private toEmbeddingString(card: ValuesCard | CanonicalValuesCard) {
     return (
-      "Short Instruction: " +
+      "### Title" +
+      card.title +
+      "\n" +
+      "### Short Instruction" +
+      "\n" +
       card.instructionsShort +
       "\n" +
-      "Long Instruction: " +
+      "### Long Instruction" +
+      "\n" +
       card.instructionsDetailed +
       "\n" +
-      "In order to evaluate whether or not ChatGPT is following this value, it could look for: " +
+      "# ChatGPT will be considered successful if, in dialogue with the user, the following kinds of things were surfaced or enabled:" +
       "\n" +
       card.evaluationCriteria.join("\n")
     )
@@ -73,4 +79,69 @@ export default class EmbeddingService {
     const input = this.toEmbeddingString(syntheticCard)
     return this.embed(input)
   }
+
+  async getNonCanonicalCardsWithoutEmbedding(): Promise<Array<ValuesCard>> {
+    return (await this.db
+      .$queryRaw`SELECT id, title, "instructionsShort", "instructionsDetailed", "evaluationCriteria" FROM "ValuesCard" WHERE "ValuesCard".embedding IS NULL`) as ValuesCard[]
+  }
+
+  async getCanonicalCardsWithoutEmbedding(): Promise<
+    Array<CanonicalValuesCard>
+  > {
+    return (await this.db
+      .$queryRaw`SELECT id, title, "instructionsShort", "instructionsDetailed", "evaluationCriteria", embedding::text FROM "CanonicalValuesCard" WHERE "CanonicalValuesCard".embedding IS NULL`) as CanonicalValuesCard[]
+  }
 }
+
+//
+// Ingest function for embedding.
+//
+
+export const embed = inngest.createFunction(
+  { name: "Embed all cards" },
+  { event: "embed" },
+  async ({ event, step, logger }) => {
+    //
+    // Prepare the service.
+    //
+    const configuration = new Configuration({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+    const openai = new OpenAIApi(configuration)
+    const service = new EmbeddingService(db, openai)
+
+    const canonicalCards = (await step.run(
+      "Fetching canonical cards",
+      async () => service.getCanonicalCardsWithoutEmbedding()
+    )) as any as CanonicalValuesCard[]
+
+    const nonCanonicalCards = (await step.run(
+      "Fetching canonical cards",
+      async () => service.getNonCanonicalCardsWithoutEmbedding()
+    )) as any as ValuesCard[]
+
+    logger.info(
+      `About to embed ${canonicalCards.length} canonical cards and ${nonCanonicalCards.length} non-canonical cards.`
+    )
+
+    for (const card of canonicalCards) {
+      await step.run("Embed canonical card", async () => {
+        await service.embedCanonicalCard(card)
+      })
+    }
+
+    for (const card of nonCanonicalCards) {
+      await step.run("Embed non-canonical card", async () => {
+        await service.embedNonCanonicalCard(card)
+      })
+    }
+
+    logger.info(
+      `Embedded ${canonicalCards.length} canonical cards and ${nonCanonicalCards.length} non-canonical cards.`
+    )
+
+    return {
+      message: `Embedded ${canonicalCards.length} canonical cards and ${nonCanonicalCards.length} non-canonical cards.`,
+    }
+  }
+)
