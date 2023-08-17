@@ -147,7 +147,7 @@ export class FunctionsService {
 
           // Override the card with a canonical duplicate if one exists.
           if (!session.has("values_card") && !res.critique) {
-            const canonical = await this.deduplication.fetchCanonicalDuplicate(
+            const canonical = await this.deduplication.fetchCanonicalCard(
               res.values_card
             )
 

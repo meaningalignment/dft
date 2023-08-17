@@ -1,8 +1,9 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import EmbeddingService from "./embedding"
 import { ValuesCardData } from "~/lib/consts"
-import { ChatCompletionFunctions, OpenAIApi } from "openai-edge"
+import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
 import { toDataModel } from "~/utils"
+import { db, inngest } from "~/config.server"
 
 //
 // Prompts.
@@ -246,7 +247,7 @@ export default class DeduplicationService {
   /**
    * Create an entry in `CanonicalValuesCard`.
    */
-  private async createCanonicalCard(data: ValuesCardData) {
+  async createCanonicalCard(data: ValuesCardData) {
     // Create a canonical values card.
     const canonical = await this.db.canonicalValuesCard.create({
       data: {
@@ -266,7 +267,7 @@ export default class DeduplicationService {
   /**
    * Deduplicate a set of values cards using a prompt.
    */
-  private async cluster(cards: ValuesCard[]): Promise<ValuesCard[][]> {
+  async cluster(cards: ValuesCard[]): Promise<ValuesCard[][]> {
     const message = JSON.stringify(
       cards.map((c) => {
         return {
@@ -303,7 +304,7 @@ export default class DeduplicationService {
    */
   async getBestValuesCard(
     cards: CanonicalValuesCard[]
-  ): Promise<CanonicalValuesCard> {
+  ): Promise<ValuesCardData> {
     const message = JSON.stringify(
       cards.map((c) => {
         return {
@@ -327,14 +328,16 @@ export default class DeduplicationService {
       data.choices[0].message.function_call.arguments
     ).values_card_id
 
-    return cards.find((c) => c.id === id) as CanonicalValuesCard
+    const card = cards.find((c) => c.id === id) as CanonicalValuesCard
+
+    return toDataModel(card)
   }
 
   /**
    * If a canonical values card exist that is essentially the same value as the provided candidate, return it.
    * Otherwise, return null.
    */
-  async fetchCanonicalDuplicate(
+  async fetchCanonicalCard(
     candidate: ValuesCardData,
     limit: number = 3
   ): Promise<CanonicalValuesCard | null> {
@@ -380,78 +383,109 @@ export default class DeduplicationService {
     return canonical.find((c) => c.id === matchingId) ?? null
   }
 
-  /**
-   * Deduplicate all values cards in the database.
-   *
-   * Long operation that should be run in the background.
-   */
-  async deduplicateAll() {
-    // Get all non-canonicalized submitted values cards.
-    const cards = (await this.db.valuesCard.findMany({
+  async fetchNonCanonicalizedValues(limit: number = 20) {
+    return (await db.valuesCard.findMany({
       where: {
         canonicalCardId: null,
       },
-      take: 20, // Set a limit to 20 cards per run to prevent overflowing the context window.
+      take: limit,
     })) as ValuesCard[]
+  }
+
+  async linkClusterToCanonicalCard(
+    cluster: ValuesCard[],
+    canonicalCard: CanonicalValuesCard
+  ) {
+    await db.valuesCard.updateMany({
+      where: {
+        id: { in: cluster.map((c) => c.id) },
+      },
+      data: { canonicalCardId: canonicalCard.id },
+    })
+  }
+}
+
+//
+// Ingest function for deduplication.
+//
+// Type casting is a bit broken here, hence the `any` casts.
+// Thread with caution.
+//
+
+export const deduplicate = inngest.createFunction(
+  { name: "Deduplicate" },
+  { event: "deduplicate" },
+  async ({ event, step, logger }) => {
+    //
+    // Prepare the service.
+    //
+    const configuration = new Configuration({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+    const openai = new OpenAIApi(configuration)
+    const embeddings = new EmbeddingService(db, openai)
+    const service = new DeduplicationService(embeddings, openai, db)
+
+    // Get all non-canonicalized submitted values cards.
+    const cards = (await step.run(
+      "Get non-canonicalized cards from database",
+      async () => service.fetchNonCanonicalizedValues()
+    )) as any as ValuesCard[]
 
     if (cards.length === 0) {
       console.log("No cards to deduplicate.")
       return
     }
 
-    console.log("Getting clusters...")
-
     // Cluster the non-canonicalized cards with a prompt.
-    const clusters = await this.cluster(cards)
+    const clusters = (await step.run("Cluster cards using prompt", async () =>
+      service.cluster(cards)
+    )) as any as ValuesCard[][]
 
-    console.log(`Deduplicating ${clusters.length} clusters.`)
+    logger.info(`Found ${clusters.length} clusters.`)
 
     //
     // For each deduplicated non-canonical card, find canonical cards that are essentially
     // the same value and link them.
     //
-    // If no such cards exist, canonicalize the duplicated non-canonical card.
+    // If no such cards exist, canonicalize the duplicated non-canonical card and link the cluster
+    // to the new canonical card.
     //
+    let i = 0
     for (const cluster of clusters) {
-      console.log(`Deduplicating cluster of size ${cluster.length}.`)
+      logger.info(`Deduplicating cluster ${++i} of ${cluster.length} cards.`)
 
-      const representative = toDataModel(await this.getBestValuesCard(cluster))
+      const representative = (await step.run(
+        "Get best values card from cluster",
+        async () => service.getBestValuesCard(cluster)
+      )) as any as ValuesCardData
 
-      console.log(
-        `Selected representative for cluster of size ${cluster.length}: ${representative.title}`
-      )
+      const existingCanonicalDuplicate = (await step.run(
+        "Fetch canonical duplicate",
+        async () => service.fetchCanonicalCard(representative)
+      )) as any as CanonicalValuesCard | null
 
-      // Find a canonical card that is essentially the same value.
-      let canonical = await this.fetchCanonicalDuplicate(representative)
-
-      // If no canonical card exists, create one.
-      if (!canonical) {
-        console.log(
-          `No matching canonical card exists for representative. Canonicalizing ${representative.title}...`
+      if (existingCanonicalDuplicate) {
+        await step.run("Link cluster to existing canonical card", async () =>
+          service.linkClusterToCanonicalCard(
+            cluster,
+            existingCanonicalDuplicate
+          )
         )
-
-        canonical = await this.createCanonicalCard(representative)
-
-        console.log(`Created canonical card with id ${canonical.id}`)
       } else {
-        console.log(
-          `Found matching canonical card for representative: ${canonical.id}`
+        const newCanonicalDuplicate = (await step.run(
+          "Canonicalize representative",
+          async () => service.createCanonicalCard(representative)
+        )) as any as CanonicalValuesCard
+
+        await step.run(
+          "Link newly cluster to newly created canonical card",
+          async () =>
+            service.linkClusterToCanonicalCard(cluster, newCanonicalDuplicate)
         )
       }
-
-      console.log(
-        `Linking ${cluster.length} cards to canonical card with id ${canonical.id}...`
-      )
-
-      // Link the clustered cards to the canonical card.
-      await this.db.valuesCard.updateMany({
-        where: {
-          id: { in: cluster.map((c) => c.id) },
-        },
-        data: { canonicalCardId: canonical.id },
-      })
-
-      console.log(`Linked ${cluster.length} cards to canonical card.`)
     }
+
+    logger.info(`Done. Deduplicated ${cards.length} cards.`)
   }
-}
+)

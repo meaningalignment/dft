@@ -34,7 +34,7 @@ export async function loader({ request }: LoaderArgs) {
   console.log("Starting deduplication")
 
   let start = Date.now()
-  await service.deduplicateAll()
+  // await service.deduplicateAll(step)
   let end = Date.now()
   const duration = (end - start) / 1000
 
