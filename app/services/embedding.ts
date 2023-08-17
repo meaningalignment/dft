@@ -12,7 +12,7 @@ export default class EmbeddingService {
   private openai: OpenAIApi
   private db: PrismaClient
 
-  constructor(db: PrismaClient, openai: OpenAIApi) {
+  constructor(openai: OpenAIApi, db: PrismaClient) {
     this.openai = openai
     this.db = db
   }

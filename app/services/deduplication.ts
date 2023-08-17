@@ -1,6 +1,6 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import EmbeddingService from "./embedding"
-import { ValuesCardData } from "~/lib/consts"
+import { ValuesCardData, model } from "~/lib/consts"
 import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
 import { toDataModel } from "~/utils"
 import { db, inngest } from "~/config.server"
@@ -213,18 +213,15 @@ export default class DeduplicationService {
   private embeddings: EmbeddingService
   private openai: OpenAIApi
   private db: PrismaClient
-  private model: string
 
   constructor(
     embeddings: EmbeddingService,
     openai: OpenAIApi,
-    db: PrismaClient,
-    model: string = "gpt-4"
+    db: PrismaClient
   ) {
     this.embeddings = embeddings
     this.openai = openai
     this.db = db
-    this.model = model
   }
 
   /**
@@ -232,16 +229,26 @@ export default class DeduplicationService {
    */
   private async similaritySearch(
     vector: number[],
-    limit: number = 10
+    limit: number = 10,
+    minimumDistance: number = 0.1
   ): Promise<Array<CanonicalValuesCard>> {
-    // @TODO include a minimum distance
-    return this.db.$queryRaw<Array<CanonicalValuesCard>>`
+    const result = await this.db.$queryRaw<
+      Array<CanonicalValuesCard & { _distance: number }>
+    >`
     SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${JSON.stringify(
       vector
     )}::vector as "_distance" 
     FROM "CanonicalValuesCard" cvc
     ORDER BY "_distance" ASC
     LIMIT ${limit};`
+
+    console.log("Similarity search result:", result)
+    console.log(
+      "Distances ",
+      result.map((r) => r._distance)
+    )
+
+    return result.filter((r) => r._distance < minimumDistance)
   }
 
   /**
@@ -279,7 +286,7 @@ export default class DeduplicationService {
 
     // Call prompt.
     const response = await this.openai.createChatCompletion({
-      model: this.model,
+      model,
       messages: [
         { role: "system", content: clusterPrompt },
         { role: "user", content: message },
@@ -319,7 +326,7 @@ export default class DeduplicationService {
     )
 
     const response = await this.openai.createChatCompletion({
-      model: this.model,
+      model,
       messages: [
         { role: "system", content: dedupePrompt },
         { role: "user", content: message },
@@ -372,7 +379,7 @@ export default class DeduplicationService {
     })
 
     const response = await this.openai.createChatCompletion({
-      model: this.model,
+      model,
       messages: [
         { role: "system", content: dedupePrompt },
         { role: "user", content: message },
@@ -431,7 +438,7 @@ export const deduplicate = inngest.createFunction(
       apiKey: process.env.OPENAI_API_KEY,
     })
     const openai = new OpenAIApi(configuration)
-    const embeddings = new EmbeddingService(db, openai)
+    const embeddings = new EmbeddingService(openai, db)
     const service = new DeduplicationService(embeddings, openai, db)
 
     // Get all non-canonicalized submitted values cards.

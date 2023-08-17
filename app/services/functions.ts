@@ -6,6 +6,7 @@ import {
   articulateCardFunction,
   articulationPrompt,
   formatCardFunction,
+  model,
   submitCardFunction,
 } from "~/lib/consts"
 import { OpenAIStream } from "~/lib/openai-stream"
@@ -38,19 +39,16 @@ export class FunctionsService {
   private embeddings: EmbeddingService
   private openai: OpenAIApi
   private db: PrismaClient
-  private model: string
 
   constructor(
     deduplication: DeduplicationService,
     embeddings: EmbeddingService,
     openai: OpenAIApi,
-    db: PrismaClient,
-    model: string = "gpt-4-0613"
+    db: PrismaClient
   ) {
     this.deduplication = deduplication
     this.embeddings = embeddings
     this.openai = openai
-    this.model = model
     this.db = db
   }
 
@@ -141,17 +139,27 @@ export class FunctionsService {
         const res = await this.articulateValuesCard(messages, articulatedCard)
 
         if (res.critique) {
+          session.unset("values_card")
           result = `<A card was articulated, but it is not yet meeting the guidelines. The following critique was receieved: "${res.critique}". Continue the dialogue with the user until you are able to solve for the critique.>`
         } else {
           articulatedCard = res.values_card
 
+          //
           // Override the card with a canonical duplicate if one exists.
-          if (!session.has("values_card") && !res.critique) {
+          //
+          if (
+            !session.has("values_card") &&
+            !session.has("canonical_card_id") &&
+            !res.critique
+          ) {
             const canonical = await this.deduplication.fetchCanonicalCard(
               res.values_card
             )
 
             if (canonical) {
+              console.log(
+                `Found matching canonical card: {canonical.id} for chat {chatId}`
+              )
               session.set("canonical_card_id", canonical.id)
               articulatedCard = toDataModel(canonical)
             }
@@ -200,7 +208,7 @@ export class FunctionsService {
     // of the conversation.
     //
     const functionResponse = await this.openai.createChatCompletion({
-      model: this.model,
+      model,
       messages: [
         ...messages,
         {
@@ -270,7 +278,7 @@ export class FunctionsService {
     }
 
     const res = await this.openai.createChatCompletion({
-      model: this.model,
+      model,
       messages: [
         { role: "system", content: articulationPrompt },
         { role: "user", content: transcript },

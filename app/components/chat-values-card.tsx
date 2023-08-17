@@ -52,7 +52,7 @@ export default function ChatValuesCard({ card, onSubmit, isFinished }: Props) {
                       {criterion.split(" ").slice(1).join(" ")}
                     </>
                   ) : (
-                    <>criterion</>
+                    <>{criterion}</>
                   )}
                 </li>
               ))}
