@@ -242,12 +242,6 @@ export default class DeduplicationService {
     ORDER BY "_distance" ASC
     LIMIT ${limit};`
 
-    console.log("Similarity search result:", result)
-    console.log(
-      "Distances ",
-      result.map((r) => r._distance)
-    )
-
     return result.filter((r) => r._distance < minimumDistance)
   }
 
