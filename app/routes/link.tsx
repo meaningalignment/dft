@@ -15,8 +15,7 @@ import { Label } from "~/components/ui/label"
 import { useEffect, useState } from "react"
 import { splitToPairs } from "~/utils"
 import toast from "react-hot-toast"
-
-type ValuesPair = [CanonicalValuesCard, CanonicalValuesCard]
+import LinkRoutingService from "~/services/linking-routing"
 
 type Relationship =
   | "a_more_comprehensive"
@@ -26,18 +25,8 @@ type Relationship =
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
-
-  // Get 10 values (2 per draw, 5 draws) that have not been
-  // linked together by the user yet.
-  const values = (await db.canonicalValuesCard.findMany({
-    take: 10,
-    where: {
-      edgesFrom: { none: { userId } },
-      edgesTo: { none: { userId } },
-    },
-  })) as CanonicalValuesCard[]
-
-  const draw: ValuesPair[] = splitToPairs(values).map((p) => p as ValuesPair)
+  const service = new LinkRoutingService(db)
+  const draw = await service.getDraw(userId)
 
   console.log(
     `Got linking draw: ${draw.map(
