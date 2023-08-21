@@ -13,8 +13,6 @@ import EmbeddingService from "~/services/embedding"
 let functions: FunctionsService
 let openai: OpenAIApi
 
-const model = "gpt-4-0613"
-
 beforeAll(() => {
   openai = new OpenAIApi(
     new Configuration({ apiKey: process.env.OPENAI_API_KEY })
