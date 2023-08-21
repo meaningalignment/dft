@@ -86,10 +86,11 @@ export const action: ActionFunction = async ({
     throw body.error
   }
 
-  // If a function call is present in the stream, handle it...
+  // Get any function call that is present in the stream.
   const functionCall = await functions.getFunctionCall(completionResponse)
 
   if (functionCall) {
+    // If a function call is present in the stream, handle it...
     const { response, articulatedCard, submittedCard } = await functions.handle(
       functionCall,
       messages,
@@ -99,10 +100,10 @@ export const action: ActionFunction = async ({
     return new StreamingTextResponse(OpenAIStream(response), {
       headers: await createHeaders(articulatedCard, submittedCard),
     })
+  } else {
+    // ...otherwise, return the response.
+    return new StreamingTextResponse(OpenAIStream(completionResponse), {
+      headers: await createHeaders(),
+    })
   }
-
-  // ...otherwise, return the response.
-  return new StreamingTextResponse(OpenAIStream(completionResponse), {
-    headers: await createHeaders(),
-  })
 }
