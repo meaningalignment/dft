@@ -8,18 +8,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog"
-import { useState } from "react"
 import { isFirstWordUppercase } from "~/utils"
 
 type Props = {
   card: ValuesCardData
-  onSubmit: (card: ValuesCardData) => void
   isFinished: boolean
 }
 
-export default function ChatValuesCard({ card, onSubmit, isFinished }: Props) {
-  const [isSubmitted, setIsSubmitted] = useState(false)
-
+export default function ChatValuesCard({ card }: Props) {
   return (
     <div className="my-8 border-2 border-border rounded-xl px-8 pt-8 pb-4 max-w-[420px]">
       <p className="text-md font-bold">{card.title}</p>
@@ -60,16 +56,6 @@ export default function ChatValuesCard({ card, onSubmit, isFinished }: Props) {
           </DialogContent>
         </Dialog>
         <div className="flex-grow" />
-        <Button
-          onClick={() => {
-            setIsSubmitted(true)
-            onSubmit(card)
-          }}
-          variant="outline"
-          disabled={isSubmitted || isFinished}
-        >
-          Submit Card
-        </Button>
       </div>
     </div>
   )

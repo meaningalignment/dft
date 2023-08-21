@@ -4,6 +4,7 @@ import { Separator } from "./ui/separator"
 import { ChatMessage, LoadingChatMessage } from "./chat-message"
 import ChatValuesCard from "./chat-values-card"
 import { ValuesCardData } from "~/lib/consts"
+import { Button } from "./ui/button"
 
 export interface ChatList {
   messages: Message[]
@@ -35,7 +36,6 @@ export function ChatList({
           {valueCard(index) && (
             <ChatValuesCard
               card={valueCard(index)!.card}
-              onSubmit={onManualSubmit}
               isFinished={isFinished}
             />
           )}
@@ -45,6 +45,13 @@ export function ChatList({
           )}
         </div>
       ))}
+      {!isLoading && valueCard(messages.length - 1) && (
+        <Button
+          onClick={() => onManualSubmit(valueCard(messages.length - 1)!.card)}
+        >
+          Submit Card
+        </Button>
+      )}
       {isLoading && messages[messages.length - 1]?.role === "user" && (
         <>
           <Separator className="my-4 md:my-8" />
