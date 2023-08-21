@@ -1,10 +1,5 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { db } from "../config.server"
-import {
-  calculateAverageEmbedding,
-  toDataModel,
-  toDataModelWithId,
-} from "~/utils"
 import { ChatCompletionFunctions, OpenAIApi } from "openai-edge"
 import { model } from "~/lib/consts"
 import { v4 as uuid } from "uuid"
