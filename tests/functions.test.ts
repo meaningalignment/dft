@@ -7,6 +7,8 @@ import { seedQuestion, systemPrompt } from "../app/lib/consts"
 import { FunctionsService } from "../app/services/functions"
 import { PrismaClient } from "@prisma/client"
 import { mockDeep } from "jest-mock-extended"
+import DeduplicationService from "~/services/deduplication"
+import EmbeddingService from "~/services/embedding"
 
 let functions: FunctionsService
 let openai: OpenAIApi
@@ -17,7 +19,12 @@ beforeAll(() => {
   openai = new OpenAIApi(
     new Configuration({ apiKey: process.env.OPENAI_API_KEY })
   )
-  functions = new FunctionsService(openai, model, mockDeep<PrismaClient>())
+  functions = new FunctionsService(
+    mockDeep<DeduplicationService>(),
+    mockDeep<EmbeddingService>(),
+    openai,
+    mockDeep<PrismaClient>()
+  )
 })
 
 test(`Articulation of a card when there is too little information generates a critique`, async () => {

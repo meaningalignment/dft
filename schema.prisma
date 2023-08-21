@@ -63,16 +63,21 @@ model CanonicalValuesCard {
   Vote                 Vote[]
   embedding            Unsupported("vector(1536)")?
   Impression           Impression[]
+  Chat                 Chat[]
 }
 
 model Chat {
-  id         String      @id
-  userId     Int
-  transcript Json
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  ValuesCard ValuesCard?
-  user       User        @relation(fields: [userId], references: [id])
+  id                         String               @id
+  userId                     Int
+  transcript                 Json
+  createdAt                  DateTime             @default(now())
+  updatedAt                  DateTime             @updatedAt
+  provisionalCard            Json? // A values card being formed in the background.
+  provisionalCanonicalCardId Int? // A canonical values card that is linked in the background.
+  ValuesCard                 ValuesCard?
+  provisionalCanonicalCard   CanonicalValuesCard? @relation(fields: [canonicalValuesCardId], references: [id])
+  user                       User                 @relation(fields: [userId], references: [id])
+  canonicalValuesCardId      Int?
 }
 
 model Vote {
