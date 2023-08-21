@@ -1,40 +1,63 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
-import { Link, useLoaderData, useNavigate } from "@remix-run/react"
+import { Link, useLoaderData } from "@remix-run/react"
 import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
 import { ChatMessage } from "~/components/chat-message"
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { CanonicalValuesCard } from "@prisma/client"
 import { IconCheck } from "~/components/ui/icons"
 import SelectionRoutingService from "~/services/selection-routing"
-import { v4 as uuid } from "uuid"
-
-const routing = new SelectionRoutingService(db)
+import { Configuration, OpenAIApi } from "openai-edge"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
-  const draw = await routing.getDraw(userId)
-  return json({ draw })
+
+  // Set up service.
+  const openai = new OpenAIApi(
+    new Configuration({ apiKey: process.env.OPENAI_API_KEY })
+  )
+  const routing = new SelectionRoutingService(openai, db)
+
+  // Get the draw for this user.
+  const { id, values } = await routing.getDraw(userId)
+
+  return json({ values, drawId: id })
 }
 
 export async function action({ request }: ActionArgs) {
   const userId = await auth.getUserId(request)
   const body = await request.json()
-  const { draw, selected, drawId } = body
+  const { values, selected, drawId } = body
 
   console.log(
     `Submitting votes (${selected}) for user ${userId} and draw ${drawId}`
   )
 
+  let promises = []
+
+  //
+  // Add impressions in the database for each seen value.
+  //
+  for (const card of values) {
+    promises.push(
+      db.impression.create({
+        data: {
+          valuesCardId: card.id,
+          userId,
+          drawId,
+        },
+      })
+    )
+  }
+
   //
   // Add votes in the database for each selected value.
   //
 
-  let promises = []
   for (const id of selected) {
-    const value = draw.find((v: CanonicalValuesCard) => v.id === id)
+    const value = values.find((v: CanonicalValuesCard) => v.id === id)
     const valuesCardId = value.id
 
     if (!value) {
@@ -46,9 +69,6 @@ export async function action({ request }: ActionArgs) {
         userId,
         drawId,
         valuesCardId,
-        draw: draw.map((v: CanonicalValuesCard) => {
-          return { id: v.id, title: v.title }
-        }),
       },
     })
 
@@ -75,8 +95,7 @@ function SelectedValuesCard({ value }: { value: CanonicalValuesCard }) {
 }
 
 export default function SelectScreen() {
-  const drawId = useRef(uuid()).current
-  const { draw } = useLoaderData<typeof loader>()
+  const { values, drawId } = useLoaderData<typeof loader>()
   const [selected, setSelected] = useState<number[]>([])
 
   const onSelectValue = (id: number) => {
@@ -88,7 +107,7 @@ export default function SelectScreen() {
   }
 
   const onSubmit = async () => {
-    const body = { draw, selected, drawId }
+    const body = { values, selected, drawId }
 
     const response = await fetch("/select", {
       method: "POST",
@@ -104,7 +123,7 @@ export default function SelectScreen() {
     }
   }
 
-  const minRequiredVotes = draw.length / 2
+  const minRequiredVotes = values.length / 2
 
   return (
     <div className="flex flex-col h-screen w-screen">
@@ -121,7 +140,7 @@ export default function SelectScreen() {
           />
         </div>
         <div className="grid xl:grid-cols-3 lg:grid-cols-2 mx-auto gap-4">
-          {draw.map((value) => (
+          {values.map((value) => (
             <div
               key={value.id}
               onClick={() => onSelectValue(value.id)}

@@ -84,3 +84,12 @@ export function toDataModel(
     evaluation_criteria: card.evaluationCriteria,
   }
 }
+
+export function toDataModelWithId(
+  card: ValuesCard | CanonicalValuesCard
+): ValuesCardData & { id: number } {
+  return {
+    ...toDataModel(card),
+    id: card.id,
+  }
+}

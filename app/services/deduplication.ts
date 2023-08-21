@@ -2,7 +2,7 @@ import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import EmbeddingService from "./embedding"
 import { ValuesCardData, model } from "~/lib/consts"
 import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
-import { toDataModel } from "~/utils"
+import { toDataModel, toDataModelWithId } from "~/utils"
 import { db, inngest } from "~/config.server"
 
 //
@@ -269,14 +269,7 @@ export default class DeduplicationService {
    * Deduplicate a set of values cards using a prompt.
    */
   async cluster(cards: ValuesCard[]): Promise<ValuesCard[][]> {
-    const message = JSON.stringify(
-      cards.map((c) => {
-        return {
-          id: c.id,
-          ...toDataModel(c),
-        }
-      })
-    )
+    const message = JSON.stringify(cards.map((c) => toDataModelWithId(c)))
 
     // Call prompt.
     const response = await this.openai.createChatCompletion({
@@ -310,14 +303,7 @@ export default class DeduplicationService {
       return toDataModel(cards[0])
     }
 
-    const message = JSON.stringify(
-      cards.map((c) => {
-        return {
-          id: c.id,
-          ...toDataModel(c),
-        }
-      })
-    )
+    const message = JSON.stringify(cards.map((c) => toDataModelWithId(c)))
 
     const response = await this.openai.createChatCompletion({
       model,
@@ -364,12 +350,7 @@ export default class DeduplicationService {
     //
     const message = JSON.stringify({
       input_values_card: candidate,
-      canonical_values_cards: canonical.map((c) => {
-        return {
-          id: c.id,
-          ...toDataModel(c),
-        }
-      }),
+      canonical_values_cards: canonical.map((c) => toDataModelWithId(c)),
     })
 
     const response = await this.openai.createChatCompletion({

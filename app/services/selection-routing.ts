@@ -1,49 +1,168 @@
-import { CanonicalValuesCard, PrismaClient } from "@prisma/client"
+import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { db } from "../config.server"
-import { calculateAverageEmbedding } from "~/utils"
+import {
+  calculateAverageEmbedding,
+  toDataModel,
+  toDataModelWithId,
+} from "~/utils"
+import { ChatCompletionFunctions, OpenAIApi } from "openai-edge"
+import { model } from "~/lib/consts"
+import { v4 as uuid } from "uuid"
+
+export type Draw = {
+  id: string
+  values: Array<CanonicalValuesCard>
+}
+
+const getPredictionPrompt = (
+  valuesString: string
+) => `You are a 'values card' voting predictor. Your task is to determine which values a user is likely to think are wise, given one value provided by them. A 'values card' is a representation of a value. A values card has a numeric id, a title and an instruction for how to guide AI systems in respnoding based on the value.
+
+### Values
+${valuesString}
+
+### Output
+You always return a list of 6 numbers. Each number is the id of a values card the user is likely to consider as wise.`
+
+const submitWiseValues: ChatCompletionFunctions = {
+  name: "submit_wise_values",
+  description:
+    "Submit 6 ids to values that the user is likely to think are wise.",
+  parameters: {
+    type: "object",
+    properties: {
+      six_best_values: {
+        type: "array",
+        description:
+          "The ids of the 6 values that the user is likely to think are wise.",
+        items: {
+          type: "integer",
+          description: "The id of a values card.",
+        },
+      },
+    },
+    required: ["six_best_values"],
+  },
+}
 
 export default class SelectionRoutingService {
   private db: PrismaClient
+  private openai: OpenAIApi
 
-  constructor(db: PrismaClient) {
+  constructor(openai: OpenAIApi, db: PrismaClient) {
+    this.openai = openai
     this.db = db
   }
 
-  /**
-   * Generate a draw of `drawSize` for the user with id `userId`.
-   */
-  async getDraw(
-    userId: number,
-    drawSize = 6
-  ): Promise<Array<CanonicalValuesCard>> {
-    // Calculate the average embedding of the user's values.
-    const userEmbeddings: Array<Array<number>> = (
-      await db.$queryRaw<
-        Array<{ embedding: any }>
-      >`SELECT embedding::text FROM "ValuesCard" vc INNER JOIN "Chat" c  ON vc."chatId" = c."id" WHERE c."userId" = ${userId} AND vc."embedding" IS NOT NULL`
-    ).map((r) => JSON.parse(r.embedding).map((v: any) => parseFloat(v)))
-    const userVector = calculateAverageEmbedding(userEmbeddings)
+  async fetchHottestValues(limit = 12): Promise<CanonicalValuesCard[]> {
+    const cards = (await db.canonicalValuesCard.findMany({
+      include: {
+        Vote: true,
+        Impression: true,
+      },
+    })) as Array<
+      CanonicalValuesCard & {
+        hotness?: number
+        Vote: { id: number }[]
+        Impression: { id: number }[]
+      }
+    >
 
-    // Get 30 candidate canonical values furthest away from the user's values semantically,
-    // that have not been synthesized from one of the user's values.
-    const candidates = await this.db.$queryRaw<Array<CanonicalValuesCard>>`
-    SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${JSON.stringify(
-      userVector
-    )}::vector as "_distance" 
-    FROM "CanonicalValuesCard" cvc
-    INNER JOIN "ValuesCard" vc ON vc."canonicalCardId" = cvc."id"
-    INNER JOIN "Chat" c ON vc."chatId" = c."id"
-    WHERE c."userId" != ${userId}
-    ORDER BY "_distance" DESC
-    LIMIT 30;`
+    // Process the data to calculate hotness (votes per impression).
+    cards.forEach((card) => {
+      card.hotness =
+        card.Impression.length === 0
+          ? 0
+          : card.Vote.length / card.Impression.length
+    })
 
-    console.log(
-      `Got selection candidates for user ${userId}: ${candidates.map(
-        (c) => c.id
-      )}}`
+    // Sort the cards based on hotness.
+    cards.sort((a, b) => b.hotness! - a.hotness!)
+
+    return cards.slice(0, limit)
+  }
+
+  async fetchNewestValues(limit = 12): Promise<CanonicalValuesCard[]> {
+    return (await db.canonicalValuesCard.findMany({
+      orderBy: [
+        {
+          Impression: {
+            _count: "asc",
+          },
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
+      take: limit,
+    })) as CanonicalValuesCard[]
+  }
+
+  async fetchValuesUserLikelyToVoteOn(
+    candidates: CanonicalValuesCard[]
+  ): Promise<CanonicalValuesCard[]> {
+    const userValue = (await this.db.valuesCard.findFirst()) as ValuesCard
+    const userValueString = JSON.stringify({
+      id: userValue.id,
+      title: userValue.title,
+      instructions: userValue.instructionsShort,
+    })
+
+    const valuesString = JSON.stringify(
+      candidates.map((c) => {
+        return {
+          id: c.id,
+          title: c.title,
+          instructions: c.instructionsShort,
+        }
+      })
     )
 
-    // Get a random draw of `drawSize` from the 30 canidates.
-    return candidates.sort(() => 0.5 - Math.random()).slice(0, drawSize)
+    const system = getPredictionPrompt(valuesString)
+    const message = `For a user that has this value:\n\n${userValueString}\n\nWhich 6 of the provided values is he or she most likely to think is also wise to consider?`
+
+    // Call prompt.
+    const response = await this.openai.createChatCompletion({
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: message },
+      ],
+      function_call: { name: submitWiseValues.name },
+      functions: [submitWiseValues],
+    })
+    const data = await response.json()
+    const ids = JSON.parse(
+      data.choices[0].message.function_call.arguments
+    ).six_best_values
+
+    return candidates.filter((c) => ids.includes(c.id))
+  }
+
+  /**
+   * Generate a draw for the user with id `userId`.
+   */
+  async getDraw(userId: number): Promise<Draw> {
+    // Get canidates.
+    const candidates = await Promise.all([
+      this.fetchNewestValues(12),
+      this.fetchHottestValues(12),
+    ]).then((r) => [...r[0], ...r[1]])
+
+    // Remove duplicates.
+    const candidatesUnique = candidates.filter(
+      (c, i) => candidates.findIndex((c2) => c2.id === c.id) === i
+    )
+
+    // Get values the user is likely to vote on.
+    const userLikelyToVoteOn = await this.fetchValuesUserLikelyToVoteOn(
+      candidatesUnique
+    )
+
+    // Return draw.
+    return {
+      id: uuid(),
+      values: userLikelyToVoteOn,
+    }
   }
 }
