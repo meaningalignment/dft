@@ -83,7 +83,7 @@ export async function action({ request }: ActionArgs) {
 function SelectedValuesCard({ value }: { value: CanonicalValuesCard }) {
   return (
     <div className="relative h-full w-full">
-      <div className="w-full h-full border-4 border-blue-500 rounded-xl z-10 absolute" />
+      <div className="w-full h-full border-4 border-blue-500 rounded-xl z-10 absolute pointer-events-none" />
       <div className="absolute -bottom-2.5 -right-2.5 z-20">
         <div className="bg-blue-500 h-8 w-8 rounded-full flex flex-col justify-center items-center">
           <IconCheck className="h-6 w-6 text-white" />

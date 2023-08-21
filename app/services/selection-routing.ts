@@ -1,10 +1,5 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { db } from "../config.server"
-import {
-  calculateAverageEmbedding,
-  toDataModel,
-  toDataModelWithId,
-} from "~/utils"
 import { ChatCompletionFunctions, OpenAIApi } from "openai-edge"
 import { model } from "~/lib/consts"
 import { v4 as uuid } from "uuid"
@@ -101,6 +96,10 @@ export default class SelectionRoutingService {
   async fetchValuesUserLikelyToVoteOn(
     candidates: CanonicalValuesCard[]
   ): Promise<CanonicalValuesCard[]> {
+    if (process.env.USE_RANDOM_SELECTION_ROUTING === "true") {
+      return candidates.sort(() => Math.random() - 0.5).slice(0, 6)
+    }
+
     const userValue = (await this.db.valuesCard.findFirst()) as ValuesCard
     const userValueString = JSON.stringify({
       id: userValue.id,

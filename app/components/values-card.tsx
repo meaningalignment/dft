@@ -69,7 +69,13 @@ export default function ValuesCard({ card, header }: Props) {
       <div className="flex-grow" />
       <div className="w-full flex flex-row mt-4 items-baseline">
         <DetailsDialog card={card}>
-          <Button variant="link" className="pl-0">
+          <Button
+            variant="link"
+            className="pl-0"
+            onClick={(e) => {
+              e.stopPropagation()
+            }}
+          >
             Show Details
           </Button>
         </DetailsDialog>
