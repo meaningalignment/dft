@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client"
 import { cowpunkify } from "cowpunk-auth"
+import { Inngest } from "inngest"
 
 export const db = new PrismaClient()
 
@@ -8,4 +9,9 @@ export const auth = cowpunkify({
   loginFrom: "Democratic Fine-Tuning <info@meaningalignment.org>",
   users: db.user,
   emailCodes: db.emailCodes,
+})
+
+export const inngest = new Inngest({
+  name: "Democratic Fine-Tuning",
+  apiKey: process.env.INNGEST_API_KEY,
 })

@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@mattiasbuelens/web-streams-adapter": "^0.1.0",
-    "@prisma/client": "5",
+    "@prisma/client": "^5.1.1",
     "@radix-ui/react-alert-dialog": "^1.0.4",
     "@radix-ui/react-checkbox": "^1.0.4",
     "@radix-ui/react-dialog": "^1.0.4",
@@ -33,6 +33,7 @@
     "clsx": "^2.0.0",
     "cookie": "^0.5.0",
     "cowpunk-auth": "^0.0.5",
+    "inngest": "^2.5.0",
     "isbot": "^3.6.8",
     "lucide-react": "^0.263.1",
     "nanoid": "^4.0.2",

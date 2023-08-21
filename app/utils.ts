@@ -1,5 +1,7 @@
+import { CanonicalValuesCard, ValuesCard } from "@prisma/client"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { ValuesCardData } from "./lib/consts"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -67,4 +69,18 @@ export function splitToPairs<T>(arr: T[]): T[][] {
       arr.slice(i * 2, i * 2 + 2)
     ).filter((p) => p.length == 2) ?? []
   )
+}
+
+/**
+ * Convert a DB card into the data model used in OpenAI functions.
+ */
+export function toDataModel(
+  card: ValuesCard | CanonicalValuesCard
+): ValuesCardData {
+  return {
+    title: card.title,
+    instructions_short: card.instructionsShort,
+    instructions_detailed: card.instructionsDetailed,
+    evaluation_criteria: card.evaluationCriteria,
+  }
 }

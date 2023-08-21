@@ -1,4 +1,4 @@
-import { ValuesCardCandidate } from "~/lib/consts"
+import { ValuesCardData } from "~/lib/consts"
 import { Button } from "./ui/button"
 import {
   Dialog,
@@ -12,8 +12,8 @@ import { useState } from "react"
 import { isFirstWordUppercase } from "~/utils"
 
 type Props = {
-  card: ValuesCardCandidate
-  onSubmit: (card: ValuesCardCandidate) => void
+  card: ValuesCardData
+  onSubmit: (card: ValuesCardData) => void
   isFinished: boolean
 }
 
@@ -52,7 +52,7 @@ export default function ChatValuesCard({ card, onSubmit, isFinished }: Props) {
                       {criterion.split(" ").slice(1).join(" ")}
                     </>
                   ) : (
-                    <>criterion</>
+                    <>{criterion}</>
                   )}
                 </li>
               ))}

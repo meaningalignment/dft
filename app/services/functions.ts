@@ -1,15 +1,18 @@
-import { PrismaClient } from "@prisma/client"
-import { Session, SessionData } from "@remix-run/node"
+import { PrismaClient, ValuesCard } from "@prisma/client"
+import { Session } from "@remix-run/node"
 import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge/types/api"
 import {
-  ValuesCardCandidate,
+  ValuesCardData,
   articulateCardFunction,
   articulationPrompt,
   formatCardFunction,
+  model,
   submitCardFunction,
 } from "~/lib/consts"
 import { OpenAIStream } from "~/lib/openai-stream"
-import { capitalize } from "~/utils"
+import { capitalize, toDataModel } from "~/utils"
+import EmbeddingService from "./embedding"
+import DeduplicationService from "./deduplication"
 
 // import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
 
@@ -24,7 +27,7 @@ type SubmitCardFunction = {
 }
 
 type ArticulateCardResponse = {
-  values_card: ValuesCardCandidate
+  values_card: ValuesCardData
   critique?: string | null
 }
 
@@ -32,17 +35,20 @@ type ArticulateCardResponse = {
  * A service for handling function calls in the chat.
  */
 export class FunctionsService {
+  private deduplication: DeduplicationService
+  private embeddings: EmbeddingService
   private openai: OpenAIApi
-  private model: string
   private db: PrismaClient
 
   constructor(
+    deduplication: DeduplicationService,
+    embeddings: EmbeddingService,
     openai: OpenAIApi,
-    model: string = "gpt-4-0613",
     db: PrismaClient
   ) {
+    this.deduplication = deduplication
+    this.embeddings = embeddings
     this.openai = openai
-    this.model = model
     this.db = db
   }
 
@@ -110,15 +116,15 @@ export class FunctionsService {
     chatId: string
   ): Promise<{
     functionResponse: Response
-    articulatedCard: ValuesCardCandidate | null
-    submittedCard: ValuesCardCandidate | null
+    articulatedCard: ValuesCardData | null
+    submittedCard: ValuesCardData | null
   }> {
     //
     // Call the right function.
     //
     let result: string = ""
-    let articulatedCard: ValuesCardCandidate | null = null
-    let submittedCard: ValuesCardCandidate | null = null
+    let articulatedCard: ValuesCardData | null = null
+    let submittedCard: ValuesCardData | null = null
 
     switch (func.name) {
       case articulateCardFunction.name: {
@@ -126,20 +132,40 @@ export class FunctionsService {
         if (session.has("values_card")) {
           articulatedCard = JSON.parse(
             session.get("values_card")
-          ) as ValuesCardCandidate
+          ) as ValuesCardData
         }
 
         // Articulate the values card.
         const res = await this.articulateValuesCard(messages, articulatedCard)
 
         if (res.critique) {
+          session.unset("values_card")
           result = `<A card was articulated, but it is not yet meeting the guidelines. The following critique was receieved: "${res.critique}". Continue the dialogue with the user until you are able to solve for the critique.>`
         } else {
           articulatedCard = res.values_card
 
-          // Save the card in the session.
-          session.set("values_card", JSON.stringify(articulatedCard))
+          //
+          // Override the card with a canonical duplicate if one exists.
+          //
+          if (
+            !session.has("values_card") &&
+            !session.has("canonical_card_id") &&
+            !res.critique
+          ) {
+            const canonical = await this.deduplication.fetchCanonicalCard(
+              res.values_card
+            )
 
+            if (canonical) {
+              console.log(
+                `Found matching canonical card: {canonical.id} for chat {chatId}`
+              )
+              session.set("canonical_card_id", canonical.id)
+              articulatedCard = toDataModel(canonical)
+            }
+          }
+
+          session.set("values_card", JSON.stringify(articulatedCard))
           result = `<A card (${articulatedCard.title}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
         }
 
@@ -151,15 +177,20 @@ export class FunctionsService {
           throw Error("No values card in session")
         }
 
-        submittedCard = JSON.parse(
-          session.get("values_card")
-        ) as ValuesCardCandidate
+        submittedCard = JSON.parse(session.get("values_card")) as ValuesCardData
+
+        const canonicalCardId = session.get("canonical_card_id") as number
 
         // Submit the values card.
-        result = await this.submitValuesCard(submittedCard, chatId)
+        result = await this.submitValuesCard(
+          submittedCard,
+          chatId,
+          canonicalCardId
+        )
 
         // Update the session.
         session.unset("values_card")
+        session.unset("canonical_card_id")
 
         break
       }
@@ -177,7 +208,7 @@ export class FunctionsService {
     // of the conversation.
     //
     const functionResponse = await this.openai.createChatCompletion({
-      model: this.model,
+      model,
       messages: [
         ...messages,
         {
@@ -204,13 +235,14 @@ export class FunctionsService {
   }
 
   async submitValuesCard(
-    card: ValuesCardCandidate,
-    chatId: string
+    card: ValuesCardData,
+    chatId: string,
+    canonicalCardId?: number
   ): Promise<string> {
     console.log(`Submitting values card:\n\n${JSON.stringify(card)}`)
 
     // Save the card in the database.
-    await this.db.valuesCard
+    const result = (await this.db.valuesCard
       .create({
         data: {
           title: card.title,
@@ -218,9 +250,13 @@ export class FunctionsService {
           instructionsDetailed: card.instructions_detailed,
           evaluationCriteria: card.evaluation_criteria,
           chatId,
+          canonicalCardId: canonicalCardId ?? null,
         },
       })
-      .catch((e) => console.error(e))
+      .catch((e) => console.error(e))) as ValuesCard
+
+    // Embed card.
+    await this.embeddings.embedNonCanonicalCard(result)
 
     return `<the values card (´${card.title}) was submitted. The user has now submitted 1 value in total. Proceed to thank the user for submitting their value.>`
   }
@@ -228,7 +264,7 @@ export class FunctionsService {
   /** Create a values card from a transcript of the conversation. */
   async articulateValuesCard(
     messages: ChatCompletionRequestMessage[],
-    previousCard: ValuesCardCandidate | null
+    previousCard: ValuesCardData | null
   ): Promise<ArticulateCardResponse> {
     console.log("Articulating values card...")
 
@@ -242,7 +278,7 @@ export class FunctionsService {
     }
 
     const res = await this.openai.createChatCompletion({
-      model: this.model,
+      model,
       messages: [
         { role: "system", content: articulationPrompt },
         { role: "user", content: transcript },

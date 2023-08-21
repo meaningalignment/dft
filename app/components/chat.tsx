@@ -6,7 +6,7 @@ import { ChatPanel } from "./chat-panel"
 import { EmptyScreen } from "./empty-screen"
 import { ChatScrollAnchor } from "./chat-scroll-anchor"
 import { toast } from "react-hot-toast"
-import { ValuesCardCandidate } from "~/lib/consts"
+import { ValuesCardData } from "~/lib/consts"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
@@ -15,11 +15,11 @@ export interface ChatProps extends React.ComponentProps<"div"> {
 
 export function Chat({ id, initialMessages, className }: ChatProps) {
   const [valueCards, setValueCards] = useState<
-    { position: number; card: ValuesCardCandidate }[]
+    { position: number; card: ValuesCardData }[]
   >([])
   const [isFinished, setIsFinished] = useState(false)
 
-  const onCardArticulation = (card: ValuesCardCandidate) => {
+  const onCardArticulation = (card: ValuesCardData) => {
     console.log("Card articulated:", card)
 
     setValueCards((prev) => [
@@ -32,7 +32,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
     ])
   }
 
-  const onCardSubmission = (card: ValuesCardCandidate) => {
+  const onCardSubmission = (card: ValuesCardData) => {
     console.log("Card submitted:", card)
 
     setIsFinished(true)
@@ -66,12 +66,12 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       onResponse: async (response) => {
         const articulatedCard = response.headers.get("X-Articulated-Card")
         if (articulatedCard) {
-          onCardArticulation(JSON.parse(articulatedCard) as ValuesCardCandidate)
+          onCardArticulation(JSON.parse(articulatedCard) as ValuesCardData)
         }
 
         const submittedCard = response.headers.get("X-Submitted-Card")
         if (submittedCard) {
-          onCardSubmission(JSON.parse(submittedCard) as ValuesCardCandidate)
+          onCardSubmission(JSON.parse(submittedCard) as ValuesCardData)
         }
 
         if (response.status === 401) {

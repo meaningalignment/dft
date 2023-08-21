@@ -2,13 +2,16 @@ import { Configuration, OpenAIApi } from "openai-edge"
 import { ActionArgs, ActionFunction, Session } from "@remix-run/node"
 import {
   articulateCardFunction,
+  model,
   submitCardFunction,
   systemPrompt,
-  ValuesCardCandidate,
+  ValuesCardData,
 } from "~/lib/consts"
 import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
 import { auth, db } from "~/config.server"
 import { FunctionsService } from "~/services/functions"
+import DeduplicationService from "~/services/deduplication"
+import EmbeddingService from "~/services/embedding"
 
 export const runtime = "edge"
 
@@ -16,14 +19,15 @@ const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-const model = "gpt-4-0613"
 const openai = new OpenAIApi(configuration)
-const functions = new FunctionsService(openai, model, db)
+const embeddings = new EmbeddingService(openai, db)
+const deduplication = new DeduplicationService(embeddings, openai, db)
+const functions = new FunctionsService(deduplication, embeddings, openai, db)
 
 async function createHeaders(
   session: Session,
-  articulatedCard?: ValuesCardCandidate | null,
-  submittedCard?: ValuesCardCandidate | null
+  articulatedCard?: ValuesCardData | null,
+  submittedCard?: ValuesCardData | null
 ): Promise<{ [key: string]: string }> {
   const headers: { [key: string]: string } = {
     "Set-Cookie": await auth.storage.commitSession(session),
