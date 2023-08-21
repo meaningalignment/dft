@@ -101,6 +101,10 @@ export default class SelectionRoutingService {
   async fetchValuesUserLikelyToVoteOn(
     candidates: CanonicalValuesCard[]
   ): Promise<CanonicalValuesCard[]> {
+    if (process.env.USE_RANDOM_SELECTION_ROUTING === "true") {
+      return candidates.sort(() => Math.random() - 0.5).slice(0, 6)
+    }
+
     const userValue = (await this.db.valuesCard.findFirst()) as ValuesCard
     const userValueString = JSON.stringify({
       id: userValue.id,
