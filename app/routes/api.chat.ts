@@ -1,5 +1,5 @@
 import { Configuration, OpenAIApi } from "openai-edge"
-import { ActionArgs, ActionFunction, Session } from "@remix-run/node"
+import { ActionArgs, ActionFunction } from "@remix-run/node"
 import {
   articulateCardFunction,
   model,
@@ -25,13 +25,10 @@ const deduplication = new DeduplicationService(embeddings, openai, db)
 const functions = new FunctionsService(deduplication, embeddings, openai, db)
 
 async function createHeaders(
-  session: Session,
   articulatedCard?: ValuesCardData | null,
   submittedCard?: ValuesCardData | null
 ): Promise<{ [key: string]: string }> {
-  const headers: { [key: string]: string } = {
-    "Set-Cookie": await auth.storage.commitSession(session),
-  }
+  const headers: { [key: string]: string } = {}
 
   if (articulatedCard) {
     headers["X-Articulated-Card"] = JSON.stringify(articulatedCard)
@@ -47,16 +44,10 @@ async function createHeaders(
 export const action: ActionFunction = async ({
   request,
 }: ActionArgs): Promise<Response> => {
-  const session = await auth.storage.getSession(request.headers.get("Cookie"))
   const userId = await auth.getUserId(request)
   const json = await request.json()
 
   let { messages, chatId, function_call } = json
-
-  // Clear values card from previous session.
-  if (messages.length === 2) {
-    session.unset("values_card")
-  }
 
   // Prepend the system message.
   messages = [{ role: "system", content: systemPrompt }, ...messages]
@@ -95,20 +86,24 @@ export const action: ActionFunction = async ({
     throw body.error
   }
 
-  // If a function call is present in the stream, handle it...
+  // Get any function call that is present in the stream.
   const functionCall = await functions.getFunctionCall(completionResponse)
 
   if (functionCall) {
-    const { functionResponse, articulatedCard, submittedCard } =
-      await functions.handle(functionCall, messages, session, chatId)
+    // If a function call is present in the stream, handle it...
+    const { response, articulatedCard, submittedCard } = await functions.handle(
+      functionCall,
+      messages,
+      chatId
+    )
 
-    return new StreamingTextResponse(OpenAIStream(functionResponse), {
-      headers: await createHeaders(session, articulatedCard, submittedCard),
+    return new StreamingTextResponse(OpenAIStream(response), {
+      headers: await createHeaders(articulatedCard, submittedCard),
+    })
+  } else {
+    // ...otherwise, return the response.
+    return new StreamingTextResponse(OpenAIStream(completionResponse), {
+      headers: await createHeaders(),
     })
   }
-
-  // ...otherwise, return the response.
-  return new StreamingTextResponse(OpenAIStream(completionResponse), {
-    headers: await createHeaders(session),
-  })
 }

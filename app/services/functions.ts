@@ -1,5 +1,9 @@
-import { PrismaClient, ValuesCard } from "@prisma/client"
-import { Session } from "@remix-run/node"
+import {
+  CanonicalValuesCard,
+  Chat,
+  PrismaClient,
+  ValuesCard,
+} from "@prisma/client"
 import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge/types/api"
 import {
   ValuesCardData,
@@ -29,6 +33,12 @@ type SubmitCardFunction = {
 type ArticulateCardResponse = {
   values_card: ValuesCardData
   critique?: string | null
+}
+
+type FunctionResult = {
+  message: string
+  articulatedCard: ValuesCardData | null
+  submittedCard: ValuesCardData | null
 }
 
 /**
@@ -109,89 +119,115 @@ export class FunctionsService {
     return json as ArticulateCardFunction | SubmitCardFunction
   }
 
+  private async handleArticulateCardFunction(
+    chatId: string,
+    messages: ChatCompletionRequestMessage[]
+  ): Promise<FunctionResult> {
+    //
+    // Fetch the chat with the provisional card from the database.
+    //
+    const chat = (await this.db.chat.findUnique({
+      where: { id: chatId },
+      include: { provisionalCanonicalCard: true },
+    })) as Chat & { provisionalCanonicalCard: CanonicalValuesCard | null }
+
+    const previousCard = chat.provisionalCard
+      ? (chat.provisionalCard as ValuesCardData)
+      : null
+
+    let canonical = chat.provisionalCanonicalCard
+
+    // Articulate the values card.
+    const response = await this.articulateValuesCard(messages, previousCard)
+
+    // The newly articulated card.
+    let newCard = response.values_card
+
+    //
+    // If the card is not yet meeting the guidelines, generate a follow-up question.
+    //
+    if (response.critique) {
+      const message = `<A card was articulated, but it is not yet meeting the guidelines. The following critique was receieved: "${response.critique}". Continue the dialogue with the user until you are able to solve for the critique.>`
+
+      return {
+        message,
+        articulatedCard: null,
+        submittedCard: null,
+      }
+    }
+
+    //
+    // Override the card with a canonical duplicate if one exists.
+    //
+    if (!previousCard && !canonical && !response.critique) {
+      canonical = await this.deduplication.fetchCanonicalCard(
+        response.values_card
+      )
+
+      if (canonical) {
+        console.log(`Found duplicate ${canonical.id} for chat ${chatId}`)
+        newCard = toDataModel(canonical)
+      }
+    }
+
+    //
+    // Save the card and canonical duplicate in the database.
+    //
+    await this.db.chat.update({
+      where: { id: chatId },
+      data: {
+        provisionalCard: newCard!,
+        provisionalCanonicalCardId: canonical?.id ?? null,
+      },
+    })
+
+    const message = `<A card (${
+      newCard!.title
+    }) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
+
+    return { message, articulatedCard: newCard, submittedCard: null }
+  }
+
+  private async handleSubmitCardFunction(
+    chatId: string
+  ): Promise<FunctionResult> {
+    const chat = (await this.db.chat.findUnique({
+      where: { id: chatId },
+    })) as Chat
+
+    const card = chat.provisionalCard as ValuesCardData
+
+    // Submit the values card.
+    const message = await this.submitValuesCard(
+      card,
+      chatId,
+      chat.provisionalCanonicalCardId
+    )
+
+    return { message, submittedCard: card, articulatedCard: null }
+  }
+
   async handle(
     func: ArticulateCardFunction | SubmitCardFunction,
     messages: any[] = [],
-    session: Session,
     chatId: string
   ): Promise<{
-    functionResponse: Response
+    response: Response
     articulatedCard: ValuesCardData | null
     submittedCard: ValuesCardData | null
   }> {
-    //
-    // Call the right function.
-    //
-    let result: string = ""
-    let articulatedCard: ValuesCardData | null = null
-    let submittedCard: ValuesCardData | null = null
+    let functionResult: FunctionResult
 
     switch (func.name) {
       case articulateCardFunction.name: {
-        // Get the previously articulated card from the session.
-        if (session.has("values_card")) {
-          articulatedCard = JSON.parse(
-            session.get("values_card")
-          ) as ValuesCardData
-        }
-
-        // Articulate the values card.
-        const res = await this.articulateValuesCard(messages, articulatedCard)
-
-        if (res.critique) {
-          session.unset("values_card")
-          result = `<A card was articulated, but it is not yet meeting the guidelines. The following critique was receieved: "${res.critique}". Continue the dialogue with the user until you are able to solve for the critique.>`
-        } else {
-          articulatedCard = res.values_card
-
-          //
-          // Override the card with a canonical duplicate if one exists.
-          //
-          if (
-            !session.has("values_card") &&
-            !session.has("canonical_card_id") &&
-            !res.critique
-          ) {
-            const canonical = await this.deduplication.fetchCanonicalCard(
-              res.values_card
-            )
-
-            if (canonical) {
-              console.log(
-                `Found matching canonical card: {canonical.id} for chat {chatId}`
-              )
-              session.set("canonical_card_id", canonical.id)
-              articulatedCard = toDataModel(canonical)
-            }
-          }
-
-          session.set("values_card", JSON.stringify(articulatedCard))
-          result = `<A card (${articulatedCard.title}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
-        }
-
+        functionResult = await this.handleArticulateCardFunction(
+          chatId,
+          messages
+        )
         break
       }
       case submitCardFunction.name: {
-        // Get the values card from the session.
-        if (!session.has("values_card")) {
-          throw Error("No values card in session")
-        }
-
-        submittedCard = JSON.parse(session.get("values_card")) as ValuesCardData
-
-        const canonicalCardId = session.get("canonical_card_id") as number
-
-        // Submit the values card.
-        result = await this.submitValuesCard(
-          submittedCard,
-          chatId,
-          canonicalCardId
-        )
-
-        // Update the session.
-        session.unset("values_card")
-        session.unset("canonical_card_id")
-
+        functionResult = await this.handleSubmitCardFunction(chatId)
         break
       }
       default: {
@@ -199,7 +235,7 @@ export class FunctionsService {
       }
     }
 
-    console.log(`Result from "${func.name}":\n${result}`)
+    console.log(`Result from "${func.name}":\n${functionResult.message}`)
 
     //
     // Call the OpenAI API with the function result.
@@ -207,7 +243,7 @@ export class FunctionsService {
     // This wraps the raw function result in a generated message that fits the flow
     // of the conversation.
     //
-    const functionResponse = await this.openai.createChatCompletion({
+    const response = await this.openai.createChatCompletion({
       model,
       messages: [
         ...messages,
@@ -222,7 +258,7 @@ export class FunctionsService {
         {
           role: "function",
           name: func.name,
-          content: result,
+          content: functionResult.message,
         },
       ],
       temperature: 0.0,
@@ -231,13 +267,13 @@ export class FunctionsService {
       stream: true,
     })
 
-    return { functionResponse, articulatedCard, submittedCard }
+    return { response, ...functionResult }
   }
 
   async submitValuesCard(
     card: ValuesCardData,
     chatId: string,
-    canonicalCardId?: number
+    canonicalCardId: number | null
   ): Promise<string> {
     console.log(`Submitting values card:\n\n${JSON.stringify(card)}`)
 

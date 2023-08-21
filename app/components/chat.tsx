@@ -7,6 +7,7 @@ import { EmptyScreen } from "./empty-screen"
 import { ChatScrollAnchor } from "./chat-scroll-anchor"
 import { toast } from "react-hot-toast"
 import { ValuesCardData } from "~/lib/consts"
+import { ChatCompletionRequestMessage } from "openai-edge/types/api"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
@@ -81,21 +82,47 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       onError: async (error) => {
         console.error(error)
         toast.error(error.message)
+
+        //
+        // Get the last message from the database and set it as the input.
+        //
         const res = await fetch(`/api/messages/${id}`)
         const json = await res.json()
+
         if (json && json.messages) {
           const messages = json.messages as Message[]
           const lastMessage = messages[messages.length - 1]
+
           console.log("messages:", messages)
           console.log("lastMessage:", lastMessage)
+
           if (lastMessage.role === "user") {
             setInput(lastMessage.content)
           }
         }
       },
-      onFinish(message) {
+      onFinish: async (message) => {
         console.log("Chat finished:", message)
         console.log("messages:", messages)
+
+        // Save messages in the database.
+        await fetch(`/api/messages/${id}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chatId: id,
+            messages: [
+              ...messages,
+              {
+                role: "user",
+                content: input,
+              },
+              message,
+            ],
+          }),
+        })
       },
     })
 
