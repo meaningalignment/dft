@@ -90,10 +90,13 @@ export const action: ActionFunction = async ({
   const functionCall = await functions.getFunctionCall(completionResponse)
 
   if (functionCall) {
-    const { functionResponse, articulatedCard, submittedCard } =
-      await functions.handle(functionCall, messages, chatId)
+    const { response, articulatedCard, submittedCard } = await functions.handle(
+      functionCall,
+      messages,
+      chatId
+    )
 
-    return new StreamingTextResponse(OpenAIStream(functionResponse), {
+    return new StreamingTextResponse(OpenAIStream(response), {
       headers: await createHeaders(articulatedCard, submittedCard),
     })
   }
