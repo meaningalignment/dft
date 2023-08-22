@@ -12,27 +12,31 @@ export async function loader({ params }: LoaderArgs) {
 
   const chat = (await db.chat.findFirst({
     where: { id: chatId },
-  })) as ChatModel | null
+    include: { ValuesCard: true },
+  })) as
+    | (ChatModel & {
+        ValuesCard: { id: string }[]
+      })
+    | null
 
-  if (chat?.transcript) {
-    const initialMessages = (chat?.transcript as any as Message[]).slice(1)
-    return json({ chatId, initialMessages })
-  } else {
-    const initialMessages = [
-      { id: "seed", content: seedQuestion, role: "assistant" },
-    ] as Message[]
-    return json({ chatId, initialMessages })
-  }
+  const hasSubmitted = Boolean(chat?.ValuesCard)
+  const initialMessages = chat?.transcript
+    ? (chat?.transcript as any as Message[]).slice(1)
+    : [{ id: "seed", content: seedQuestion, role: "assistant" }]
+
+  return json({ chatId, initialMessages, hasSubmitted })
 }
 
 export default function ChatScreen() {
-  const { chatId, initialMessages } = useLoaderData<typeof loader>()
+  const { chatId, initialMessages, hasSubmitted } =
+    useLoaderData<typeof loader>()
 
   return (
     <div className="flex flex-col h-screen w-screen">
       <Header chatId={chatId} />
       <Chat
         id={chatId!}
+        hasSubmitted={hasSubmitted}
         initialMessages={initialMessages.map((m) => m as Message)}
       />
     </div>

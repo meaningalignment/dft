@@ -6,7 +6,7 @@ import { Button } from "./ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 import { IconArrowElbow, IconArrowRight, IconRefresh } from "./ui/icons"
 import { useEnterSubmit } from "~/hooks/use-enter-submit"
-import { Link } from "@remix-run/react"
+import { Link, useNavigate } from "@remix-run/react"
 import { useCurrentUserValues } from "~/root"
 
 export interface PromptProps
@@ -17,6 +17,7 @@ export interface PromptProps
 }
 
 const FinishedView = () => {
+  const navigate = useNavigate()
   const values = useCurrentUserValues()
   const count = (values?.length ?? 0) + 1
   const suffix = count === 1 ? "" : "s"
@@ -34,7 +35,9 @@ const FinishedView = () => {
         <Button
           variant="outline"
           className="bg-white"
-          onClick={() => window.location.reload()}
+          onClick={() => {
+            window.location.href = "/chat"
+          }}
         >
           <IconRefresh className="mr-2" />
           Articulate Another Value

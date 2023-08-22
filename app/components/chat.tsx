@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useState } from "react"
 import { useChat, type Message } from "ai/react"
 import { cn } from "../utils"
 import { ChatList } from "./chat-list"
@@ -7,18 +7,23 @@ import { EmptyScreen } from "./empty-screen"
 import { ChatScrollAnchor } from "./chat-scroll-anchor"
 import { toast } from "react-hot-toast"
 import { ValuesCardData } from "~/lib/consts"
-import { ChatCompletionRequestMessage } from "openai-edge/types/api"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
+  hasSubmitted?: boolean
   id: string
 }
 
-export function Chat({ id, initialMessages, className }: ChatProps) {
+export function Chat({
+  id,
+  initialMessages,
+  hasSubmitted,
+  className,
+}: ChatProps) {
   const [valueCards, setValueCards] = useState<
     { position: number; card: ValuesCardData }[]
   >([])
-  const [isFinished, setIsFinished] = useState(false)
+  const [isFinished, setIsFinished] = useState(hasSubmitted || false)
 
   const onCardArticulation = (card: ValuesCardData) => {
     console.log("Card articulated:", card)
