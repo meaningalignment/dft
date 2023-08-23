@@ -80,6 +80,10 @@ model Chat {
   provisionalCanonicalCard   CanonicalValuesCard? @relation(fields: [canonicalValuesCardId], references: [id])
   user                       User                 @relation(fields: [userId], references: [id])
   canonicalValuesCardId      Int?
+  articulatorPromptVersion   String
+  articulatorPromptHash      String
+  articulatorModel           String
+  gitCommitHash              String
 }
 
 model Vote {

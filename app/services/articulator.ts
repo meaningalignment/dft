@@ -5,7 +5,7 @@ import {
   ValuesCard,
 } from "@prisma/client"
 import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge/types/api"
-import { ArticulatorConfig, configs, summarize } from "./articulator-config"
+import { ArticulatorConfig, configs, metadata, summarize } from "./articulator-config"
 import { ValuesCardData, } from "~/lib/consts"
 import { OpenAIStream } from "~/lib/openai-stream"
 import { capitalize, toDataModel } from "~/utils"
@@ -47,6 +47,10 @@ export class ArticulatorService {
     this.embeddings = embeddings
     this.openai = openai
     this.db = db
+  }
+
+  metadata() {
+    return metadata(this.config)
   }
 
   private async addServerSideMessage({ chatId, messages, message, data }: {

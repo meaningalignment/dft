@@ -47,6 +47,7 @@ export const action: ActionFunction = async ({
   messages = [{ role: "system", content: articulator.config.prompts.main.prompt }, ...messages]
 
   // Save the transcript in the database in the background.
+  const metadata = articulator.metadata()
   const updateDbPromise = db.chat
     .upsert({
       where: { id: chatId },
@@ -55,6 +56,10 @@ export const action: ActionFunction = async ({
         id: chatId,
         transcript: messages,
         userId,
+        articulatorModel: metadata.model,
+        articulatorPromptHash: metadata.contentHash,
+        articulatorPromptVersion: metadata.name,
+        gitCommitHash: metadata.gitHash,
       },
     })
     .catch((e) => console.error(e))
