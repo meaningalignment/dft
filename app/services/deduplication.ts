@@ -225,27 +225,6 @@ export default class DeduplicationService {
   }
 
   /**
-   * Perform a cosine similarity search on `CanonicalValuesCard`.
-   */
-  private async similaritySearch(
-    vector: number[],
-    limit: number = 10,
-    minimumDistance: number = 0.1
-  ): Promise<Array<CanonicalValuesCard>> {
-    const result = await this.db.$queryRaw<
-      Array<CanonicalValuesCard & { _distance: number }>
-    >`
-    SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${JSON.stringify(
-      vector
-    )}::vector as "_distance" 
-    FROM "CanonicalValuesCard" cvc
-    ORDER BY "_distance" ASC
-    LIMIT ${limit};`
-
-    return result.filter((r) => r._distance < minimumDistance)
-  }
-
-  /**
    * Create an entry in `CanonicalValuesCard`.
    */
   async createCanonicalCard(data: ValuesCardData) {
@@ -337,7 +316,11 @@ export default class DeduplicationService {
     const embeddings = await this.embeddings.embedCandidate(candidate)
 
     // Fetch `limit` canonical cards based on similarity.
-    const canonical = await this.similaritySearch(embeddings, limit)
+    const canonical = await this.embeddings.similaritySearch(
+      embeddings,
+      limit,
+      0.1
+    )
 
     // If we have no canonical cards, we can't deduplicate.
     if (canonical.length === 0) {
@@ -402,7 +385,7 @@ export default class DeduplicationService {
 
 export const deduplicate = inngest.createFunction(
   { name: "Deduplicate" },
-  { cron: "0 */3 * * * " },
+  { cron: process.env.DEDUPLICATION_CRON ?? "0 */3 * * *" },
   async ({ step, logger }) => {
     console.log("Running deduplication...")
 

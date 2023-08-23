@@ -2,6 +2,7 @@ import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { Configuration, OpenAIApi } from "openai-edge"
 import { db, inngest } from "~/config.server"
 import { ValuesCardData } from "~/lib/consts"
+import { calculateAverageEmbedding } from "~/utils"
 
 /**
  * This service is responsible for embedding cards.
@@ -91,6 +92,34 @@ export default class EmbeddingService {
     return (await this.db
       .$queryRaw`SELECT id, title, "instructionsShort", "instructionsDetailed", "evaluationCriteria", embedding::text FROM "CanonicalValuesCard" WHERE "CanonicalValuesCard".embedding IS NULL`) as CanonicalValuesCard[]
   }
+
+  async getUserEmbedding(userId: number): Promise<number[]> {
+    const userEmbeddings: Array<Array<number>> = (
+      await db.$queryRaw<
+        Array<{ embedding: any }>
+      >`SELECT embedding::text FROM "ValuesCard" vc INNER JOIN "Chat" c  ON vc."chatId" = c."id" WHERE c."userId" = ${userId} AND vc."embedding" IS NOT NULL`
+    ).map((r) => JSON.parse(r.embedding).map((v: any) => parseFloat(v)))
+
+    return calculateAverageEmbedding(userEmbeddings)
+  }
+
+  async similaritySearch(
+    vector: number[],
+    limit: number = 10,
+    minimumDistance: number = 0.0
+  ): Promise<Array<CanonicalValuesCard>> {
+    const result = await this.db.$queryRaw<
+      Array<CanonicalValuesCard & { _distance: number }>
+    >`
+    SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${JSON.stringify(
+      vector
+    )}::vector as "_distance" 
+    FROM "CanonicalValuesCard" cvc
+    ORDER BY "_distance" ASC
+    LIMIT ${limit};`
+
+    return result.filter((r) => r._distance < minimumDistance)
+  }
 }
 
 //
@@ -108,7 +137,7 @@ export const embed = inngest.createFunction(
       apiKey: process.env.OPENAI_API_KEY,
     })
     const openai = new OpenAIApi(configuration)
-    const service = new EmbeddingService(db, openai)
+    const service = new EmbeddingService(openai, db)
 
     const canonicalCards = (await step.run(
       "Fetching canonical cards",
