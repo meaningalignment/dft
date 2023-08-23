@@ -10,6 +10,8 @@ import toast from "react-hot-toast"
 import LinkRoutingService from "~/services/linking-routing"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "~/services/embedding"
+import { CanonicalValuesCard } from "@prisma/client"
+import { IconArrowRight } from "~/components/ui/icons"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
@@ -33,20 +35,37 @@ export async function action({ request }: LoaderArgs) {
     `Submitting lesser values ${selected} for more comprehensive value ${values.to.id}`
   )
 
-  // Add the edges in the database.
+  // Upsert all the edges in the database.
   await Promise.all(
     selected.map((id: number) =>
-      db.edge.create({
-        data: {
+      db.edge.upsert({
+        where: {
+          userId_fromId_toId: {
+            userId,
+            fromId: id,
+            toId: values.to.id,
+          },
+        },
+        create: {
           fromId: id,
           toId: values.to.id,
           userId,
         },
+        update: {},
       })
     )
   )
 
   return json({})
+}
+
+function SelectedValuesCard({ value }: { value: CanonicalValuesCard }) {
+  return (
+    <div className="relative h-full w-full opacity-20">
+      <div className="w-full h-full border-2 border-slate-400 rounded-xl z-10 absolute pointer-events-none" />
+      <ValuesCard card={value} />
+    </div>
+  )
 }
 
 export default function LinkScreen() {
@@ -61,6 +80,25 @@ export default function LinkScreen() {
       navigate("/finished")
     }
   }, [draw])
+
+  const onSelect = (id: number) => {
+    if (selectedLesserValues.includes(id)) {
+      setSelectedLesserValues((values) => values.filter((v) => v !== id))
+    } else {
+      setSelectedLesserValues((values) => [...values, id])
+    }
+  }
+
+  const onSkip = () => {
+    // If we're at the end of the draw, navigate to the finish screen.
+    if (index === draw.length - 1) {
+      return navigate("/finished")
+    }
+
+    // Move to the next pair.
+    setIndex((i) => i + 1)
+    setSelectedLesserValues([])
+  }
 
   const onSubmit = async () => {
     const body = { values: draw[index], selected: selectedLesserValues }
@@ -92,6 +130,10 @@ export default function LinkScreen() {
     setSelectedLesserValues([])
   }
 
+  if (!draw[index]) {
+    return null
+  }
+
   return (
     <div className="flex flex-col h-screen w-screen">
       <Header />
@@ -109,26 +151,32 @@ export default function LinkScreen() {
         <div className="mx-auto">
           <ValuesCard card={draw[index].to as any} />
         </div>
-        <div className="grid md:grid-cols-2 mx-auto gap-4">
-          {draw[index].from.map((value, idx) => (
+        <div className="grid lg:grid-cols-2 xl:grid-cols-3 mx-auto gap-4">
+          {draw[index].from.map((value) => (
             <div
-              style={{
-                opacity: selectedLesserValues.includes(value.id) ? 0.5 : 1,
-              }}
-              className={"transition-opacity"}
               key={value.id}
+              onClick={() => onSelect(value.id)}
+              className={"cursor-pointer hover:opacity-80 active:opacity-70"}
             >
-              <ValuesCard card={value as any} />
+              {selectedLesserValues.includes(value.id) ? (
+                <SelectedValuesCard value={value as any} />
+              ) : (
+                <ValuesCard card={value as any} />
+              )}
             </div>
           ))}
         </div>
 
-        <div className="flex flex-col justify-center items-center">
+        <div className="flex flex-row mx-auto justify-center items-center space-x-2">
           <Button
             disabled={selectedLesserValues.length === 0}
             onClick={() => onSubmit()}
           >
             {draw.length - index === 1 ? "Finish" : "Continue"}
+          </Button>
+          <Button variant={"outline"} onClick={() => onSkip()}>
+            <IconArrowRight className="mr-2" />
+            Skip
           </Button>
         </div>
         <div className="flex flex-col justify-center items-center my-4 h-4">

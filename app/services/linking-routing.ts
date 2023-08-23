@@ -121,12 +121,9 @@ export default class LinkRoutingService {
     this.embedding = embedding
   }
 
-  async createHypotheticalEdges(cards: CanonicalValuesCard[]): Promise<
-    {
-      to: CanonicalValuesCard
-      from: CanonicalValuesCard[]
-    }[]
-  > {
+  async createHypotheticalEdges(
+    cards: CanonicalValuesCard[]
+  ): Promise<EdgesHypothesis[]> {
     // Create a message with the cards for the prompt.
     const message = JSON.stringify(
       cards.map((c) => {
@@ -164,7 +161,7 @@ export default class LinkRoutingService {
         l.less_comprehensive_values.includes(c.id)
       ) as CanonicalValuesCard[]
 
-      return { to, from }
+      return { to, from } as EdgesHypothesis
     })
   }
 
@@ -238,10 +235,14 @@ export default class LinkRoutingService {
     })
 
     // The unique values that are linked to a more comprehensive value.
-    const fromValues = [...new Set(hypotheses.map((h) => h.from!))]
+    const fromValues = [...new Set(hypotheses.map((h) => h.fromId))].map(
+      (id) => hypotheses.find((h) => h.fromId === id)!.from!
+    )
 
     // The unique values that are linked to one or several less comprehensive values.
-    const toValues = [...new Set(hypotheses.map((h) => h.to!))]
+    const toValues = [...new Set(hypotheses.map((h) => h.toId))].map(
+      (id) => hypotheses.find((h) => h.toId === id)!.to!
+    )
 
     // The user's votes on the "from" values.
     const votes = (await this.db.vote.findMany({
@@ -273,14 +274,22 @@ export default class LinkRoutingService {
       const distanceA = distances.get(a.id) ?? 0
       const distanceB = distances.get(b.id) ?? 0
 
-      // Sort values with a smaller distance first.
+      // Sort values with a smaller distance as fallback.
       return distanceA - distanceB
     })
 
     // Sort the "to" values by whichever has the lowest index in the corresponding "from" values.
     const sortedToValues = toValues.sort((a, b) => {
-      const indexA = sortedFromValues.findIndex((f) => f.id === a.id)
-      const indexB = sortedFromValues.findIndex((f) => f.id === b.id)
+      const linksA = hypotheses.filter((h) => h.toId === a.id)
+      const linksB = hypotheses.filter((h) => h.toId === b.id)
+
+      const indexA = sortedFromValues.findIndex((f) =>
+        linksA.map((l) => l.fromId).includes(f.id)
+      )
+
+      const indexB = sortedFromValues.findIndex((f) =>
+        linksB.map((l) => l.fromId).includes(f.id)
+      )
 
       return indexA - indexB
     })
@@ -339,14 +348,11 @@ export const hypothesize = inngest.createFunction(
     // Create the hypothetical edges using a prompt.
     //
     const edgeHypotheses = (await step.run(
-      "Create hypothetical edges",
+      "Identify hypothetical edges",
       async () => service.createHypotheticalEdges(cards)
-    )) as any as {
-      to: CanonicalValuesCard
-      from: CanonicalValuesCard[]
-    }[]
+    )) as any as EdgesHypothesis[]
 
-    logger.info(`Created ${edgeHypotheses.length} edge hyptheses.`)
+    logger.info(`Identified ${edgeHypotheses.length} possible links.`)
 
     //
     // Insert the edges into the database.

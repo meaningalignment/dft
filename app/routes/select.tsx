@@ -139,7 +139,7 @@ export default function SelectScreen() {
             hideActions={true}
           />
         </div>
-        <div className="grid xl:grid-cols-3 lg:grid-cols-2 mx-auto gap-4">
+        <div className="grid md:grid-cols-2 mx-auto gap-4">
           {values.map((value) => (
             <div
               key={value.id}
