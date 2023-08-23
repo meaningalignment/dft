@@ -192,30 +192,39 @@ export default class LinkRoutingService {
     })
   }
 
-  private async orderedByThematicRelevance(
-    userId: number,
-    values: CanonicalValuesCard[]
-  ): Promise<Array<CanonicalValuesCard>> {
-    // Get the user's embedding.
-    const user = await this.embedding.getUserEmbedding(userId)
+  private async getUserFromValueDistanceMap(
+    userId: number
+  ): Promise<Map<number, number>> {
+    // Get the user's embedding vector.
+    const vector = await this.embedding.getUserEmbedding(userId)
 
-    // Get the values ordered by their similarity to the user's embedding.
+    // Get the values ordered by their similarity to the vector.
     const result = await this.db.$queryRaw<
-      Array<CanonicalValuesCard & { _distance: number }>
+      Array<{ id: number; _distance: number }>
     >`
-    SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${JSON.stringify(
-      user
-    )}::vector as "_distance" 
-    FROM "CanonicalValuesCard" cvc
-    WHERE cvc.id IN (${values.map((v) => v.id)})
-    ORDER BY "_distance" ASC;`
+    SELECT
+      cvc.id, 
+      cvc.embedding <=> ${JSON.stringify(vector)}::vector as "_distance" 
+    FROM 
+      "CanonicalValuesCard" cvc
+    INNER JOIN "EdgeHypothesis" eh 
+    ON eh."fromId" = cvc.id
+    ORDER BY 
+      "_distance" DESC;`
 
-    return result
+    // Convert the array to a map.
+    const map = new Map<number, number>()
+    for (const r of result) {
+      map.set(r.id, r._distance)
+    }
+
+    // Return the map.
+    return map
   }
 
   async getDraw(userId: number, size: number = 5): Promise<EdgesHypothesis[]> {
     // Find edge hypotheses that the user has not linked together yet.
-    const candidates = await this.db.edgeHypothesis.findMany({
+    const hypotheses = await this.db.edgeHypothesis.findMany({
       where: {
         AND: [
           { from: { edgesTo: { none: { userId } } } },
@@ -228,64 +237,65 @@ export default class LinkRoutingService {
       },
     })
 
-    const fromValues = candidates.map((c) => c.from as CanonicalValuesCard)
-    const toValues = candidates.map((c) => c.to as CanonicalValuesCard)
+    // The unique values that are linked to a more comprehensive value.
+    const fromValues = [...new Set(hypotheses.map((h) => h.from!))]
 
-    //
-    // Sort the value hypotheses by two metrics:
-    //  1. How similar they are thematically to the values submitted by the user.
-    //  2. If the user has selected one of the values as being "wise to consider".
-    //
-    // This should give us relevant values for the user that are "at the edge
-    // of their wisdom".
-    //
+    // The unique values that are linked to one or several less comprehensive values.
+    const toValues = [...new Set(hypotheses.map((h) => h.to!))]
 
-    // Values that the user thinks are "wise to consider".
+    // The user's votes on the "from" values.
     const votes = (await this.db.vote.findMany({
       where: {
         userId,
-        valuesCardId: { in: fromValues.map((c) => c.id) },
+        valuesCardId: { in: fromValues.map((f) => f.id) },
       },
     })) as Vote[]
 
-    // 1., sort the "more comprehensive" values thematically.
-    const sortedThematically = await this.orderedByThematicRelevance(
-      userId,
-      toValues
-    )
-
-    // 2., Sort the sorted values again by wether or not the user has voted for them.
-    const sorted: CanonicalValuesCard[] = sortedThematically
-      .sort((a: CanonicalValuesCard, b: CanonicalValuesCard) => {
-        const voteA = votes.find((v) => v.valuesCardId === a.id)
-        const voteB = votes.find((v) => v.valuesCardId === b.id)
-
-        // If the user has voted for one of the values, it should be prioritized.
-        if (voteA && !voteB) {
-          return -1
-        } else if (!voteA && voteB) {
-          return 1
-        }
-
-        // If both or neither has been voted for, sort by the semantic similarity alone.
-        return 0
-      })
-      .slice(0, size)
+    // The map of distances between the user's embedding and the "from" values.
+    const distances = await this.getUserFromValueDistanceMap(userId)
 
     //
-    // Return a draw of the most relevant "more comprehensive" values,
-    // and all the "less comprehensive" values that are linked to each of them.
+    // Sort the "from" values by the following criteria:
+    //  1. If the user has voted on a value, it should be first.
+    //  2. If the user has not voted on a value, it should be sorted by similarity to the user's embedding.
     //
-    const draw = sorted.map((c) => {
-      return {
-        to: c,
-        from: candidates
-          .filter((h) => h.toId === c.id)
-          .map((h) => h.from as CanonicalValuesCard),
+    const sortedFromValues = fromValues.sort((a, b) => {
+      const voteA = votes.find((v) => v.valuesCardId === a.id)
+      const voteB = votes.find((v) => v.valuesCardId === b.id)
+
+      // Sort values with a linked vote first.
+      if (voteA && !voteB) {
+        return -1
+      } else if (!voteA && voteB) {
+        return 1
       }
+
+      const distanceA = distances.get(a.id) ?? 0
+      const distanceB = distances.get(b.id) ?? 0
+
+      // Sort values with a smaller distance first.
+      return distanceA - distanceB
     })
 
-    return draw
+    // Sort the "to" values by whichever has the lowest index in the corresponding "from" values.
+    const sortedToValues = toValues.sort((a, b) => {
+      const indexA = sortedFromValues.findIndex((f) => f.id === a.id)
+      const indexB = sortedFromValues.findIndex((f) => f.id === b.id)
+
+      return indexA - indexB
+    })
+
+    //
+    // Return a sized draw from the sorted "more comprehensive" values,
+    // and for each, all the "less comprehensive" values linked to it.
+    //
+    const draw = sortedToValues.map((to) => {
+      const from = hypotheses.filter((h) => h.toId === to.id).map((h) => h.from)
+
+      return { to, from } as EdgesHypothesis
+    })
+
+    return draw.slice(0, size)
   }
 }
 
@@ -341,28 +351,15 @@ export const hypothesize = inngest.createFunction(
     //
     // Insert the edges into the database.
     //
-    const operations = (await step.run(
-      "Add hypothetical edges in db",
-      async () => {
-        let promises: Promise<void>[] = []
-
-        for (const edge of edgeHypotheses) {
-          for (const from of edge.from) {
-            promises.push(
-              service.addHypotheticalEdge(from.id, edge.to.id, logger)
-            )
-          }
-        }
-
-        await Promise.all(promises)
-
-        return promises.length
+    for (const edge of edgeHypotheses) {
+      for (const from of edge.from) {
+        await step.run(
+          `Create edge between ${from.id} and ${edge.to.id}`,
+          async () => service.addHypotheticalEdge(from.id, edge.to.id, logger)
+        )
       }
-    )) as number
+    }
 
-    const message = `Upserted ${operations} edges.`
-    logger.info(message)
-
-    return { message }
+    return { message: `Created ${edgeHypotheses.length} hypotheses` }
   }
 )

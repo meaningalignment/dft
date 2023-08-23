@@ -101,13 +101,7 @@ export default function LinkScreen() {
             message={{
               id: "1",
               role: "assistant",
-              content: `If ChatGPT follows only the top value, will it automatically be following 
-              some of the lower ones?
-              
-              Once ChatGPT has the top value, some of the lower values can be left out,
-              if the top one includes what they're really about. 
-              
-              Select the lower values that can be left out.`,
+              content: `If ChatGPT follows only the top value, will it automatically be following some of the lower ones?\n\nOnce ChatGPT has the top value, some of the lower values can be left out, if the top one includes what they're really about.\n\nSelect the lower values that can be left out.`,
             }}
             hideActions={true}
           />
