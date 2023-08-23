@@ -50,7 +50,7 @@ export const action: ActionFunction = async ({
   const updateDbPromise = db.chat
     .upsert({
       where: { id: chatId },
-      update: { transcript: messages },
+      update: {},
       create: {
         id: chatId,
         transcript: messages,

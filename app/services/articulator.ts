@@ -49,6 +49,27 @@ export class ArticulatorService {
     this.db = db
   }
 
+  private async addServerSideMessage({ chatId, messages, message, data }: {
+    chatId: string,
+    messages: ChatCompletionRequestMessage[],
+    message: ChatCompletionRequestMessage,
+    data?: { provisionalCard?: ValuesCardData, provisionalCanonicalCardId?: number | null }
+  }) {
+    messages.push(message)
+    const chat = await this.db.chat.findUnique({
+      where: { id: chatId },
+    })
+    const transcript = (chat?.transcript ?? []) as any as ChatCompletionRequestMessage[]
+    transcript.push(message)
+    await this.db.chat.update({
+      where: { id: chatId },
+      data: {
+        transcript: transcript as any,
+        ...data
+      }
+    })
+  }
+
 
   async processCompletionWithFunctions({ messages, function_call, chatId }: {
     messages: ChatCompletionRequestMessage[],
@@ -70,6 +91,18 @@ export class ArticulatorService {
 
       if (functionCall) {
         // If a function call is present in the stream, handle it...
+        await this.addServerSideMessage({
+          chatId,
+          messages,
+          message: {
+            role: "assistant",
+            content: null as any,
+            function_call: {
+              name: functionCall.name,
+              arguments: JSON.stringify(functionCall.arguments),
+            },
+          }
+        })
         const { response, articulatedCard, submittedCard } = await this.handle(
           functionCall,
           messages,
@@ -137,10 +170,11 @@ export class ArticulatorService {
     // Return the resulting function call.
     //
     const json = JSON.parse(result)["function_call"]
+    console.log(`Function call: ${JSON.stringify(json)}`)
 
     // The following is needed due to tokens being streamed with escape characters.
     json["arguments"] = JSON.parse(json["arguments"])
-
+    console.log(`Function call: ${JSON.stringify(json)}`)
     return json as { name: string, arguments: object }
   }
 
@@ -195,15 +229,18 @@ export class ArticulatorService {
       }
     }
 
-    //
-    // Save the card and canonical duplicate in the database.
-    //
-    await this.db.chat.update({
-      where: { id: chatId },
+    await this.addServerSideMessage({
+      chatId,
+      messages,
+      message: {
+        role: "function",
+        name: "articulate_values_card",
+        content: JSON.stringify(response.values_card)
+      },
       data: {
         provisionalCard: newCard!,
         provisionalCanonicalCardId: canonical?.id ?? null,
-      },
+      }
     })
 
     const message = summarize(this.config, 'articulate_values_card', { title: newCard!.title })
@@ -259,29 +296,43 @@ export class ArticulatorService {
 
     console.log(`Result from "${func.name}":\n${functionResult.message}`)
 
+    await this.addServerSideMessage({
+      chatId,
+      messages,
+      message: {
+        role: "function",
+        name: func.name,
+        content: functionResult.message,
+      }
+    })
+
     //
     // Call the OpenAI API with the function result.
     //
     // This wraps the raw function result in a generated message that fits the flow
     // of the conversation.
     //
+
+    console.log(`Calling OpenAI API with function result...`)
+    console.log(`Messages:\n${JSON.stringify(messages)}`)
+
     const response = await this.openai.createChatCompletion({
       model: this.config.model,
       messages: [
         ...messages,
-        {
-          role: "assistant",
-          content: null,
-          function_call: {
-            name: func.name,
-            arguments: JSON.stringify(func.arguments), // API expects a string.
-          },
-        },
-        {
-          role: "function",
-          name: func.name,
-          content: functionResult.message,
-        },
+        // {
+        //   role: "assistant",
+        //   content: null,
+        //   function_call: {
+        //     name: func.name,
+        //     arguments: JSON.stringify(func.arguments), // API expects a string.
+        //   },
+        // },
+        // {
+        //   role: "function",
+        //   name: func.name,
+        //   content: functionResult.message,
+        // },
       ],
       temperature: 0.0,
       functions: this.config.prompts.main.functions,

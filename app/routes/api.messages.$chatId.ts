@@ -13,13 +13,17 @@ export async function loader({ params }: LoaderArgs) {
 }
 
 function mergeMessages(oldMessages: Message[], newMessages: Message[]) {
-  // find the last message in old, and delete everything before that in new, then merge them
-  const lastOldMessage = oldMessages[oldMessages.length - 1]
-  const lastOldMessageIndex = newMessages.findIndex(
-    (message) => message.role === lastOldMessage.role && message.content === lastOldMessage.content
-  )
-  const newMessagesAfterLastOldMessage = newMessages.slice(lastOldMessageIndex + 1)
-  return [...oldMessages, ...newMessagesAfterLastOldMessage]
+  // go back in new messages, until you find one that's not in old messages, then add the others to the end of old messages
+  let i = newMessages.length - 1
+  while (i >= 0) {
+    const newMessage = newMessages[i]
+    const oldMessage = oldMessages.find(
+      (message) => message.content === newMessage.content
+    )
+    if (!oldMessage) break
+    i--
+  }
+  return [...oldMessages, ...newMessages.slice(i)]
 }
 
 export async function action({ request }: ActionArgs) {
