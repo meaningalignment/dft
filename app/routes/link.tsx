@@ -151,7 +151,7 @@ export default function LinkScreen() {
         <div className="mx-auto">
           <ValuesCard card={draw[index].to as any} />
         </div>
-        <div className="grid lg:grid-cols-2 xl:grid-cols-3 mx-auto gap-4">
+        <div className="grid lg:grid-cols-2 mx-auto gap-4">
           {draw[index].from.map((value) => (
             <div
               key={value.id}
