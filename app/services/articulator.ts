@@ -5,30 +5,14 @@ import {
   ValuesCard,
 } from "@prisma/client"
 import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge/types/api"
-import {
-  ValuesCardData,
-  articulateCardFunction,
-  articulationPrompt,
-  formatCardFunction,
-  model,
-  submitCardFunction,
-} from "~/lib/consts"
+import { ArticulatorConfig, configs, summarize } from "./articulator-config"
+import { ValuesCardData, } from "~/lib/consts"
 import { OpenAIStream } from "~/lib/openai-stream"
 import { capitalize, toDataModel } from "~/utils"
 import EmbeddingService from "./embedding"
 import DeduplicationService from "./deduplication"
 
 // import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
-
-type ArticulateCardFunction = {
-  name: string
-  arguments: {}
-}
-
-type SubmitCardFunction = {
-  name: string
-  arguments: {}
-}
 
 type ArticulateCardResponse = {
   values_card: ValuesCardData
@@ -44,22 +28,63 @@ type FunctionResult = {
 /**
  * A service for handling function calls in the chat.
  */
-export class FunctionsService {
+export class ArticulatorService {
   private deduplication: DeduplicationService
   private embeddings: EmbeddingService
   private openai: OpenAIApi
   private db: PrismaClient
+  public config: ArticulatorConfig
 
   constructor(
+    configKey: string,
     deduplication: DeduplicationService,
     embeddings: EmbeddingService,
     openai: OpenAIApi,
     db: PrismaClient
   ) {
+    this.config = configs[configKey]
     this.deduplication = deduplication
     this.embeddings = embeddings
     this.openai = openai
     this.db = db
+  }
+
+
+  async processCompletionWithFunctions({ messages, function_call, chatId }: {
+    messages: ChatCompletionRequestMessage[],
+    function_call: { name: string } | null,
+    chatId: string
+  }) {
+    const completionResponse = await this.openai.createChatCompletion({
+      model: this.config.model,
+      messages: messages,
+      temperature: 0.7,
+      stream: true,
+      functions: this.config.prompts.main.functions,
+      function_call: function_call ?? "auto",
+    })
+
+    if (completionResponse.ok) {
+      // Get any function call that is present in the stream.
+      const functionCall = await this.getFunctionCall(completionResponse)
+
+      if (functionCall) {
+        // If a function call is present in the stream, handle it...
+        const { response, articulatedCard, submittedCard } = await this.handle(
+          functionCall,
+          messages,
+          chatId
+        )
+        return {
+          functionCall,
+          response,
+          articulatedCard,
+          submittedCard,
+          completionResponse
+        }
+      }
+    }
+    return { completionResponse }
   }
 
   //
@@ -72,7 +97,7 @@ export class FunctionsService {
   //
   async getFunctionCall(
     res: Response
-  ): Promise<ArticulateCardFunction | SubmitCardFunction | null> {
+  ): Promise<{ name: string, arguments: object } | null> {
     const stream = OpenAIStream(res.clone()) // .clone() since we don't want to consume the response.
     const reader = stream.getReader()
 
@@ -116,7 +141,7 @@ export class FunctionsService {
     // The following is needed due to tokens being streamed with escape characters.
     json["arguments"] = JSON.parse(json["arguments"])
 
-    return json as ArticulateCardFunction | SubmitCardFunction
+    return json as { name: string, arguments: object }
   }
 
   private async handleArticulateCardFunction(
@@ -147,7 +172,7 @@ export class FunctionsService {
     // If the card is not yet meeting the guidelines, generate a follow-up question.
     //
     if (response.critique) {
-      const message = `<A card was articulated, but it is not yet meeting the guidelines. The following critique was receieved: "${response.critique}". Continue the dialogue with the user until you are able to solve for the critique.>`
+      const message = summarize(this.config, 'articulate_values_card_critique', { critique: response.critique })
 
       return {
         message,
@@ -181,10 +206,7 @@ export class FunctionsService {
       },
     })
 
-    const message = `<A card (${
-      newCard!.title
-    }) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`
-
+    const message = summarize(this.config, 'articulate_values_card', { title: newCard!.title })
     return { message, articulatedCard: newCard, submittedCard: null }
   }
 
@@ -208,7 +230,7 @@ export class FunctionsService {
   }
 
   async handle(
-    func: ArticulateCardFunction | SubmitCardFunction,
+    func: { name: string, arguments: any },
     messages: any[] = [],
     chatId: string
   ): Promise<{
@@ -219,14 +241,14 @@ export class FunctionsService {
     let functionResult: FunctionResult
 
     switch (func.name) {
-      case articulateCardFunction.name: {
+      case "articulate_values_card": {
         functionResult = await this.handleArticulateCardFunction(
           chatId,
           messages
         )
         break
       }
-      case submitCardFunction.name: {
+      case "submit_values_card": {
         functionResult = await this.handleSubmitCardFunction(chatId)
         break
       }
@@ -244,7 +266,7 @@ export class FunctionsService {
     // of the conversation.
     //
     const response = await this.openai.createChatCompletion({
-      model,
+      model: this.config.model,
       messages: [
         ...messages,
         {
@@ -262,7 +284,7 @@ export class FunctionsService {
         },
       ],
       temperature: 0.0,
-      functions: [articulateCardFunction, submitCardFunction],
+      functions: this.config.prompts.main.functions,
       function_call: "none", // Prevent recursion.
       stream: true,
     })
@@ -293,8 +315,7 @@ export class FunctionsService {
 
     // Embed card.
     await this.embeddings.embedNonCanonicalCard(result)
-
-    return `<the values card (´${card.title}) was submitted. The user has now submitted 1 value in total. Proceed to thank the user for submitting their value.>`
+    return summarize(this.config, 'submit_values_card', { title: card.title })
   }
 
   /** Create a values card from a transcript of the conversation. */
@@ -314,13 +335,13 @@ export class FunctionsService {
     }
 
     const res = await this.openai.createChatCompletion({
-      model,
+      model: this.config.model,
       messages: [
-        { role: "system", content: articulationPrompt },
+        { role: "system", content: this.config.prompts.articulate_values_card.prompt },
         { role: "user", content: transcript },
       ],
-      functions: [formatCardFunction],
-      function_call: { name: formatCardFunction.name },
+      functions: this.config.prompts.articulate_values_card.functions,
+      function_call: { name: "format_card" },
       temperature: 0.0,
       stream: false,
     })

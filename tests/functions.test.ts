@@ -3,21 +3,22 @@ import {
   Configuration,
   OpenAIApi,
 } from "openai-edge"
-import { seedQuestion, systemPrompt } from "../app/lib/consts"
-import { FunctionsService } from "../app/services/functions"
+import { seedQuestion } from "../app/lib/consts"
+import { ArticulatorService } from "../app/services/articulator"
 import { PrismaClient } from "@prisma/client"
 import { mockDeep } from "jest-mock-extended"
 import DeduplicationService from "~/services/deduplication"
 import EmbeddingService from "~/services/embedding"
 
-let functions: FunctionsService
+let articulator: ArticulatorService
 let openai: OpenAIApi
 
 beforeAll(() => {
   openai = new OpenAIApi(
     new Configuration({ apiKey: process.env.OPENAI_API_KEY })
   )
-  functions = new FunctionsService(
+  articulator = new ArticulatorService(
+    'default',
     mockDeep<DeduplicationService>(),
     mockDeep<EmbeddingService>(),
     openai,
@@ -27,7 +28,7 @@ beforeAll(() => {
 
 test(`Articulation of a card when there is too little information generates a critique`, async () => {
   const messages: ChatCompletionRequestMessage[] = [
-    { role: "system", content: systemPrompt },
+    { role: "system", content: articulator.config.prompts.main.prompt },
     { role: "assistant", content: seedQuestion },
     {
       role: "user",
@@ -35,7 +36,7 @@ test(`Articulation of a card when there is too little information generates a cr
     },
   ]
 
-  const response = await functions.articulateValuesCard(messages, null)
+  const response = await articulator.articulateValuesCard(messages, null)
 
   console.log(`Values Card Critique: ${response.critique}`)
 
