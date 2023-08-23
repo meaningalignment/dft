@@ -105,25 +105,25 @@ model Impression {
 }
 
 model Edge {
-  userId      Int
-  fromValueId Int
-  toValueId   Int
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  user        User                @relation(fields: [userId], references: [id])
-  fromValue   CanonicalValuesCard @relation("FromValueRelation", fields: [fromValueId], references: [id])
-  toValue     CanonicalValuesCard @relation("ToValueRelation", fields: [toValueId], references: [id])
+  userId    Int
+  fromId    Int
+  toId      Int
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  user      User                @relation(fields: [userId], references: [id])
+  from      CanonicalValuesCard @relation("FromValueRelation", fields: [fromId], references: [id])
+  to        CanonicalValuesCard @relation("ToValueRelation", fields: [toId], references: [id])
 
-  @@id([userId, fromValueId, toValueId])
+  @@id([userId, fromId, toId])
 }
 
 model EdgeHypothesis {
-  fromValueId Int
-  toValueId   Int
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-  fromValue   CanonicalValuesCard? @relation("FromHypothesizedValueRelation", fields: [fromValueId], references: [id])
-  toValue     CanonicalValuesCard? @relation("ToHypothesizedValueRelation", fields: [toValueId], references: [id])
+  fromId    Int
+  toId      Int
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  from      CanonicalValuesCard? @relation("FromHypothesizedValueRelation", fields: [fromId], references: [id])
+  to        CanonicalValuesCard? @relation("ToHypothesizedValueRelation", fields: [toId], references: [id])
 
-  @@id([fromValueId, toValueId])
+  @@id([fromId, toId])
 }

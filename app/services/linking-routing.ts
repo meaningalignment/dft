@@ -139,7 +139,7 @@ export default class LinkRoutingService {
 
     // Get the hypothetical edges from the prompt.
     const response = await this.openai.createChatCompletion({
-      model,
+      model, // This is probably one of our longest prompts & message combination – might want to use the 32k model eventually.
       messages: [
         { role: "system", content: prompt },
         { role: "user", content: message },
@@ -169,23 +169,25 @@ export default class LinkRoutingService {
   }
 
   async addHypotheticalEdge(
-    from: number,
-    to: number,
+    fromId: number,
+    toId: number,
     logger: Logger
   ): Promise<void> {
     const count = await db.edgeHypothesis.count({
-      where: { fromValueId: from, toValueId: to },
+      where: { fromId, toId },
     })
 
-    if (count === 0) {
-      logger.info(`Edge between ${from} and ${to} already exists.`)
+    if (count !== 0) {
+      logger.info(`Edge between ${fromId} and ${toId} already exists.`)
       return
     }
 
+    logger.info(`Creating edge between ${fromId} and ${toId}.`)
+
     await db.edgeHypothesis.create({
       data: {
-        fromValue: { connect: { id: from } },
-        toValue: { connect: { id: to } },
+        from: { connect: { id: fromId } },
+        to: { connect: { id: toId } },
       },
     })
   }
@@ -216,18 +218,18 @@ export default class LinkRoutingService {
     const candidates = await this.db.edgeHypothesis.findMany({
       where: {
         AND: [
-          { fromValue: { edgesTo: { none: { userId } } } },
-          { toValue: { edgesFrom: { none: { userId } } } },
+          { from: { edgesTo: { none: { userId } } } },
+          { to: { edgesFrom: { none: { userId } } } },
         ],
       },
       include: {
-        fromValue: true,
-        toValue: true,
+        from: true,
+        to: true,
       },
     })
 
-    const fromValues = candidates.map((c) => c.fromValue as CanonicalValuesCard)
-    const toValues = candidates.map((c) => c.toValue as CanonicalValuesCard)
+    const fromValues = candidates.map((c) => c.from as CanonicalValuesCard)
+    const toValues = candidates.map((c) => c.to as CanonicalValuesCard)
 
     //
     // Sort the value hypotheses by two metrics:
@@ -246,7 +248,7 @@ export default class LinkRoutingService {
       },
     })) as Vote[]
 
-    // 1., sort the more comprehensive values thematically.
+    // 1., sort the "more comprehensive" values thematically.
     const sortedThematically = await this.orderedByThematicRelevance(
       userId,
       toValues
@@ -272,14 +274,14 @@ export default class LinkRoutingService {
 
     //
     // Return a draw of the most relevant "more comprehensive" values,
-    // and all the "less comprehensive" values that are linked to them.
+    // and all the "less comprehensive" values that are linked to each of them.
     //
     const draw = sorted.map((c) => {
       return {
         to: c,
         from: candidates
-          .filter((h) => h.toValueId === c.id)
-          .map((h) => h.fromValue as CanonicalValuesCard),
+          .filter((h) => h.toId === c.id)
+          .map((h) => h.from as CanonicalValuesCard),
       }
     })
 
@@ -288,11 +290,11 @@ export default class LinkRoutingService {
 }
 
 //
-// Ingest function for creating link hypotheses.
+// Ingest function for creating edge hypotheses.
 //
 
-export const createLinks = inngest.createFunction(
-  { name: "Create Hypothetical Links" },
+export const hypothesize = inngest.createFunction(
+  { name: "Create Hypothetical Edges" },
   { cron: process.env.EDGE_HYPOTHESIS_CRON ?? "0 */12 * * *" },
   async ({ step, logger }) => {
     logger.info("Running hypothetical links generation...")
@@ -326,7 +328,7 @@ export const createLinks = inngest.createFunction(
     //
     // Create the hypothetical edges using a prompt.
     //
-    const hypotheticalEdges = (await step.run(
+    const edgeHypotheses = (await step.run(
       "Create hypothetical edges",
       async () => service.createHypotheticalEdges(cards)
     )) as any as {
@@ -334,27 +336,31 @@ export const createLinks = inngest.createFunction(
       from: CanonicalValuesCard[]
     }[]
 
-    logger.info(`Created ${hypotheticalEdges.length} hypothetical edges.`)
+    logger.info(`Created ${edgeHypotheses.length} edge hyptheses.`)
 
     //
     // Insert the edges into the database.
     //
-    for (const edge of hypotheticalEdges) {
-      for (const from of edge.from) {
-        await step.run(
-          "Add hypothetical edge in db",
-          async () =>
-            await service.addHypotheticalEdge(from.id, edge.to.id, logger)
-        )
+    const operations = (await step.run(
+      "Add hypothetical edges in db",
+      async () => {
+        let promises: Promise<void>[] = []
+
+        for (const edge of edgeHypotheses) {
+          for (const from of edge.from) {
+            promises.push(
+              service.addHypotheticalEdge(from.id, edge.to.id, logger)
+            )
+          }
+        }
+
+        await Promise.all(promises)
+
+        return promises.length
       }
-    }
+    )) as number
 
-    const operations = hypotheticalEdges.reduce(
-      (acc, e) => acc + e.from.length,
-      0
-    )
     const message = `Upserted ${operations} edges.`
-
     logger.info(message)
 
     return { message }
