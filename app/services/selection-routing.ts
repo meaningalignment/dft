@@ -3,6 +3,7 @@ import { db } from "../config.server"
 import { ChatCompletionFunctions, OpenAIApi } from "openai-edge"
 import { model } from "~/lib/consts"
 import { v4 as uuid } from "uuid"
+import EmbeddingService from "./embedding"
 
 export type Draw = {
   id: string
@@ -43,17 +44,38 @@ const submitWiseValues: ChatCompletionFunctions = {
 export default class SelectionRoutingService {
   private db: PrismaClient
   private openai: OpenAIApi
+  private embedding: EmbeddingService
 
-  constructor(openai: OpenAIApi, db: PrismaClient) {
+  constructor(
+    openai: OpenAIApi,
+    db: PrismaClient,
+    embedding: EmbeddingService
+  ) {
     this.openai = openai
     this.db = db
+    this.embedding = embedding
   }
 
-  async fetchHottestValues(limit = 12): Promise<CanonicalValuesCard[]> {
+  async fetchHottestValues(
+    userId: number,
+    limit = 12
+  ): Promise<CanonicalValuesCard[]> {
     const cards = (await db.canonicalValuesCard.findMany({
       include: {
         Vote: true,
         Impression: true,
+      },
+      where: {
+        Vote: {
+          none: {
+            userId,
+          },
+        },
+        Impression: {
+          none: {
+            userId,
+          },
+        },
       },
     })) as Array<
       CanonicalValuesCard & {
@@ -77,8 +99,23 @@ export default class SelectionRoutingService {
     return cards.slice(0, limit)
   }
 
-  async fetchNewestValues(limit = 12): Promise<CanonicalValuesCard[]> {
+  async fetchNewestValues(
+    userId: number,
+    limit = 12
+  ): Promise<CanonicalValuesCard[]> {
     return (await db.canonicalValuesCard.findMany({
+      where: {
+        Vote: {
+          none: {
+            userId,
+          },
+        },
+        Impression: {
+          none: {
+            userId,
+          },
+        },
+      },
       orderBy: [
         {
           Impression: {
@@ -93,13 +130,21 @@ export default class SelectionRoutingService {
     })) as CanonicalValuesCard[]
   }
 
-  async fetchValuesUserLikelyToVoteOn(
+  async trimCandidatesWithEmbedding(
+    userId: number,
     candidates: CanonicalValuesCard[]
   ): Promise<CanonicalValuesCard[]> {
-    if (process.env.USE_RANDOM_SELECTION_ROUTING === "true") {
-      return candidates.sort(() => Math.random() - 0.5).slice(0, 6)
-    }
+    const userEmbedding = await this.embedding.getUserEmbedding(userId)
+    return await this.embedding.findValuesSimilarTo(
+      userEmbedding,
+      candidates,
+      6
+    )
+  }
 
+  async trimCandidatesWithPrompt(
+    candidates: CanonicalValuesCard[]
+  ): Promise<CanonicalValuesCard[]> {
     const userValue = (await this.db.valuesCard.findFirst()) as ValuesCard
     const userValueString = JSON.stringify({
       id: userValue.id,
@@ -144,8 +189,8 @@ export default class SelectionRoutingService {
   async getDraw(userId: number): Promise<Draw> {
     // Get canidates.
     const candidates = await Promise.all([
-      this.fetchNewestValues(12),
-      this.fetchHottestValues(12),
+      this.fetchNewestValues(userId, 12),
+      this.fetchHottestValues(userId, 12),
     ]).then((r) => [...r[0], ...r[1]])
 
     // Remove duplicates.
@@ -153,15 +198,15 @@ export default class SelectionRoutingService {
       (c, i) => candidates.findIndex((c2) => c2.id === c.id) === i
     )
 
-    // Get values the user is likely to vote on.
-    const userLikelyToVoteOn = await this.fetchValuesUserLikelyToVoteOn(
-      candidatesUnique
-    )
-
-    // Return draw.
-    return {
-      id: uuid(),
-      values: userLikelyToVoteOn,
+    // Trim unique candidates.
+    let values: CanonicalValuesCard[] = []
+    if (process.env.SELECT_ROUTING_USE_PROMPT === "true") {
+      values = await this.trimCandidatesWithPrompt(candidatesUnique)
+    } else {
+      values = await this.trimCandidatesWithEmbedding(userId, candidatesUnique)
     }
+
+    // Return draw with trimmed candidates.
+    return { id: uuid(), values }
   }
 }

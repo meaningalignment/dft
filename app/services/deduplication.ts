@@ -303,6 +303,24 @@ export default class DeduplicationService {
     return toDataModel(card)
   }
 
+  private async similaritySearch(
+    vector: number[],
+    limit: number = 10,
+    minimumDistance: number = 0.1
+  ): Promise<Array<CanonicalValuesCard>> {
+    const result = await this.db.$queryRaw<
+      Array<CanonicalValuesCard & { _distance: number }>
+    >`
+      SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${JSON.stringify(
+        vector
+      )}::vector as "_distance" 
+      FROM "CanonicalValuesCard" cvc
+      ORDER BY "_distance" ASC
+      LIMIT ${limit};`
+
+    return result.filter((r) => r._distance < minimumDistance)
+  }
+
   /**
    * If a canonical values card exist that is essentially the same value as the provided candidate, return it.
    * Otherwise, return null.
@@ -316,11 +334,7 @@ export default class DeduplicationService {
     const embeddings = await this.embeddings.embedCandidate(candidate)
 
     // Fetch `limit` canonical cards based on similarity.
-    const canonical = await this.embeddings.similaritySearch(
-      embeddings,
-      limit,
-      0.1
-    )
+    const canonical = await this.similaritySearch(embeddings, limit, 0.1)
 
     // If we have no canonical cards, we can't deduplicate.
     if (canonical.length === 0) {

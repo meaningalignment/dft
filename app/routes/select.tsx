@@ -10,6 +10,7 @@ import { CanonicalValuesCard } from "@prisma/client"
 import { IconCheck } from "~/components/ui/icons"
 import SelectionRoutingService from "~/services/selection-routing"
 import { Configuration, OpenAIApi } from "openai-edge"
+import EmbeddingService from "~/services/embedding"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
@@ -18,7 +19,8 @@ export async function loader({ request }: LoaderArgs) {
   const openai = new OpenAIApi(
     new Configuration({ apiKey: process.env.OPENAI_API_KEY })
   )
-  const routing = new SelectionRoutingService(openai, db)
+  const embedding = new EmbeddingService(openai, db)
+  const routing = new SelectionRoutingService(openai, db, embedding)
 
   // Get the draw for this user.
   const { id, values } = await routing.getDraw(userId)
