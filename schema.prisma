@@ -58,12 +58,14 @@ model CanonicalValuesCard {
   createdAt            DateTime                     @default(now())
   updatedAt            DateTime                     @updatedAt
   valuesCards          ValuesCard[]
-  edgesFrom            Edge[]                       @relation("FromValuesRelation")
+  edgesFrom            Edge[]                       @relation("FromValueRelation")
   edgesTo              Edge[]                       @relation("ToValueRelation")
   Vote                 Vote[]
   embedding            Unsupported("vector(1536)")?
   Impression           Impression[]
   Chat                 Chat[]
+  edgeHypothesisFrom   EdgeHypothesis[]             @relation("FromHypothesizedValueRelation")
+  edgeHypothesisTo     EdgeHypothesis[]             @relation("ToHypothesizedValueRelation")
 }
 
 model Chat {
@@ -103,20 +105,25 @@ model Impression {
 }
 
 model Edge {
-  id           Int                 @id @default(autoincrement())
-  userId       Int
-  fromValueId  Int
-  toValueId    Int
-  relationship Relationship
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  user         User                @relation(fields: [userId], references: [id])
-  fromValue    CanonicalValuesCard @relation("FromValuesRelation", fields: [fromValueId], references: [id])
-  toValue      CanonicalValuesCard @relation("ToValueRelation", fields: [toValueId], references: [id])
+  userId    Int
+  fromId    Int
+  toId      Int
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+  user      User                @relation(fields: [userId], references: [id])
+  from      CanonicalValuesCard @relation("FromValueRelation", fields: [fromId], references: [id])
+  to        CanonicalValuesCard @relation("ToValueRelation", fields: [toId], references: [id])
+
+  @@id([userId, fromId, toId])
 }
 
-enum Relationship {
-  more_comprehensive
-  incommensurable
-  dont_know
+model EdgeHypothesis {
+  fromId    Int
+  toId      Int
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  from      CanonicalValuesCard? @relation("FromHypothesizedValueRelation", fields: [fromId], references: [id])
+  to        CanonicalValuesCard? @relation("ToHypothesizedValueRelation", fields: [toId], references: [id])
+
+  @@id([fromId, toId])
 }

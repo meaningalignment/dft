@@ -1,38 +1,27 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
-import { useLoaderData, useNavigate, useRevalidator } from "@remix-run/react"
+import { useLoaderData, useNavigate } from "@remix-run/react"
 import { LoaderArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import { ChatMessage } from "~/components/chat-message"
 import ValuesCard from "~/components/values-card"
-import {
-  CanonicalValuesCard,
-  Edge,
-  Relationship as RelationshipType,
-} from "@prisma/client"
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
-import { Label } from "~/components/ui/label"
 import { useEffect, useState } from "react"
-import { splitToPairs } from "~/utils"
 import toast from "react-hot-toast"
 import LinkRoutingService from "~/services/linking-routing"
-
-type Relationship =
-  | "a_more_comprehensive"
-  | "b_more_comprehensive"
-  | "incommensurable"
-  | "dont_know"
+import { Configuration, OpenAIApi } from "openai-edge"
+import EmbeddingService from "~/services/embedding"
+import { CanonicalValuesCard } from "@prisma/client"
+import { IconArrowRight } from "~/components/ui/icons"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
-  const service = new LinkRoutingService(db)
-  const draw = await service.getDraw(userId)
 
-  console.log(
-    `Got linking draw: ${draw.map(
-      (p) => p[0].id.toString() + ", " + p[1].id
-    )} for user: ${userId}`
-  )
+  const config = new Configuration({ apiKey: process.env.OPENAI_API_KEY })
+  const openai = new OpenAIApi(config)
+  const embedding = new EmbeddingService(openai, db)
+  const service = new LinkRoutingService(openai, db, embedding)
+
+  const draw = await service.getDraw(userId)
 
   return json({ draw })
 }
@@ -40,52 +29,50 @@ export async function loader({ request }: LoaderArgs) {
 export async function action({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
   const body = await request.json()
-  const { values, relationship } = body
+  const { values, selected } = body
 
-  console.log(`Submitting relationship ${relationship} for ${values}`)
+  console.log(
+    `Submitting lesser values ${selected} for more comprehensive value ${values.to.id}`
+  )
 
-  //
-  // Add the relationship in the database.
-  //
-
-  const [a, b] = values
-  let [from, to]: CanonicalValuesCard[] = values
-  let relationshipType: RelationshipType
-
-  if (relationship === "a_more_comprehensive") {
-    from = b
-    to = a
-    relationshipType = RelationshipType.more_comprehensive
-  } else if (relationship === "b_more_comprehensive") {
-    from = a
-    to = b
-    relationshipType = RelationshipType.more_comprehensive
-  } else if (relationship === "incommensurable") {
-    relationshipType = RelationshipType.incommensurable
-  } else if (relationship === "dont_know") {
-    relationshipType = RelationshipType.dont_know
-  } else {
-    throw new Error(`Invalid relationship: ${relationship}`)
-  }
-
-  await db.edge.create({
-    data: {
-      userId,
-      fromValueId: from.id,
-      toValueId: to.id,
-      relationship: relationshipType,
-    },
-  })
+  // Upsert all the edges in the database.
+  await Promise.all(
+    selected.map((id: number) =>
+      db.edge.upsert({
+        where: {
+          userId_fromId_toId: {
+            userId,
+            fromId: id,
+            toId: values.to.id,
+          },
+        },
+        create: {
+          fromId: id,
+          toId: values.to.id,
+          userId,
+        },
+        update: {},
+      })
+    )
+  )
 
   return json({})
+}
+
+function SelectedValuesCard({ value }: { value: CanonicalValuesCard }) {
+  return (
+    <div className="relative h-full w-full opacity-20">
+      <div className="w-full h-full border-2 border-slate-400 rounded-xl z-10 absolute pointer-events-none" />
+      <ValuesCard card={value} />
+    </div>
+  )
 }
 
 export default function LinkScreen() {
   const navigate = useNavigate()
   const { draw } = useLoaderData<typeof loader>()
-  const [currentPairIndex, setCurrentPairIndex] = useState<number>(0)
-  const [currentRelationship, setCurrentRelationship] =
-    useState<Relationship | null>(null)
+  const [index, setIndex] = useState<number>(0)
+  const [selectedLesserValues, setSelectedLesserValues] = useState<number[]>([])
 
   // If there are no values in the draw, continue to next step.
   useEffect(() => {
@@ -94,30 +81,44 @@ export default function LinkScreen() {
     }
   }, [draw])
 
+  const onSelect = (id: number) => {
+    if (selectedLesserValues.includes(id)) {
+      setSelectedLesserValues((values) => values.filter((v) => v !== id))
+    } else {
+      setSelectedLesserValues((values) => [...values, id])
+    }
+  }
+
+  const onSkip = () => {
+    // If we're at the end of the draw, navigate to the finish screen.
+    if (index === draw.length - 1) {
+      return navigate("/finished")
+    }
+
+    // Move to the next pair.
+    setIndex((i) => i + 1)
+    setSelectedLesserValues([])
+  }
+
   const onSubmit = async () => {
-    const index = currentPairIndex
-    const body = { values: draw[index], relationship: currentRelationship }
+    const body = { values: draw[index], selected: selectedLesserValues }
 
     // Post the relationship to the server in the background,
     // and reset in case it fails.
-    fetch("/link", {
+    const response = await fetch("/link", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
-    }).then(async (response) => {
-      if (!response.ok) {
-        toast.error("Failed to submit relationship.")
-
-        // Reset.
-        setCurrentPairIndex(index)
-        setCurrentRelationship(null)
-
-        const text = await response.json()
-        console.error(text)
-      }
     })
+
+    if (!response.ok) {
+      const text = await response.json()
+      console.error(text)
+      toast.error("Failed to submit relationship. Please try again.")
+      return
+    }
 
     // If we're at the end of the draw, navigate to the finish screen.
     if (index === draw.length - 1) {
@@ -125,21 +126,12 @@ export default function LinkScreen() {
     }
 
     // Move to the next pair.
-    setCurrentPairIndex((i) => i + 1)
-    setCurrentRelationship(null)
+    setIndex((i) => i + 1)
+    setSelectedLesserValues([])
   }
 
-  const isMoreComprehensive = (card: CanonicalValuesCard) => {
-    const [a, b] = draw[currentPairIndex]
-    if (a.id === card.id) {
-      return currentRelationship === "a_more_comprehensive"
-    }
-
-    if (b.id === card.id) {
-      return currentRelationship === "b_more_comprehensive"
-    }
-
-    return false
+  if (!draw[index]) {
+    return null
   }
 
   return (
@@ -151,72 +143,46 @@ export default function LinkScreen() {
             message={{
               id: "1",
               role: "assistant",
-              content: `Here are two values ChatGPT could consider in forming its response.\n\nCertain values include all of the important aspects of other values. If this is the case, it would be enough for ChatGPT to only consider one of these values. Is this the case with the values below? Or are they both important in unique ways?\n\nYour next task is to determine the relationship between 5 value pairs.`,
+              content: `If ChatGPT follows only the top value, will it automatically be following some of the lower ones?\n\nOnce ChatGPT has the top value, some of the lower values can be left out, if the top one includes what they're really about.\n\nSelect the lower values that can be left out.`,
             }}
             hideActions={true}
           />
         </div>
-        <div className="grid md:grid-cols-2 mx-auto gap-4">
-          {draw[currentPairIndex]?.map((value, idx) => (
+        <div className="mx-auto">
+          <ValuesCard card={draw[index].to as any} />
+        </div>
+        <div className="grid lg:grid-cols-2 mx-auto gap-4">
+          {draw[index].from.map((value) => (
             <div
-              style={{
-                opacity:
-                  currentRelationship !== null &&
-                  currentRelationship !== "incommensurable" &&
-                  !isMoreComprehensive(value as any)
-                    ? 0.5
-                    : 1,
-              }}
-              className={"transition-opacity"}
               key={value.id}
+              onClick={() => onSelect(value.id)}
+              className={"cursor-pointer hover:opacity-80 active:opacity-70"}
             >
-              <ValuesCard
-                card={value as any}
-                header={
-                  <h1 className="font-bold text-2xl mb-2">
-                    {idx === 0 ? "A" : "B"}
-                  </h1>
-                }
-              />
+              {selectedLesserValues.includes(value.id) ? (
+                <SelectedValuesCard value={value as any} />
+              ) : (
+                <ValuesCard card={value as any} />
+              )}
             </div>
           ))}
         </div>
 
-        <div className="flex flex-col justify-center items-center">
-          <RadioGroup
-            className="mb-12"
-            value={currentRelationship || "undefined"}
-            onValueChange={(r: Relationship) => setCurrentRelationship(r)}
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="a_more_comprehensive" id="1" />
-              <Label htmlFor="1">It is enough to only consider A</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="b_more_comprehensive" id="2" />
-              <Label htmlFor="2">It is enough to only consider B</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="incommensurable" id="3" />
-              <Label htmlFor="3">They are both important in unique ways</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="dont_know" id="4" />
-              <Label htmlFor="4">I don't know</Label>
-            </div>
-          </RadioGroup>
-
+        <div className="flex flex-row mx-auto justify-center items-center space-x-2">
           <Button
-            disabled={currentRelationship === null}
+            disabled={selectedLesserValues.length === 0}
             onClick={() => onSubmit()}
           >
-            {draw.length - currentPairIndex === 1 ? "Finish" : "Continue"}
+            {draw.length - index === 1 ? "Finish" : "Continue"}
+          </Button>
+          <Button variant={"outline"} onClick={() => onSkip()}>
+            <IconArrowRight className="mr-2" />
+            Skip
           </Button>
         </div>
         <div className="flex flex-col justify-center items-center my-4 h-4">
           <p className="text-stone-300">
-            {`Submit ${draw.length - currentPairIndex} more relationship${
-              draw.length - currentPairIndex === 1 ? "" : "s"
+            {`Submit ${draw.length - index} more relationship${
+              draw.length - index === 1 ? "" : "s"
             } to finish`}
           </p>
         </div>
