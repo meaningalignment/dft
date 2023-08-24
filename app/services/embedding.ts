@@ -103,22 +103,22 @@ export default class EmbeddingService {
     return calculateAverageEmbedding(userEmbeddings)
   }
 
-  async similaritySearch(
+  async findValuesSimilarTo(
     vector: number[],
-    limit: number = 10,
-    minimumDistance: number = 0.0
+    values: CanonicalValuesCard[] | null,
+    limit: number = 10
   ): Promise<Array<CanonicalValuesCard>> {
-    const result = await this.db.$queryRaw<
-      Array<CanonicalValuesCard & { _distance: number }>
-    >`
-    SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${JSON.stringify(
+    const query = `SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> '${JSON.stringify(
       vector
-    )}::vector as "_distance" 
+    )}'::vector as "_distance" 
     FROM "CanonicalValuesCard" cvc
+    WHERE cvc.id IN (${values!.map((c) => c.id).join(",")})
     ORDER BY "_distance" ASC
     LIMIT ${limit};`
 
-    return result.filter((r) => r._distance < minimumDistance)
+    return this.db.$queryRawUnsafe<
+      Array<CanonicalValuesCard & { _distance: number }>
+    >(query)
   }
 }
 
