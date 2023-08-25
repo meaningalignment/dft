@@ -23,14 +23,10 @@ export async function loader({ request }: LoaderArgs) {
     totalRelationships,
     carouselValues,
   ] = await Promise.all([
-    db.canonicalValuesCard.count({
+    db.valuesCard.count({
       where: {
-        valuesCards: {
-          some: {
-            chat: {
-              userId,
-            },
-          },
+        chat: {
+          userId,
         },
       },
     }),
@@ -54,6 +50,11 @@ export async function loader({ request }: LoaderArgs) {
           select: {
             Vote: true,
           },
+        },
+      },
+      orderBy: {
+        Vote: {
+          _count: "desc",
         },
       },
     }),
@@ -114,8 +115,8 @@ function Carousel({ cards }: { cards: CardWithCounts[] }) {
     <div className="relative z-0 w-full">
       <div ref={carouselRef} className="flex hide-scrollbar space-x-4">
         {cards.map((card, index) => (
-          <div className="flex-grow">
-            <ValuesCard key={index} card={card} />
+          <div key={card.id} className="flex-grow">
+            <ValuesCard card={card} />
             <p className="mx-8 mt-2 text-sm text-neutral-500">
               {footerText(card)}
             </p>
