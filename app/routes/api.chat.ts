@@ -41,37 +41,10 @@ export const action: ActionFunction = async ({
   const userId = await auth.getUserId(request)
   const json = await request.json()
 
-  let { messages, chatId, function_call } = json
-
-  // Prepend the system message.
-  messages = [{ role: "system", content: articulator.config.prompts.main.prompt }, ...messages]
-
-  // Save the transcript in the database in the background.
-  const metadata = articulator.metadata()
-  const updateDbPromise = db.chat
-    .upsert({
-      where: { id: chatId },
-      update: {},
-      create: {
-        id: chatId,
-        transcript: messages,
-        userId,
-        articulatorModel: metadata.model,
-        articulatorPromptHash: metadata.contentHash,
-        articulatorPromptVersion: metadata.name,
-        gitCommitHash: metadata.gitHash,
-      },
-    })
-    .catch((e) => console.error(e))
+  const { messages, chatId, function_call } = json
 
   // Create stream for next chat message.
-  const articulatorPromise = articulator.processCompletionWithFunctions({ messages, function_call, chatId })
-
-  // Wait for both the database update and the OpenAI API call to finish.
-  const [{ completionResponse, ...etc }, _] = await Promise.all([
-    articulatorPromise,
-    updateDbPromise,
-  ])
+  const { completionResponse, ...etc } = await articulator.processCompletionWithFunctions({ userId, messages, function_call, chatId })
 
   if (!completionResponse.ok) {
     const body = await completionResponse.json()

@@ -53,6 +53,7 @@ export class ArticulatorService {
     return metadata(this.config)
   }
 
+  // TODO: put it in a transaction
   private async addServerSideMessage({ chatId, messages, message, data }: {
     chatId: string,
     messages: ChatCompletionRequestMessage[],
@@ -75,11 +76,43 @@ export class ArticulatorService {
   }
 
 
-  async processCompletionWithFunctions({ messages, function_call, chatId }: {
+  async processCompletionWithFunctions({ userId, messages, function_call, chatId }: {
+    userId: number,
     messages: ChatCompletionRequestMessage[],
     function_call: { name: string } | null,
     chatId: string
   }) {
+    // Prepend the system message.
+    messages = [{ role: "system", content: this.config.prompts.main.prompt }, ...messages]
+
+    // update the db
+    // TODO: put it in a transaction
+    const chat = await this.db.chat.findUnique({ where: { id: chatId } })
+    if (chat) {
+      const transcript = (chat?.transcript ?? []) as any as ChatCompletionRequestMessage[]
+      const lastMessage = messages[messages.length - 1]
+      transcript.push(lastMessage)
+      await this.db.chat.update({
+        where: { id: chatId },
+        data: {
+          transcript: transcript as any,
+        }
+      })
+    } else {
+      const metadata = this.metadata()
+      await this.db.chat.create({
+        data: {
+          id: chatId,
+          transcript: messages as any,
+          userId,
+          articulatorModel: metadata.model,
+          articulatorPromptHash: metadata.contentHash,
+          articulatorPromptVersion: metadata.name,
+          gitCommitHash: metadata.gitHash,
+        },
+      })
+    }
+
     const completionResponse = await this.openai.createChatCompletion({
       model: this.config.model,
       messages: messages,
@@ -89,39 +122,37 @@ export class ArticulatorService {
       function_call: function_call ?? "auto",
     })
 
-    if (completionResponse.ok) {
-      // Get any function call that is present in the stream.
-      const functionCall = await this.getFunctionCall(completionResponse)
+    if (!completionResponse.ok) return { completionResponse }
 
-      if (functionCall) {
-        // If a function call is present in the stream, handle it...
-        await this.addServerSideMessage({
-          chatId,
-          messages,
-          message: {
-            role: "assistant",
-            content: null as any,
-            function_call: {
-              name: functionCall.name,
-              arguments: JSON.stringify(functionCall.arguments),
-            },
-          }
-        })
-        const { response, articulatedCard, submittedCard } = await this.handle(
-          functionCall,
-          messages,
-          chatId
-        )
-        return {
-          functionCall,
-          response,
-          articulatedCard,
-          submittedCard,
-          completionResponse
-        }
+    // Get any function call that is present in the stream.
+    const functionCall = await this.getFunctionCall(completionResponse)
+    if (!functionCall) return { completionResponse }
+
+    // If a function call is present in the stream, handle it...
+    await this.addServerSideMessage({
+      chatId,
+      messages,
+      message: {
+        role: "assistant",
+        content: null as any,
+        function_call: {
+          name: functionCall.name,
+          arguments: JSON.stringify(functionCall.arguments),
+        },
       }
+    })
+    const { response, articulatedCard, submittedCard } = await this.handle(
+      functionCall,
+      messages,
+      chatId
+    )
+    return {
+      functionCall,
+      response,
+      articulatedCard,
+      submittedCard,
+      completionResponse
     }
-    return { completionResponse }
   }
 
   //
@@ -322,22 +353,7 @@ export class ArticulatorService {
 
     const response = await this.openai.createChatCompletion({
       model: this.config.model,
-      messages: [
-        ...messages,
-        // {
-        //   role: "assistant",
-        //   content: null,
-        //   function_call: {
-        //     name: func.name,
-        //     arguments: JSON.stringify(func.arguments), // API expects a string.
-        //   },
-        // },
-        // {
-        //   role: "function",
-        //   name: func.name,
-        //   content: functionResult.message,
-        // },
-      ],
+      messages,
       temperature: 0.0,
       functions: this.config.prompts.main.functions,
       function_call: "none", // Prevent recursion.
