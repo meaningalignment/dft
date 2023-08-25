@@ -1,15 +1,9 @@
 import { Configuration, OpenAIApi } from "openai-edge"
 import { ActionArgs, ActionFunction } from "@remix-run/node"
-import {
-  articulateCardFunction,
-  model,
-  submitCardFunction,
-  systemPrompt,
-  ValuesCardData,
-} from "~/lib/consts"
+import { ValuesCardData } from "~/lib/consts"
 import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
 import { auth, db } from "~/config.server"
-import { FunctionsService } from "~/services/functions"
+import { ArticulatorService } from "~/services/articulator"
 import DeduplicationService from "~/services/deduplication"
 import EmbeddingService from "~/services/embedding"
 
@@ -22,7 +16,7 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration)
 const embeddings = new EmbeddingService(openai, db)
 const deduplication = new DeduplicationService(embeddings, openai, db)
-const functions = new FunctionsService(deduplication, embeddings, openai, db)
+const articulator = new ArticulatorService('default', deduplication, embeddings, openai, db)
 
 async function createHeaders(
   articulatedCard?: ValuesCardData | null,
@@ -47,58 +41,20 @@ export const action: ActionFunction = async ({
   const userId = await auth.getUserId(request)
   const json = await request.json()
 
-  let { messages, chatId, function_call } = json
-
-  // Prepend the system message.
-  messages = [{ role: "system", content: systemPrompt }, ...messages]
-
-  // Save the transcript in the database in the background.
-  const updateDbPromise = db.chat
-    .upsert({
-      where: { id: chatId },
-      update: { transcript: messages },
-      create: {
-        id: chatId,
-        transcript: messages,
-        userId,
-      },
-    })
-    .catch((e) => console.error(e))
+  const { messages, chatId, function_call } = json
 
   // Create stream for next chat message.
-  const completionPromise = openai.createChatCompletion({
-    model,
-    messages: messages,
-    temperature: 0.7,
-    stream: true,
-    functions: [articulateCardFunction, submitCardFunction],
-    function_call: function_call ?? "auto",
-  })
-
-  // Wait for both the database update and the OpenAI API call to finish.
-  const [completionResponse, _] = await Promise.all([
-    completionPromise,
-    updateDbPromise,
-  ])
+  const { completionResponse, ...etc } = await articulator.processCompletionWithFunctions({ userId, messages, function_call, chatId })
 
   if (!completionResponse.ok) {
     const body = await completionResponse.json()
     throw body.error
   }
 
-  // Get any function call that is present in the stream.
-  const functionCall = await functions.getFunctionCall(completionResponse)
-
-  if (functionCall) {
+  if (etc.functionCall) {
     // If a function call is present in the stream, handle it...
-    const { response, articulatedCard, submittedCard } = await functions.handle(
-      functionCall,
-      messages,
-      chatId
-    )
-
-    return new StreamingTextResponse(OpenAIStream(response), {
-      headers: await createHeaders(articulatedCard, submittedCard),
+    return new StreamingTextResponse(OpenAIStream(etc.response), {
+      headers: await createHeaders(etc.articulatedCard, etc.submittedCard),
     })
   } else {
     // ...otherwise, return the response.

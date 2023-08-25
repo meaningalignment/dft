@@ -1,7 +1,6 @@
 import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
-import { ChatCompletionRequestMessage } from "openai-edge"
+import { Message } from "ai"
 import { db } from "~/config.server"
-import { systemPrompt } from "~/lib/consts"
 
 export async function loader({ params }: LoaderArgs) {
   const chatId = params.chatId
@@ -13,20 +12,33 @@ export async function loader({ params }: LoaderArgs) {
   return json({ messages })
 }
 
+function mergeMessages(oldMessages: Message[], newMessages: Message[]) {
+  // go back in new messages, until you find one that's not in old messages, then add the others to the end of old messages
+  let i = newMessages.length - 1
+  while (i >= 0) {
+    const newMessage = newMessages[i]
+    const oldMessage = oldMessages.find(
+      (message) => message.content === newMessage.content
+    )
+    if (!oldMessage) break
+    i--
+  }
+  return [...oldMessages, ...newMessages.slice(i)]
+}
+
 export async function action({ request }: ActionArgs) {
   const body = await request.json()
   let { messages, chatId } = body
+  messages = messages.filter((message: any) => message.content !== "")
 
-  // Prepend the system message and filter out empty messages
-  // (can happen when a user regenerates a message).
-  messages = [
-    { role: "system", content: systemPrompt },
-    ...messages.filter((message: any) => message.content !== ""),
-  ] as ChatCompletionRequestMessage[]
+  const chat = await db.chat.findUnique({ where: { id: chatId } })
+  if (!chat) throw new Error(`No chat with id ${chatId}`)
+  const prevMessages = chat.transcript as any as Message[]
+  const mergedMessages = mergeMessages(prevMessages, messages)
 
   await db.chat.update({
     where: { id: chatId },
-    data: { transcript: messages as any },
+    data: { transcript: mergedMessages as any },
   })
 
   return json({ message: "Saved new messages in db" })
