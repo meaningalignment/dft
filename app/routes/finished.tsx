@@ -142,19 +142,25 @@ export default function FinishedScreen() {
     <div className="flex flex-col h-screen w-screen">
       <Header />
       <div className="grid flex-grow place-items-center">
-        <div className="flex flex-col items-center mx-4">
-          <h1 className="text-4xl font-bold mb-8">Thank You!</h1>
+        <div className="flex flex-col items-center mx-auto max-w-xl text-center px-8">
+          <h1 className="text-4xl font-bold mb-8">🙏 Thank You!</h1>
+
           <p>
-            You submitted{" "}
+            You've contributed{" "}
             <strong>
               {userValuesCount} value
               {userValuesCount > 1 ? "s" : ""}
-            </strong>
-            . In total, <strong>{totalValuesCount} values</strong> have been
-            submitted.
+            </strong>{" "}
+            to our growing <strong>Moral Graph</strong>. So far, participants
+            like you have articulated <strong>{totalValuesCount} values</strong>
+            . A total of{" "}
+            <strong>{totalRelationships} value-to-value relationships</strong>{" "}
+            have been submitted, and <strong>{totalVotes} values</strong> have
+            earned endorsements from other participants.
           </p>
-          <p>
-            {totalRelationships} relationships have been created between values.
+          <p className="text-sm text-neutral-500 mt-8">
+            Once the Moral Graph is complete, you'll receive a follow-up email
+            showcasing the results.
           </p>
         </div>
 
