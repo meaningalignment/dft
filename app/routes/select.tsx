@@ -130,7 +130,7 @@ export default function SelectScreen() {
   return (
     <div className="flex flex-col h-screen w-screen">
       <Header />
-      <div className="grid flex-grow place-items-center space-y-4 my-12 px-8">
+      <div className="grid flex-grow place-items-center space-y-4 py-12 px-8">
         <div className="max-w-2xl">
           <ChatMessage
             message={{

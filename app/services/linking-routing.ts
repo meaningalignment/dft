@@ -299,7 +299,10 @@ export default class LinkRoutingService {
     // and for each, all the "less comprehensive" values linked to it.
     //
     const draw = sortedToValues.map((to) => {
-      const from = hypotheses.filter((h) => h.toId === to.id).map((h) => h.from)
+      const from = hypotheses
+        .filter((h) => h.toId === to.id)
+        .map((h) => h.from)
+        .slice(0, 3)
 
       return { to, from } as EdgesHypothesis
     })
