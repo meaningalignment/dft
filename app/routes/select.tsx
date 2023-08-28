@@ -130,7 +130,7 @@ export default function SelectScreen() {
   return (
     <div className="flex flex-col h-screen w-screen">
       <Header />
-      <div className="grid flex-grow place-items-center space-y-4 my-12 px-8">
+      <div className="grid flex-grow place-items-center space-y-8 py-12 px-8">
         <div className="max-w-2xl">
           <ChatMessage
             message={{
@@ -141,7 +141,7 @@ export default function SelectScreen() {
             hideActions={true}
           />
         </div>
-        <div className="grid md:grid-cols-2 mx-auto gap-4">
+        <div className="grid lg:grid-cols-2 xl:grid-cols-3 mx-auto gap-4">
           {values.map((value) => (
             <div
               key={value.id}
@@ -156,7 +156,7 @@ export default function SelectScreen() {
             </div>
           ))}
         </div>
-        <div className="flex flex-col justify-center items-center">
+        <div className="flex flex-col justify-center items-center pt-4">
           <Button
             disabled={selected.length < minRequiredVotes}
             onClick={() => onSubmit()}

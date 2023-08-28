@@ -11,7 +11,10 @@ import LinkRoutingService from "~/services/linking-routing"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "~/services/embedding"
 import { CanonicalValuesCard } from "@prisma/client"
-import { IconArrowRight } from "~/components/ui/icons"
+import { IconArrowRight, IconSeparator } from "~/components/ui/icons"
+import React from "react"
+import { Separator } from "../components/ui/separator"
+import { Space } from "lucide-react"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
@@ -64,6 +67,40 @@ function SelectedValuesCard({ value }: { value: CanonicalValuesCard }) {
     <div className="relative h-full w-full opacity-20">
       <div className="w-full h-full border-2 border-slate-400 rounded-xl z-10 absolute pointer-events-none" />
       <ValuesCard card={value} />
+    </div>
+  )
+}
+
+function InfoText({
+  selected,
+  from,
+  to,
+}: {
+  selected: number[]
+  from: CanonicalValuesCard[]
+  to: CanonicalValuesCard
+}) {
+  const filteredTitles = from
+    .filter((f) => selected.includes(f.id))
+    .map((f, index, array) => (
+      <React.Fragment key={f.id}>
+        <strong className="text-black">{f.title}</strong>
+        {index < array.length - 1
+          ? index === array.length - 2
+            ? " and "
+            : ", "
+          : null}
+      </React.Fragment>
+    ))
+
+  return (
+    <div className="w-96 p-8">
+      <p className="text-neutral-500">
+        It would be enough for ChatGPT to only take instructions from{" "}
+        <strong className="text-black">{to.title}</strong>, because that's what{" "}
+        {filteredTitles} {filteredTitles.length > 1 ? "are" : "is"} really
+        about.
+      </p>
     </div>
   )
 }
@@ -137,7 +174,7 @@ export default function LinkScreen() {
   return (
     <div className="flex flex-col h-screen w-screen">
       <Header />
-      <div className="grid flex-grow place-items-center space-y-4 my-12 px-8">
+      <div className="grid flex-grow place-items-center space-y-4 py-12 px-8">
         <div className="max-w-2xl">
           <ChatMessage
             message={{
@@ -148,10 +185,22 @@ export default function LinkScreen() {
             hideActions={true}
           />
         </div>
-        <div className="mx-auto">
+        <div className="mx-auto flex flex-col md:flex-row">
           <ValuesCard card={draw[index].to as any} />
+          {selectedLesserValues.length > 0 && (
+            <InfoText
+              selected={selectedLesserValues}
+              from={draw[index].from as any}
+              to={draw[index].to as any}
+            />
+          )}
         </div>
-        <div className="grid lg:grid-cols-2 mx-auto gap-4">
+
+        <div className="w-full flex items-center justify-center py-4">
+          <Separator className="max-w-2xl" />
+        </div>
+
+        <div className="grid lg:grid-cols-2 xl:grid-cols-3  mx-auto gap-4">
           {draw[index].from.map((value) => (
             <div
               key={value.id}
@@ -166,8 +215,7 @@ export default function LinkScreen() {
             </div>
           ))}
         </div>
-
-        <div className="flex flex-row mx-auto justify-center items-center space-x-2">
+        <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
           <Button
             disabled={selectedLesserValues.length === 0}
             onClick={() => onSubmit()}
