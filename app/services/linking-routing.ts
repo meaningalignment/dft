@@ -1,108 +1,100 @@
-import {
-  CanonicalValuesCard,
-  Edge,
-  EdgeHypothesis,
-  PrismaClient,
-  ValuesCard,
-  Vote,
-} from "@prisma/client"
+import { CanonicalValuesCard, PrismaClient, Vote } from "@prisma/client"
 import { db, inngest } from "~/config.server"
 import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
-import { splitToPairs } from "~/utils"
 import EmbeddingService from "./embedding"
-import DeduplicationService from "./deduplication"
 import { model } from "~/lib/consts"
 import { Logger } from "inngest/middleware/logger"
 
-type EdgesHypothesis = {
+type EdgeHypothesis = {
   to: CanonicalValuesCard
-  from: CanonicalValuesCard[]
+  from: CanonicalValuesCard
+  story: string
 }
 
-// type ValuesPair = [CanonicalValuesCard, CanonicalValuesCard]
-
-// TODO - hardcoded for now. Should have a background job that generates these hypotheses.
-// Will revise after deciding what to do about this screen?
-// const hypotheses: LinkHypothesis[] = [
-//   { moreComprehensive: 50, lessComprehensive: 59 },
-//   { moreComprehensive: 52, lessComprehensive: 67 },
-//   { moreComprehensive: 56, lessComprehensive: 68 },
-//   { moreComprehensive: 53, lessComprehensive: 62 },
-//   { moreComprehensive: 70, lessComprehensive: 59 },
-// ]
-
-const prompt = `You are a 'values card' linking assistant. Given a list of values cards, you find two values that seem to be more/less comprehensive versions of each other.
+const prompt = `You are a 'values card' linking assistant. Given a list of values cards, you find values that seem to be more/less comprehensive versions of each other.
 
 # Values Card
-A "values card" is a representation of a "source of meaning". A values card has five fields: "id", "title", "instructions_short", "instructions_detailed", and "evaluation_criteria".
+A "values card" is a representation of a value. A values card has three fields: "id", "title" and "instructions".
 
 # What Is Meant By 'More Comprehensive'?
-We mean 'more comprehsive' as used by Ruth Chang – that is, certain values obviate the need for others, since all of the important parts of the value is included in the more comprehensive one. If one was to make a choice, it would be enough to only consider the more comprehensive one.
+We mean 'more comprehensive' as used by Ruth Chang – that is, certain values obviate the need for others, since all of the important parts of the value is included in the more comprehensive one. If one was to make a choice, it would be enough to only consider the more comprehensive one.
 
-Another way of framing this would be that more comprehensive values resolve some tension between two or more other values. They allow us to make 'all things considered' judgements between two or more values that seem incommensurable.all
+Another way of framing this would be that more comprehensive values resolve some tension between two or more other values. They allow us to make 'all things considered' judgements between two or more values that seem incommensurable.
+
 
 # Examples
 
-## Less Comprehensive Values:
-
-### A:
-{"title": "Helicopter Parent", "instructions": "ChatGPT should help me be there sensibly for my child."}
-
-### B:
-{"title": "Tough Love", "instructions": "ChatGPT should encourage resilience and independence in my child."}
-
-## More Comprehensive Value:
-
-{"title": "Fostering Resilience", "instructions": "ChatGPT should help my child face emotional turmoil independently and provide support when needed."}
+Below are some examples of less comprehensive values, and a more comprehensive value that balances them. The upgrade stories are examples of the reasoning of someone that upgraded from each respective less comprehensive value to the more comprehensive value.
 
 ## Less Comprehensive Values:
 
 ### A:
-{"title": "Shortest Path", "instructions": "ChatGPT should strive to find the most efficient and least risky solution."}
+{"title": "Helicopter Parent", "instructions": "ChatGPT can highlight moments where my child needs support, boost my capacity to comfort them, their sense of safety, all of which added together lead to a nurturing presence in my child's life."}
+
+#### Upgrade Story
+The underlying reason I wanted to care for my child is because I want my child to be well. Now, I understand that part of being well is being able to handle things sometimes on your own.
 
 ### B:
-{"title": "Open-Endedness", "instructions": "ChatGPT should allow for chance and serendipitous outcomes."}
+{"title": "Tough Love", "instructions": "ChatGPT should promote situations and opportunities for my child to rely on their own wits and grit. It should help my child identify and navigate challenges that build resilience, strength, and independence. It should not provide all the answers but guide my child to find them, which leads to personal growth and self-reliance."}
+
+#### Upgrade Story
+When I was trying to give my child tough love, the reason was because I wanted them to be strong and resilient in life. But I didn't fully understand that resilience involves being soft and vulnerable sometimes, and strong at other times. By pressuring someone to be strong all the time it creates a brittleness, not resilience.
 
 ## More Comprehensive Value:
-{"title": "Portfolio Approach", "instructions": "ChatGPT should promote a balance of tried-and-true methods with exploratory actions."}
+{"title": "Fostering Resilience", "instructions": "ChaGPT should enable my child to encounter experiences that will allow them to discover their inner strength, especially in moments of emotional confusion. Help me discern when they can rely on their self-reliance and when I should offer my nurturing support."}
+
+## Less Comprehensive Values:
+
+### A:
+{"title": "Shortest Path", "instructions": "ChatGPT should focus on developing and recommending plans that can accomplish tasks or solve problems in the most efficient way possible, using the least amount of resources and posing the least risk. This involves considering multiple options, predicting their outcomes, and choosing the one that meets the criteria of efficiency, low resource use, and minimal risk."}
+
+#### Upgrade Story
+The Shortest Path approach was like my reliable, low-yield bond: safe but limiting. When I discovered the Portfolio Approach, I realized I could diversify, blending in higher-risk, higher-reward 'stocks'—opportunities I'd overlooked before. This balance let me keep my foundation while exploring new, enriching avenues.
+
+### B:
+{"title": "Open-Endedness", "instructions": "ChatGPT should strive to foster an environment that encourages exploration and is open to serendipitous outcomes. This could involve providing avenues for discovery, encouraging open-ended inquiry and considering non-prescriptive ways of handling situations, which could lead to unpredictable but potentially beneficial outcomes."}
+
+#### Upgrade Story
+Part of why I used to pursue open-endedness, is that exploration and new frontiers are what's truly important to me. But, what I didn't realize is that experimentation always rests upon a kind of experimental apparatus which must be dependent and reliable. There’s many situations in which to construct the experiment, you want to be efficient and not exploratory, so you can be exploratory when it counts.
+
+## More Comprehensive Value:
+{"title": "Portfolio Approach", "instructions": "ChatGPT can facilitate discussions and provide suggestions that speak to both, risk-averse and risk-seeking tendencies. It should point out the stability of conventional approaches simultaneous with the potential rewards of exploratory ones. The goal is to inform a balance between security and exploration, fostering a portfolio approach in decision-making."}
+
 
 # Output
-You will receive a list of values cards. Your output should be the a list of id pairs, where the id of each pair refer to a values card that seem to be a more/less comprehensible version of the other value in the pair.`
+You will receive a list of values cards. Your output should be a list of upgrades between values. Each upgrade contains of the id of the less comprehensive value, the id of the more comprehensive value and a corresponding upgrade story.
+`
 
-const submitValueLinks: ChatCompletionFunctions = {
-  name: "submit_value_links",
-  description:
-    "Submit value card ids that seem to be more & less comprehensive versions of the same value.",
+const submitValueUpgrades: ChatCompletionFunctions = {
+  name: "submit_value_upgrades",
+  description: "Submit value upgrades that someone could go through.",
   parameters: {
     type: "object",
     properties: {
-      links: {
+      upgrades: {
         type: "array",
-        description:
-          "Groups of value card ids that seem to be more & less comprehensive versions of each other.",
+        description: "Value card upgrades that a user could go through.",
         items: {
           type: "object",
           properties: {
-            less_comprehensive_values: {
-              type: "array",
+            upgrade_story: {
+              type: "string",
               description:
-                "One or more value card ids that is the less comprehensive version of the more comprehensive value.",
-              items: {
-                type: "number",
-                description:
-                  "The id of one of the values that are the less comprehensive versions of the more comprehensive value.",
-              },
+                "The upgrade story of how a user, upon reflection or by grappling with a tension created by a contradiction, went from the less comprehensive value to the more comprehensive value",
             },
             more_comprehensive_value: {
               type: "number",
-              description:
-                "The id of the value that is the more comprehensive version of the less comprehensive values.",
+              description: "The id of the more comprehensive value.",
+            },
+            less_comprehensive_value: {
+              type: "number",
+              description: "The id of the less comprehensive value.",
             },
           },
         },
       },
     },
-    required: ["links"],
+    required: ["upgrades"],
   },
 }
 
@@ -123,7 +115,9 @@ export default class LinkRoutingService {
 
   async createHypotheticalEdges(
     cards: CanonicalValuesCard[]
-  ): Promise<EdgesHypothesis[]> {
+  ): Promise<
+    { to: CanonicalValuesCard; from: CanonicalValuesCard; story: string }[]
+  > {
     // Create a message with the cards for the prompt.
     const message = JSON.stringify(
       cards.map((c) => {
@@ -141,50 +135,57 @@ export default class LinkRoutingService {
         { role: "system", content: prompt },
         { role: "user", content: message },
       ],
-      functions: [submitValueLinks],
-      function_call: { name: submitValueLinks.name },
+      functions: [submitValueUpgrades],
+      temperature: 0.0,
+      function_call: { name: submitValueUpgrades.name },
     })
     const data = await response.json()
 
-    const links = JSON.parse(data.choices[0].message.function_call.arguments)
-      .links as {
+    const upgrades = JSON.parse(data.choices[0].message.function_call.arguments)
+      .upgrades as {
+      upgrade_story: string
       more_comprehensive_value: number
-      less_comprehensive_values: number[]
+      less_comprehensive_value: number
     }[]
 
     // Return the edges with the corresponding cards.
-    return links.map((l) => {
+    return upgrades.map((u) => {
       const to = cards.find(
-        (c) => c.id === l.more_comprehensive_value
+        (c) => c.id === u.more_comprehensive_value
       ) as CanonicalValuesCard
-      const from = cards.filter((c) =>
-        l.less_comprehensive_values.includes(c.id)
-      ) as CanonicalValuesCard[]
 
-      return { to, from } as EdgesHypothesis
+      const from = cards.find(
+        (c) => c.id === u.less_comprehensive_value
+      ) as CanonicalValuesCard
+
+      return { to, from, story: u.upgrade_story }
     })
   }
 
-  async addHypotheticalEdge(
-    fromId: number,
-    toId: number,
+  async addHypotheticalUpgradeToDb(
+    upgrade: EdgeHypothesis,
     logger: Logger
   ): Promise<void> {
     const count = await db.edgeHypothesis.count({
-      where: { fromId, toId },
+      where: { fromId: upgrade.from.id, toId: upgrade.to.id },
     })
 
     if (count !== 0) {
-      logger.info(`Edge between ${fromId} and ${toId} already exists.`)
+      logger.info(
+        `Edge between ${upgrade.from.id} and ${upgrade.to.id} already exists.`
+      )
       return
     }
 
-    logger.info(`Creating edge between ${fromId} and ${toId}.`)
+    logger.info(
+      `Creating edge between ${upgrade.from.id} and ${upgrade.to.id}.`
+    )
 
     await db.edgeHypothesis.create({
       data: {
-        from: { connect: { id: fromId } },
-        to: { connect: { id: toId } },
+        from: { connect: { id: upgrade.from.id } },
+        to: { connect: { id: upgrade.to.id } },
+        // story: upgrade.story,
       },
     })
   }
@@ -219,13 +220,21 @@ export default class LinkRoutingService {
     return map
   }
 
-  async getDraw(userId: number, size: number = 5): Promise<EdgesHypothesis[]> {
+  async getDraw(
+    userId: number,
+    size: number = 5
+  ): Promise<
+    {
+      to: CanonicalValuesCard
+      from: CanonicalValuesCard[]
+    }[]
+  > {
     // Find edge hypotheses that the user has not linked together yet.
     const hypotheses = await this.db.edgeHypothesis.findMany({
       where: {
         AND: [
-          { from: { edgesTo: { none: { userId } } } },
-          { to: { edgesFrom: { none: { userId } } } },
+          { from: { edgesFrom: { none: { userId } } } },
+          { to: { edgesTo: { none: { userId } } } },
         ],
       },
       include: {
@@ -302,9 +311,12 @@ export default class LinkRoutingService {
       const from = hypotheses
         .filter((h) => h.toId === to.id)
         .map((h) => h.from)
-        .slice(0, 3)
+        .slice(0, 3) // Only include the 3 first "less comprehensive" values, to not clutter UI.
 
-      return { to, from } as EdgesHypothesis
+      return { to, from } as {
+        to: CanonicalValuesCard
+        from: CanonicalValuesCard[]
+      }
     })
 
     return draw.slice(0, size)
@@ -336,7 +348,10 @@ export const hypothesize = inngest.createFunction(
     //
     const cards = (await step.run(
       "Get canonical cards from database",
-      async () => db.canonicalValuesCard.findMany()
+      async () =>
+        db.canonicalValuesCard.findMany({
+          orderBy: { id: "asc" }, // For deterministic prompt output.
+        })
     )) as any as CanonicalValuesCard[]
 
     if (cards.length === 0) {
@@ -353,22 +368,20 @@ export const hypothesize = inngest.createFunction(
     const edgeHypotheses = (await step.run(
       "Identify hypothetical edges",
       async () => service.createHypotheticalEdges(cards)
-    )) as any as EdgesHypothesis[]
+    )) as any as EdgeHypothesis[]
 
-    logger.info(`Identified ${edgeHypotheses.length} possible links.`)
+    logger.info(`Identified ${edgeHypotheses.length} possible upgrades.`)
 
     //
     // Insert the edges into the database.
     //
-    for (const edge of edgeHypotheses) {
-      for (const from of edge.from) {
-        await step.run(
-          `Create edge between ${from.id} and ${edge.to.id}`,
-          async () => service.addHypotheticalEdge(from.id, edge.to.id, logger)
-        )
-      }
+    for (const upgrade of edgeHypotheses) {
+      await step.run(
+        `Create edge between ${upgrade.from.id} and ${upgrade.to.id}`,
+        async () => service.addHypotheticalUpgradeToDb(upgrade, logger)
+      )
     }
 
-    return { message: `Created ${edgeHypotheses.length} hypotheses` }
+    return { message: "Success." }
   }
 )
