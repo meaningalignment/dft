@@ -14,7 +14,6 @@ import { CanonicalValuesCard } from "@prisma/client"
 import { IconArrowRight, IconSeparator } from "~/components/ui/icons"
 import React from "react"
 import { Separator } from "../components/ui/separator"
-import { Space } from "lucide-react"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
@@ -41,7 +40,7 @@ export async function action({ request }: LoaderArgs) {
   // Upsert all the edges in the database.
   await Promise.all(
     selected.map((id: number) =>
-      db.edge.upsert({
+      db.upgrade.upsert({
         where: {
           userId_fromId_toId: {
             userId,

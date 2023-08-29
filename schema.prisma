@@ -20,7 +20,7 @@ model User {
   role       String[]     @default(["USER"])
   chats      Chat[]
   votes      Vote[]
-  edges      Edge[]
+  upgrades   Upgrade[]
   Impression Impression[]
 }
 
@@ -50,22 +50,22 @@ model ValuesCard {
 }
 
 model CanonicalValuesCard {
-  id                   Int                          @id @default(autoincrement())
-  title                String
-  instructionsShort    String
-  instructionsDetailed String
-  evaluationCriteria   String[]
-  createdAt            DateTime                     @default(now())
-  updatedAt            DateTime                     @updatedAt
-  valuesCards          ValuesCard[]
-  edgesFrom            Edge[]                       @relation("FromValueRelation")
-  edgesTo              Edge[]                       @relation("ToValueRelation")
-  Vote                 Vote[]
-  embedding            Unsupported("vector(1536)")?
-  Impression           Impression[]
-  Chat                 Chat[]
-  edgeHypothesisFrom   EdgeHypothesis[]             @relation("FromHypothesizedValueRelation")
-  edgeHypothesisTo     EdgeHypothesis[]             @relation("ToHypothesizedValueRelation")
+  id                    Int                          @id @default(autoincrement())
+  title                 String
+  instructionsShort     String
+  instructionsDetailed  String
+  evaluationCriteria    String[]
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
+  valuesCards           ValuesCard[]
+  upgradesFrom          Upgrade[]                    @relation("FromValueRelation")
+  upgradesTo            Upgrade[]                    @relation("ToValueRelation")
+  Vote                  Vote[]
+  embedding             Unsupported("vector(1536)")?
+  Impression            Impression[]
+  Chat                  Chat[]
+  upgradeHypothesisFrom UpgradeHypothesis[]          @relation("FromHypothesizedValueRelation")
+  upgradeHypothesisTo   UpgradeHypothesis[]          @relation("ToHypothesizedValueRelation")
 }
 
 model Chat {
@@ -108,7 +108,7 @@ model Impression {
   valuesCard   CanonicalValuesCard @relation(fields: [valuesCardId], references: [id])
 }
 
-model Edge {
+model Upgrade {
   userId    Int
   fromId    Int
   toId      Int
@@ -121,13 +121,15 @@ model Edge {
   @@id([userId, fromId, toId])
 }
 
-model EdgeHypothesis {
-  fromId    Int
-  toId      Int
-  createdAt DateTime             @default(now())
-  updatedAt DateTime             @updatedAt
-  from      CanonicalValuesCard? @relation("FromHypothesizedValueRelation", fields: [fromId], references: [id])
-  to        CanonicalValuesCard? @relation("ToHypothesizedValueRelation", fields: [toId], references: [id])
+model UpgradeHypothesis {
+  fromId        Int
+  toId          Int
+  story         String
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  from          CanonicalValuesCard? @relation("FromHypothesizedValueRelation", fields: [fromId], references: [id])
+  to            CanonicalValuesCard? @relation("ToHypothesizedValueRelation", fields: [toId], references: [id])
+  gitCommitHash String               @default("OLD")
 
   @@id([fromId, toId])
 }

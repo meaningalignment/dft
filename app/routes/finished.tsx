@@ -32,7 +32,7 @@ export async function loader({ request }: LoaderArgs) {
     }),
     db.canonicalValuesCard.count(),
     db.vote.count(),
-    db.edge.count(),
+    db.upgrade.count(),
     db.canonicalValuesCard.findMany({
       take: 12,
       include: {

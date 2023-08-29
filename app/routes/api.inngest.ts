@@ -4,6 +4,8 @@ import { embed } from "~/services/embedding"
 import { inngest } from "~/config.server"
 import { hypothesize } from "~/services/linking-routing"
 
-const handler = serve(inngest, [deduplicate, embed, hypothesize])
+const handler = serve(inngest, [deduplicate, embed, hypothesize], {
+  streaming: "allow",
+})
 
 export { handler as loader, handler as action }

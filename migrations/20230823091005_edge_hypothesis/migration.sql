@@ -11,17 +11,17 @@ ALTER TABLE "Edge" DROP COLUMN "relationship";
 DROP TYPE "Relationship";
 
 -- CreateTable
-CREATE TABLE "EdgeHypothesis" (
+CREATE TABLE "upgradeHypothesis" (
     "fromValueId" INTEGER NOT NULL,
     "toValueId" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "EdgeHypothesis_pkey" PRIMARY KEY ("fromValueId","toValueId")
+    CONSTRAINT "upgradeHypothesis_pkey" PRIMARY KEY ("fromValueId","toValueId")
 );
 
 -- AddForeignKey
-ALTER TABLE "EdgeHypothesis" ADD CONSTRAINT "EdgeHypothesis_fromValueId_fkey" FOREIGN KEY ("fromValueId") REFERENCES "CanonicalValuesCard"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "upgradeHypothesis" ADD CONSTRAINT "upgradeHypothesis_fromValueId_fkey" FOREIGN KEY ("fromValueId") REFERENCES "CanonicalValuesCard"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "EdgeHypothesis" ADD CONSTRAINT "EdgeHypothesis_toValueId_fkey" FOREIGN KEY ("toValueId") REFERENCES "CanonicalValuesCard"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "upgradeHypothesis" ADD CONSTRAINT "upgradeHypothesis_toValueId_fkey" FOREIGN KEY ("toValueId") REFERENCES "CanonicalValuesCard"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
