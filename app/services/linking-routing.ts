@@ -185,7 +185,7 @@ export default class LinkRoutingService {
       data: {
         from: { connect: { id: upgrade.from.id } },
         to: { connect: { id: upgrade.to.id } },
-        // story: upgrade.story,
+        story: upgrade.story,
       },
     })
   }
@@ -201,7 +201,7 @@ export default class LinkRoutingService {
       Array<{ id: number; _distance: number }>
     >`
     SELECT
-      cvc.id, 
+      cvc.id,
       cvc.embedding <=> ${JSON.stringify(vector)}::vector as "_distance" 
     FROM 
       "CanonicalValuesCard" cvc

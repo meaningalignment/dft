@@ -124,6 +124,7 @@ model Edge {
 model EdgeHypothesis {
   fromId    Int
   toId      Int
+  story     String?
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
   from      CanonicalValuesCard? @relation("FromHypothesizedValueRelation", fields: [fromId], references: [id])
