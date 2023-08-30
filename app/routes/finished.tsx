@@ -116,7 +116,6 @@ function Carousel({ cards }: { cards: CardWithCounts[] }) {
       <div ref={carouselRef} className="flex hide-scrollbar space-x-4">
         {cards.map((card, index) => (
           <div key={card.id} className="flex flex-col">
-            {/* This div is made into a flex container */}
             <div className="flex-grow w-96">
               <ValuesCard card={card} />
             </div>
