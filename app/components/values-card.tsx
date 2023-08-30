@@ -58,7 +58,7 @@ export default function ValuesCard({ card, header }: Props) {
   return (
     <div
       className={
-        "border-2 border-border rounded-xl px-8 pt-8 pb-4 w-96 h-full bg-white flex flex-col"
+        "border-2 border-border rounded-xl px-8 pt-8 pb-4 max-w-sm h-full bg-white flex flex-col"
       }
     >
       {header && header}

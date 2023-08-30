@@ -117,7 +117,7 @@ function Carousel({ cards }: { cards: CardWithCounts[] }) {
         {cards.map((card, index) => (
           <div key={card.id} className="flex flex-col">
             {/* This div is made into a flex container */}
-            <div className="flex-grow">
+            <div className="flex-grow w-96">
               <ValuesCard card={card} />
             </div>
             <p className="mx-8 mt-2 text-sm text-neutral-500">
