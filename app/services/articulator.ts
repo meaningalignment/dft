@@ -20,9 +20,15 @@ type ArticulateCardResponse = {
 }
 
 type FunctionResult = {
-  message: string
+  message: string | null
   articulatedCard: ValuesCardData | null
   submittedCard: ValuesCardData | null
+}
+
+function normalizeMessage(message: ChatCompletionRequestMessage): ChatCompletionRequestMessage {
+  // only role, content, name, function_call
+  const { role, content, name, function_call } = message
+  return { role, content, name, function_call }
 }
 
 /**
@@ -82,8 +88,6 @@ export class ArticulatorService {
     function_call: { name: string } | null,
     chatId: string
   }) {
-    // Prepend the system message.
-    messages = [{ role: "system", content: this.config.prompts.main.prompt }, ...messages]
 
     // update the db
     // TODO: put it in a transaction
@@ -92,6 +96,7 @@ export class ArticulatorService {
       const transcript = (chat?.transcript ?? []) as any as ChatCompletionRequestMessage[]
       const lastMessage = messages[messages.length - 1]
       transcript.push(lastMessage)
+      messages = transcript.map(o => normalizeMessage(o))
       await this.db.chat.update({
         where: { id: chatId },
         data: {
@@ -100,6 +105,8 @@ export class ArticulatorService {
       })
     } else {
       const metadata = this.metadata()
+      // Prepend the system message.
+      messages = [{ role: "system", content: this.config.prompts.main.prompt }, ...messages]
       await this.db.chat.create({
         data: {
           id: chatId,
@@ -241,7 +248,7 @@ export class ArticulatorService {
     // If the card is not yet meeting the guidelines, generate a follow-up question.
     //
     if (response.critique) {
-      const message = summarize(this.config, 'articulate_values_card_critique', { critique: response.critique })
+      const message = summarize(this.config, 'show_values_card_critique', { critique: response.critique })
 
       return {
         message,
@@ -269,7 +276,7 @@ export class ArticulatorService {
       messages,
       message: {
         role: "function",
-        name: "articulate_values_card",
+        name: "show_values_card",
         content: JSON.stringify(response.values_card)
       },
       data: {
@@ -278,7 +285,7 @@ export class ArticulatorService {
       }
     })
 
-    const message = summarize(this.config, 'articulate_values_card', { title: newCard!.title })
+    const message = summarize(this.config, 'show_values_card', { title: newCard!.title })
     return { message, articulatedCard: newCard, submittedCard: null }
   }
 
@@ -313,7 +320,16 @@ export class ArticulatorService {
     let functionResult: FunctionResult
 
     switch (func.name) {
-      case "articulate_values_card": {
+      case "guess_values_card": {
+        console.log('Guessed!', func.arguments)
+        functionResult = {
+          message: null,
+          articulatedCard: null,
+          submittedCard: null,
+        }
+        break
+      }
+      case "show_values_card": {
         functionResult = await this.handleArticulateCardFunction(
           chatId,
           messages
@@ -329,17 +345,19 @@ export class ArticulatorService {
       }
     }
 
-    console.log(`Result from "${func.name}":\n${functionResult.message}`)
+    if (functionResult.message) {
+      console.log(`Result from "${func.name}":\n${functionResult.message}`)
 
-    await this.addServerSideMessage({
-      chatId,
-      messages,
-      message: {
-        role: "function",
-        name: func.name,
-        content: functionResult.message,
-      }
-    })
+      await this.addServerSideMessage({
+        chatId,
+        messages,
+        message: {
+          role: "function",
+          name: func.name,
+          content: functionResult.message,
+        }
+      })
+    }
 
     //
     // Call the OpenAI API with the function result.
@@ -408,10 +426,10 @@ export class ArticulatorService {
     const res = await this.openai.createChatCompletion({
       model: this.config.model,
       messages: [
-        { role: "system", content: this.config.prompts.articulate_values_card.prompt },
+        { role: "system", content: this.config.prompts.show_values_card.prompt },
         { role: "user", content: transcript },
       ],
-      functions: this.config.prompts.articulate_values_card.functions,
+      functions: this.config.prompts.show_values_card.functions,
       function_call: { name: "format_card" },
       temperature: 0.0,
       stream: false,
