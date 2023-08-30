@@ -16,7 +16,6 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration)
 const embeddings = new EmbeddingService(openai, db)
 const deduplication = new DeduplicationService(embeddings, openai, db)
-const articulator = new ArticulatorService('default', deduplication, embeddings, openai, db)
 
 async function createHeaders(
   articulatedCard?: ValuesCardData | null,
@@ -38,12 +37,14 @@ async function createHeaders(
 export const action: ActionFunction = async ({
   request,
 }: ActionArgs): Promise<Response> => {
+  const articulatorConfig = request.headers.get("X-Articulator-Config")
   const userId = await auth.getUserId(request)
   const json = await request.json()
 
   const { messages, chatId, function_call } = json
 
   // Create stream for next chat message.
+  const articulator = new ArticulatorService(articulatorConfig || 'default', deduplication, embeddings, openai, db)
   const { completionResponse, ...etc } = await articulator.processCompletionWithFunctions({ userId, messages, function_call, chatId })
 
   if (!completionResponse.ok) {
