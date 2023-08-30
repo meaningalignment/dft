@@ -198,11 +198,13 @@ export default function LinkScreen() {
         <div className="mx-auto flex flex-col md:flex-row">
           <ValuesCard card={draw[index].to as any} />
           {selectedLesserValues.length > 0 && (
-            <InfoText
-              selected={selectedLesserValues}
-              from={draw[index].from as any}
-              to={draw[index].to as any}
-            />
+            <div className="hidden md:block">
+              <InfoText
+                selected={selectedLesserValues}
+                from={draw[index].from as any}
+                to={draw[index].to as any}
+              />
+            </div>
           )}
         </div>
 
@@ -225,6 +227,17 @@ export default function LinkScreen() {
             </div>
           ))}
         </div>
+
+        {selectedLesserValues.length > 0 && (
+          <div className="block md:hidden">
+            <InfoText
+              selected={selectedLesserValues}
+              from={draw[index].from as any}
+              to={draw[index].to as any}
+            />
+          </div>
+        )}
+
         <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
           <Button
             disabled={selectedLesserValues.length === 0 || Boolean(isLoading)}
