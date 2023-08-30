@@ -1,16 +1,17 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
-import { Link, useLoaderData } from "@remix-run/react"
+import { Link, useLoaderData, useNavigate } from "@remix-run/react"
 import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
 import { ChatMessage } from "~/components/chat-message"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { CanonicalValuesCard } from "@prisma/client"
 import { IconCheck } from "~/components/ui/icons"
 import SelectionRoutingService from "~/services/selection-routing"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "~/services/embedding"
+import { Loader, Loader2 } from "lucide-react"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
@@ -39,9 +40,7 @@ export async function action({ request }: ActionArgs) {
 
   let promises = []
 
-  //
   // Add impressions in the database for each seen value.
-  //
   for (const card of values) {
     promises.push(
       db.impression.create({
@@ -54,10 +53,7 @@ export async function action({ request }: ActionArgs) {
     )
   }
 
-  //
   // Add votes in the database for each selected value.
-  //
-
   for (const id of selected) {
     const value = values.find((v: CanonicalValuesCard) => v.id === id)
     const valuesCardId = value.id
@@ -97,8 +93,17 @@ function SelectedValuesCard({ value }: { value: CanonicalValuesCard }) {
 }
 
 export default function SelectScreen() {
+  const [isLoading, setIsLoading] = useState(false)
+  const navigate = useNavigate()
   const { values, drawId } = useLoaderData<typeof loader>()
   const [selected, setSelected] = useState<number[]>([])
+
+  // If there are no values in the draw, continue to next step.
+  useEffect(() => {
+    if (values.length === 0) {
+      navigate("/link")
+    }
+  }, [values])
 
   const onSelectValue = (id: number) => {
     if (selected.includes(id)) {
@@ -109,6 +114,8 @@ export default function SelectScreen() {
   }
 
   const onSubmit = async () => {
+    setIsLoading(true)
+
     const body = { values, selected, drawId }
 
     const response = await fetch("/select", {
@@ -120,12 +127,23 @@ export default function SelectScreen() {
     })
 
     if (!response.ok) {
+      setIsLoading(false)
       const text = await response.text()
       throw new Error("Failed to submit votes: " + text)
     }
+
+    navigate("/link")
   }
 
-  const minRequiredVotes = values.length / 2
+  const minRequiredVotes = Math.floor(values.length / 2)
+
+  if (values.length === 0) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center">
+        <Loader2 className="h-4 w-4 animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-screen w-screen">
@@ -158,10 +176,11 @@ export default function SelectScreen() {
         </div>
         <div className="flex flex-col justify-center items-center pt-4">
           <Button
-            disabled={selected.length < minRequiredVotes}
+            disabled={selected.length < minRequiredVotes || isLoading}
             onClick={() => onSubmit()}
           >
-            <Link to="/link">Continue</Link>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Continue
           </Button>
 
           <div className="flex flex-col justify-center items-center my-4 h-4">

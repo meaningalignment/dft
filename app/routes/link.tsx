@@ -14,7 +14,7 @@ import { CanonicalValuesCard } from "@prisma/client"
 import { IconArrowRight, IconSeparator } from "~/components/ui/icons"
 import React from "react"
 import { Separator } from "../components/ui/separator"
-import { Space } from "lucide-react"
+import { Loader2, Space } from "lucide-react"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
@@ -109,6 +109,7 @@ export default function LinkScreen() {
   const navigate = useNavigate()
   const { draw } = useLoaderData<typeof loader>()
   const [index, setIndex] = useState<number>(0)
+  const [isLoading, setIsLoading] = useState<"submit" | "skip" | null>(null)
   const [selectedLesserValues, setSelectedLesserValues] = useState<number[]>([])
 
   // If there are no values in the draw, continue to next step.
@@ -129,6 +130,7 @@ export default function LinkScreen() {
   const onSkip = () => {
     // If we're at the end of the draw, navigate to the finish screen.
     if (index === draw.length - 1) {
+      setIsLoading("skip")
       return navigate("/finished")
     }
 
@@ -138,6 +140,8 @@ export default function LinkScreen() {
   }
 
   const onSubmit = async () => {
+    setIsLoading("submit")
+
     const body = { values: draw[index], selected: selectedLesserValues }
 
     // Post the relationship to the server in the background,
@@ -151,6 +155,7 @@ export default function LinkScreen() {
     })
 
     if (!response.ok) {
+      setIsLoading(null)
       const text = await response.json()
       console.error(text)
       toast.error("Failed to submit relationship. Please try again.")
@@ -163,12 +168,17 @@ export default function LinkScreen() {
     }
 
     // Move to the next pair.
+    setIsLoading(null)
     setIndex((i) => i + 1)
     setSelectedLesserValues([])
   }
 
   if (!draw[index]) {
-    return null
+    return (
+      <div className="h-screen w-screen flex items-center justify-center">
+        <Loader2 className="h-4 w-4 animate-spin" />
+      </div>
+    )
   }
 
   return (
@@ -217,13 +227,24 @@ export default function LinkScreen() {
         </div>
         <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
           <Button
-            disabled={selectedLesserValues.length === 0}
+            disabled={selectedLesserValues.length === 0 || Boolean(isLoading)}
             onClick={() => onSubmit()}
           >
+            {isLoading == "submit" && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             {draw.length - index === 1 ? "Finish" : "Continue"}
           </Button>
-          <Button variant={"outline"} onClick={() => onSkip()}>
-            <IconArrowRight className="mr-2" />
+          <Button
+            disabled={Boolean(isLoading)}
+            variant={"outline"}
+            onClick={() => onSkip()}
+          >
+            {isLoading == "skip" ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <IconArrowRight className="mr-2" />
+            )}
             Skip
           </Button>
         </div>
