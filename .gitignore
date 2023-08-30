@@ -6,5 +6,6 @@ node_modules.nosync
 /public/build
 .env
 /notes
+.DS_Store
 
 tests/script.test.ts
