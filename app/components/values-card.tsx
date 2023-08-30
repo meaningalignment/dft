@@ -1,4 +1,4 @@
-import { isFirstWordUppercase } from "~/utils"
+import { isAllUppercase } from "~/utils"
 import { Button } from "./ui/button"
 import {
   Dialog,
@@ -36,16 +36,18 @@ function DetailsDialog({
         <div className="flex space-y-1 flex-col overflow-auto">
           {card.evaluationCriteria?.map((criterion, id) => (
             <li key={id} className="text-sm text-neutral-500">
-              {isFirstWordUppercase(criterion) ? (
+              {criterion.split(" ").map((word, index) => (
                 <>
-                  <strong className="font-bold text-neutral-600">
-                    {criterion.split(" ")[0]}
-                  </strong>{" "}
-                  {criterion.split(" ").slice(1).join(" ")}
+                  {isAllUppercase(word) ? (
+                    <strong className="font-bold text-neutral-600">
+                      {word}
+                    </strong>
+                  ) : (
+                    word
+                  )}
+                  {index < criterion.split(" ").length - 1 ? " " : null}
                 </>
-              ) : (
-                <>{criterion}</>
-              )}
+              ))}
             </li>
           ))}
         </div>

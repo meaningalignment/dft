@@ -20,11 +20,8 @@ export function capitalize(input: string): string {
   return input.charAt(0).toUpperCase() + input.slice(1)
 }
 
-export function isFirstWordUppercase(str: string) {
-  return (
-    str.split(" ").slice(0, 1)[0] ===
-    str.split(" ").slice(0, 1)[0].toUpperCase()
-  )
+export function isAllUppercase(str: string) {
+  return str === str.toUpperCase()
 }
 
 /**
