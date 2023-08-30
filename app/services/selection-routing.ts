@@ -200,7 +200,9 @@ export default class SelectionRoutingService {
 
     // Trim unique candidates.
     let values: CanonicalValuesCard[] = []
-    if (process.env.SELECT_ROUTING_USE_PROMPT === "true") {
+    if (candidatesUnique.length === 0) {
+      return { id: uuid(), values }
+    } else if (process.env.SELECT_ROUTING_USE_PROMPT === "true") {
       values = await this.trimCandidatesWithPrompt(candidatesUnique)
     } else {
       values = await this.trimCandidatesWithEmbedding(userId, candidatesUnique)
