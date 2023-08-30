@@ -11,10 +11,10 @@ import LinkRoutingService from "~/services/linking-routing"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "~/services/embedding"
 import { CanonicalValuesCard } from "@prisma/client"
-import { IconArrowRight, IconSeparator } from "~/components/ui/icons"
+import { IconArrowRight } from "~/components/ui/icons"
 import React from "react"
 import { Separator } from "../components/ui/separator"
-import { Loader2, Space } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
