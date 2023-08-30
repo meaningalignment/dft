@@ -82,7 +82,7 @@ function Carousel({ cards }: { cards: CardWithCounts[] }) {
 
   const footerText = (card: CardWithCounts) => {
     return (
-      `Articulated by ${uniqueArticulations(card)} participant${
+      `Articulated by ${Math.max(1, uniqueArticulations(card))} participant${
         uniqueArticulations(card) > 1 ? "s" : ""
       }.` +
       `${
