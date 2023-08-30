@@ -173,6 +173,19 @@ export default function LinkScreen() {
     setSelectedLesserValues([])
   }
 
+  const gridColsClass = () => {
+    let str = ""
+    if (draw[index].from.length === 1) {
+      str = "grid-cols-1"
+    } else if (draw[index].from.length === 2) {
+      str = "lg:grid-cols-2"
+    } else {
+      str = "lg:grid-cols-2 xl:grid-cols-3"
+    }
+
+    return str
+  }
+
   if (!draw[index]) {
     return (
       <div className="h-screen w-screen flex items-center justify-center">
@@ -213,7 +226,7 @@ export default function LinkScreen() {
           <Separator className="max-w-2xl" />
         </div>
 
-        <div className="grid lg:grid-cols-2 xl:grid-cols-3  mx-auto gap-4">
+        <div className={`grid ${gridColsClass()} mx-auto gap-4`}>
           {draw[index].from.map((value) => (
             <div
               key={value.id}

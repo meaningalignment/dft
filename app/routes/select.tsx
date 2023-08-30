@@ -1,17 +1,16 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
-import { Link, useLoaderData, useNavigate } from "@remix-run/react"
+import { useLoaderData, useNavigate } from "@remix-run/react"
 import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
 import { ChatMessage } from "~/components/chat-message"
 import { useEffect, useState } from "react"
 import { CanonicalValuesCard } from "@prisma/client"
-import { IconCheck } from "~/components/ui/icons"
 import SelectionRoutingService from "~/services/selection-routing"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "~/services/embedding"
-import { Loader, Loader2 } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
@@ -81,10 +80,10 @@ export async function action({ request }: ActionArgs) {
 function SelectedValuesCard({ value }: { value: CanonicalValuesCard }) {
   return (
     <div className="relative h-full w-full">
-      <div className="w-full h-full border-4 border-blue-500 rounded-xl z-10 absolute pointer-events-none" />
-      <div className="absolute -bottom-2.5 -right-2.5 z-20">
-        <div className="bg-blue-500 h-8 w-8 rounded-full flex flex-col justify-center items-center">
-          <IconCheck className="h-6 w-6 text-white" />
+      <div className="w-full h-full border-4 border-black rounded-xl z-10 absolute pointer-events-none" />
+      <div className="absolute -bottom-2 -right-2 z-20">
+        <div className="bg-black h-6 w-6 rounded-full flex flex-col justify-center items-center">
+          <Check strokeWidth={3} className="h-4 w-4 text-white" />
         </div>
       </div>
       <ValuesCard card={value} />
