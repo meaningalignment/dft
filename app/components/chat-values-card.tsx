@@ -8,7 +8,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog"
-import { isAllUppercase, isFirstWordUppercase } from "~/utils"
+import { isAllUppercase } from "~/utils"
+import React from "react"
 
 type Props = {
   card: ValuesCardData
@@ -41,7 +42,7 @@ export default function ChatValuesCard({ card }: Props) {
               {card.evaluation_criteria?.map((criterion, id) => (
                 <li key={id} className="text-sm text-neutral-500">
                   {criterion.split(" ").map((word, index) => (
-                    <>
+                    <React.Fragment key={word}>
                       {isAllUppercase(word) ? (
                         <strong className="font-bold text-neutral-600">
                           {word}
@@ -50,7 +51,7 @@ export default function ChatValuesCard({ card }: Props) {
                         word
                       )}
                       {index < criterion.split(" ").length - 1 ? " " : null}
-                    </>
+                    </React.Fragment>
                   ))}
                 </li>
               ))}

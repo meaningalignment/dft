@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "./ui/dialog"
 import { ValuesCard as DataModel, CanonicalValuesCard } from "@prisma/client"
+import React from "react"
 
 type Props = {
   card: DataModel | CanonicalValuesCard
@@ -37,7 +38,7 @@ function DetailsDialog({
           {card.evaluationCriteria?.map((criterion, id) => (
             <li key={id} className="text-sm text-neutral-500">
               {criterion.split(" ").map((word, index) => (
-                <>
+                <React.Fragment key={word}>
                   {isAllUppercase(word) ? (
                     <strong className="font-bold text-neutral-600">
                       {word}
@@ -46,7 +47,7 @@ function DetailsDialog({
                     word
                   )}
                   {index < criterion.split(" ").length - 1 ? " " : null}
-                </>
+                </React.Fragment>
               ))}
             </li>
           ))}
