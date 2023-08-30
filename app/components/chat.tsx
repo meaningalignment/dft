@@ -81,12 +81,13 @@ export function Chat({
         }
 
         if (response.status === 401) {
-          toast.error(response.statusText)
+          console.error(response.status)
+          toast.error("Failed to update chat. Please try again.")
         }
       },
       onError: async (error) => {
         console.error(error)
-        toast.error(error.message)
+        toast.error("Failed to update chat. Please try again.")
 
         //
         // Get the last message from the database and set it as the input.

@@ -115,8 +115,10 @@ function Carousel({ cards }: { cards: CardWithCounts[] }) {
     <div className="relative z-0 w-full">
       <div ref={carouselRef} className="flex hide-scrollbar space-x-4">
         {cards.map((card, index) => (
-          <div key={card.id} className="flex-grow">
-            <ValuesCard card={card} />
+          <div key={card.id} className="flex flex-col">
+            <div className="flex-grow w-96">
+              <ValuesCard card={card} />
+            </div>
             <p className="mx-8 mt-2 text-sm text-neutral-500">
               {footerText(card)}
             </p>
@@ -142,7 +144,7 @@ export default function FinishedScreen() {
   return (
     <div className="flex flex-col h-screen w-screen">
       <Header />
-      <div className="grid flex-grow place-items-center">
+      <div className="grid flex-grow place-items-center py-12">
         <div className="flex flex-col items-center mx-auto max-w-xl text-center px-8">
           <h1 className="text-4xl font-bold mb-8">🙏 Thank You!</h1>
 
@@ -159,7 +161,7 @@ export default function FinishedScreen() {
             have been submitted, and <strong>{totalVotes} values</strong> have
             earned endorsements from other participants.
           </p>
-          <p className="text-sm text-neutral-500 mt-8">
+          <p className="text-sm text-neutral-500 my-8">
             Once the Moral Graph is complete, you'll receive a follow-up email
             showcasing the results.
           </p>

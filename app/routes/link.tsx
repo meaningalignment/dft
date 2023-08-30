@@ -11,10 +11,10 @@ import LinkRoutingService from "~/services/linking-routing"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "~/services/embedding"
 import { CanonicalValuesCard } from "@prisma/client"
-import { IconArrowRight, IconSeparator } from "~/components/ui/icons"
+import { IconArrowRight } from "~/components/ui/icons"
 import React from "react"
 import { Separator } from "../components/ui/separator"
-import { Loader2, Space } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
@@ -198,11 +198,14 @@ export default function LinkScreen() {
         <div className="mx-auto flex flex-col md:flex-row">
           <ValuesCard card={draw[index].to as any} />
           {selectedLesserValues.length > 0 && (
-            <InfoText
-              selected={selectedLesserValues}
-              from={draw[index].from as any}
-              to={draw[index].to as any}
-            />
+            <div className="hidden md:block">
+              {/* Display the info text at the top of page only on big screens. */}
+              <InfoText
+                selected={selectedLesserValues}
+                from={draw[index].from as any}
+                to={draw[index].to as any}
+              />
+            </div>
           )}
         </div>
 
@@ -225,6 +228,18 @@ export default function LinkScreen() {
             </div>
           ))}
         </div>
+
+        {/* Display the info text in the bottom of page only on small screens. */}
+        {selectedLesserValues.length > 0 && (
+          <div className="block md:hidden">
+            <InfoText
+              selected={selectedLesserValues}
+              from={draw[index].from as any}
+              to={draw[index].to as any}
+            />
+          </div>
+        )}
+
         <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
           <Button
             disabled={selectedLesserValues.length === 0 || Boolean(isLoading)}
