@@ -199,6 +199,7 @@ export default function LinkScreen() {
           <ValuesCard card={draw[index].to as any} />
           {selectedLesserValues.length > 0 && (
             <div className="hidden md:block">
+              {/* Display the info text at the top of page only on big screens. */}
               <InfoText
                 selected={selectedLesserValues}
                 from={draw[index].from as any}
@@ -228,6 +229,7 @@ export default function LinkScreen() {
           ))}
         </div>
 
+        {/* Display the info text in the bottom of page only on small screens. */}
         {selectedLesserValues.length > 0 && (
           <div className="block md:hidden">
             <InfoText
