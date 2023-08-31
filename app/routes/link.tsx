@@ -16,6 +16,8 @@ import React from "react"
 import { Separator } from "../components/ui/separator"
 import { Loader2 } from "lucide-react"
 
+const minRequiredLinks = 3
+
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
 
@@ -24,7 +26,7 @@ export async function loader({ request }: LoaderArgs) {
   const embedding = new EmbeddingService(openai, db)
   const service = new LinkRoutingService(openai, db, embedding)
 
-  const draw = await service.getDraw(userId)
+  const draw = await service.getDraw(userId, minRequiredLinks)
 
   return json({ draw })
 }

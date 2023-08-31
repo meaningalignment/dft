@@ -12,6 +12,8 @@ import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "~/services/embedding"
 import { Check, Loader2 } from "lucide-react"
 
+const minRequiredVotes = 2
+
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
 
@@ -133,8 +135,6 @@ export default function SelectScreen() {
 
     navigate("/link")
   }
-
-  const minRequiredVotes = Math.floor(values.length / 2)
 
   if (values.length === 0) {
     return (

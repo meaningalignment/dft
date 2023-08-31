@@ -222,7 +222,7 @@ export default class LinkRoutingService {
 
   async getDraw(
     userId: number,
-    size: number = 5
+    size: number = 3
   ): Promise<
     {
       to: CanonicalValuesCard
