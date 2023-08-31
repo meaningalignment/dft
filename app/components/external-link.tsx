@@ -1,6 +1,6 @@
 export function ExternalLink({
   href,
-  children
+  children,
 }: {
   href: string
   children: React.ReactNode

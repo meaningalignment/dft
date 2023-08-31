@@ -1,79 +1,117 @@
 import { useState } from "react"
 import { ActionArgs } from "@remix-run/node"
-import { Form, useRouteError, useSearchParams } from "@remix-run/react"
-import { auth } from "~/config.server"
-import { Button } from "~/components/ui/button"
+import { Form, Link, useRouteError, useSearchParams } from "@remix-run/react"
+import { auth, db } from "~/config.server"
+import { Button, buttonVariants } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
-import { Checkbox } from "~/components/ui/checkbox"
+import { Label } from "~/components/ui/label"
+import { Loader2 } from "lucide-react"
+import { ExternalLink } from "~/components/external-link"
 
 export async function action(args: ActionArgs) {
-  return await auth.loginSubmitAction(args)
+  //
+  // Cowpunk auth requires a "register" flag for new users.
+  // Since we are merging signup & login here, we need to
+  // manually set the "register" flag if the user is new.
+  //
+  const data = await args.request.formData()
+  const email = data.get("email") as string
+  const user = await db.user.findFirst({ where: { email } })
+
+  console.log(user)
+
+  if (!user) {
+    data.append("register", "true")
+  }
+
+  const newFormData = new URLSearchParams()
+  for (const [key, value] of data.entries()) {
+    console.log("Adding key/value:", key, value)
+    newFormData.append(key, value as string)
+  }
+
+  const newRequest = new Request(args.request, {
+    body: newFormData.toString(),
+    headers: args.request.headers,
+  })
+
+  // Call the submit action with the updated args.
+  return await auth.loginSubmitAction({ ...args, request: newRequest })
 }
 
 type LoginScreenProps = {
-  isNewUser?: boolean
   errorMessage?: string
 }
 
+function LoginForm({ redirect }: { redirect?: string }) {
+  const [isLoading, setIsLoading] = useState(false)
+
+  return (
+    <div className="grid gap-6">
+      <Form method="post" onSubmit={() => setIsLoading(true)}>
+        <input type="hidden" name="redirect" value={redirect || ""} />
+        <div className="grid gap-2">
+          <div className="grid gap-1">
+            <Label className="sr-only" htmlFor="email">
+              Email
+            </Label>
+            <Input
+              id="email"
+              placeholder="name@example.com"
+              type="email"
+              name="email"
+              autoCapitalize="none"
+              autoComplete="email"
+              autoCorrect="off"
+              disabled={isLoading}
+            />
+          </div>
+
+          <Button disabled={isLoading} type="submit">
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Sign In with Email
+          </Button>
+        </div>
+      </Form>
+    </div>
+  )
+}
+
 export default function LoginScreen(props: LoginScreenProps) {
-  const [newUser, setNewUser] = useState(props.isNewUser ?? false)
   const [searchParams] = useSearchParams()
   const redirect = searchParams.get("redirect") as string
 
   return (
-    <div className="grid h-screen place-items-center">
-      <Form method="post" className="flex flex-col gap-2 pt-12 w-[32rem]">
-        <div className="mb-2">
-          <p className="text-lg font-medium ">Enter your email</p>
+    <div className="grid h-screen place-items-center p-8">
+      <div className="mx-auto flex w-full flex-col justify-center space-y-6 max-w-sm">
+        <div className="flex flex-col space-y-2 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">Get Started</h1>
           <p className="text-sm text-muted-foreground">
-            We'll send you a code you can use to log in.
+            We'll send you an email with a login code.
           </p>
         </div>
-        <input type="hidden" name="redirect" value={redirect || ""} />
-        <Input placeholder="Your email here" type="email" name="email" />
-        {newUser && <Input placeholder="Your name" type="name" name="name" />}
 
-        <Button type="submit">Send Code</Button>
-        <div className="items-top flex space-x-2 mt-2">
-          <Checkbox
-            name="register"
-            checked={newUser}
-            onCheckedChange={(isChecked: boolean) => setNewUser(isChecked)}
-          />
-          <div className="grid gap-1.5 leading-none">
-            <label
-              htmlFor="register"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              I'm a new user
-            </label>
-            <p className="text-sm text-muted-foreground">
-              Create an account for me
-            </p>
-          </div>
-        </div>
+        <LoginForm redirect={redirect} />
+
+        <p className="text-center text-sm text-muted-foreground">
+          Built by the{" "}
+          <ExternalLink href="https://meaningalignment.institute">
+            Institute for Meaning Alignment
+          </ExternalLink>
+          .
+        </p>
 
         {props.errorMessage && (
           <div className="text-red-500 mt-6 w-full text-center">
             {props.errorMessage}
           </div>
         )}
-      </Form>
+      </div>
     </div>
   )
 }
 
 export function ErrorBoundary() {
   const error = useRouteError() as Error
-
-  if (error.message === "User not found") {
-    return (
-      <LoginScreen
-        isNewUser={true}
-        errorMessage={"User not found, please register."}
-      />
-    )
-  }
-
   return <LoginScreen errorMessage={error.message} />
 }
