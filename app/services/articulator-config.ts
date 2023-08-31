@@ -1,6 +1,7 @@
 import { ChatCompletionFunctions } from 'openai-edge';
 import crypto from 'crypto'
 import { default as defaultConfig } from '~/articulator-configs/default'
+import { default as guessCardConfig } from '~/articulator-configs/guess_card'
 
 export interface ArticulatorConfig {
   name: string;
@@ -24,7 +25,8 @@ interface ArticulatorMetadata {
 }
 
 export const configs: { [key: string]: ArticulatorConfig } = {
-  "default": defaultConfig
+  "default": defaultConfig,
+  "guess_card": guessCardConfig
 }
 
 export function summarize(config: ArticulatorConfig, function_name: string, result: Record<string, string>): string {
