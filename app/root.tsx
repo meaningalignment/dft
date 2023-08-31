@@ -20,6 +20,7 @@ import { TooltipProvider } from "@radix-ui/react-tooltip"
 import { User, ValuesCard } from "@prisma/client"
 import { Toaster } from "react-hot-toast"
 import { Analytics } from "@vercel/analytics/react"
+import React from "react"
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -66,10 +67,12 @@ export default function App() {
         </head>
         <body className="bg-slate-50">
           <Outlet />
+          <React.Suspense>
+            <Toaster />
+          </React.Suspense>
           <ScrollRestoration />
           <Scripts />
           <LiveReload />
-          <Toaster />
           <Analytics />
         </body>
       </html>

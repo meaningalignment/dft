@@ -1,8 +1,8 @@
-import { useState } from "react"
-import { ActionArgs } from "@remix-run/node"
-import { Form, Link, useRouteError, useSearchParams } from "@remix-run/react"
+import { useEffect, useState } from "react"
+import { ActionArgs, json } from "@remix-run/node"
+import { Form, useActionData, useSearchParams } from "@remix-run/react"
 import { auth, db } from "~/config.server"
-import { Button, buttonVariants } from "~/components/ui/button"
+import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Loader2 } from "lucide-react"
@@ -18,15 +18,12 @@ export async function action(args: ActionArgs) {
   const email = data.get("email") as string
   const user = await db.user.findFirst({ where: { email } })
 
-  console.log(user)
-
   if (!user) {
     data.append("register", "true")
   }
 
   const newFormData = new URLSearchParams()
   for (const [key, value] of data.entries()) {
-    console.log("Adding key/value:", key, value)
     newFormData.append(key, value as string)
   }
 
@@ -35,51 +32,36 @@ export async function action(args: ActionArgs) {
     headers: args.request.headers,
   })
 
-  // Call the submit action with the updated args.
-  return await auth.loginSubmitAction({ ...args, request: newRequest })
+  try {
+    // Call the submit action with the updated args.
+    return await auth.loginSubmitAction({ ...args, request: newRequest })
+  } catch (error: any) {
+    // Handle errors in client.
+    return json({ error: error.message }, { status: 500 })
+  }
 }
 
-type LoginScreenProps = {
-  errorMessage?: string
-}
-
-function LoginForm({ redirect }: { redirect?: string }) {
-  const [isLoading, setIsLoading] = useState(false)
-
-  return (
-    <div className="grid gap-6">
-      <Form method="post" onSubmit={() => setIsLoading(true)}>
-        <input type="hidden" name="redirect" value={redirect || ""} />
-        <div className="grid gap-2">
-          <div className="grid gap-1">
-            <Label className="sr-only" htmlFor="email">
-              Email
-            </Label>
-            <Input
-              id="email"
-              placeholder="name@example.com"
-              type="email"
-              name="email"
-              autoCapitalize="none"
-              autoComplete="email"
-              autoCorrect="off"
-              disabled={isLoading}
-            />
-          </div>
-
-          <Button disabled={isLoading} type="submit">
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign In with Email
-          </Button>
-        </div>
-      </Form>
-    </div>
-  )
-}
-
-export default function LoginScreen(props: LoginScreenProps) {
+export default function LoginScreen() {
   const [searchParams] = useSearchParams()
+  const [isLoading, setIsLoading] = useState(false)
+  const [showError, setShowError] = useState(false)
+  const [email, setEmail] = useState<string>("")
+  const actionData = useActionData()
+
   const redirect = searchParams.get("redirect") as string
+
+  useEffect(() => {
+    if (actionData?.error) {
+      setShowError(true)
+      setIsLoading(false)
+      setEmail("")
+
+      const timeout = setTimeout(() => setShowError(false), 5_000)
+      return () => {
+        clearTimeout(timeout)
+      }
+    }
+  }, [actionData])
 
   return (
     <div className="grid h-screen place-items-center p-8">
@@ -90,8 +72,35 @@ export default function LoginScreen(props: LoginScreenProps) {
             We'll send you an email with a login code.
           </p>
         </div>
+        <div className="grid gap-6">
+          <Form method="post" onSubmit={() => setIsLoading(true)}>
+            <input type="hidden" name="redirect" value={redirect || ""} />
+            <div className="grid gap-2">
+              <div className="grid gap-1">
+                <Label className="sr-only" htmlFor="email">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  placeholder="name@example.com"
+                  type="email"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  autoCorrect="off"
+                  disabled={isLoading}
+                />
+              </div>
 
-        <LoginForm redirect={redirect} />
+              <Button disabled={isLoading} type="submit">
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign In with Email
+              </Button>
+            </div>
+          </Form>
+        </div>
 
         <p className="text-center text-sm text-muted-foreground">
           Built by the{" "}
@@ -100,18 +109,14 @@ export default function LoginScreen(props: LoginScreenProps) {
           </ExternalLink>
           .
         </p>
-
-        {props.errorMessage && (
-          <div className="text-red-500 mt-6 w-full text-center">
-            {props.errorMessage}
-          </div>
-        )}
+        <div
+          className={`mt-6 w-full text-center transition-opacity duration-300 ease-in-out ${
+            showError ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <div className="text-red-500">{actionData?.error ?? "error"}</div>
+        </div>
       </div>
     </div>
   )
-}
-
-export function ErrorBoundary() {
-  const error = useRouteError() as Error
-  return <LoginScreen errorMessage={error.message} />
 }
