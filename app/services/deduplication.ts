@@ -228,6 +228,8 @@ export default class DeduplicationService {
    * Create an entry in `CanonicalValuesCard`.
    */
   async createCanonicalCard(data: ValuesCardData) {
+    console.log("Creating canonical card with title " + data.title)
+
     // Create a canonical values card.
     const canonical = await this.db.canonicalValuesCard.create({
       data: {
@@ -248,6 +250,10 @@ export default class DeduplicationService {
    * Deduplicate a set of values cards using a prompt.
    */
   async cluster(cards: ValuesCard[]): Promise<ValuesCard[][]> {
+    if (cards.length === 1) {
+      return [[cards[0]]]
+    }
+
     const message = JSON.stringify(cards.map((c) => toDataModelWithId(c)))
 
     // Call prompt.
@@ -467,7 +473,7 @@ export const deduplicate = inngest.createFunction(
         )) as any as CanonicalValuesCard
 
         await step.run(
-          "Link newly cluster to newly created canonical card",
+          "Link cluster to newly created canonical card",
           async () =>
             service.linkClusterToCanonicalCard(cluster, newCanonicalDuplicate)
         )

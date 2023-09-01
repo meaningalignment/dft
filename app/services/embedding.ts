@@ -72,6 +72,7 @@ export default class EmbeddingService {
 
   async embedCandidate(card: ValuesCardData): Promise<number[]> {
     const syntheticCard = {
+      title: card.title,
       instructionsShort: card.instructions_short,
       instructionsDetailed: card.instructions_detailed,
       evaluationCriteria: card.evaluation_criteria ?? [],
