@@ -11,6 +11,8 @@ import SelectionRoutingService from "~/services/selection-routing"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "~/services/embedding"
 import { Check, Loader2 } from "lucide-react"
+import StaticChatMessage from "~/components/static-chat-message"
+import { cn } from "~/utils"
 
 const minRequiredVotes = 2
 
@@ -94,10 +96,13 @@ function SelectedValuesCard({ value }: { value: CanonicalValuesCard }) {
 }
 
 export default function SelectScreen() {
-  const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
-  const { values, drawId } = useLoaderData<typeof loader>()
+
+  const [isLoading, setIsLoading] = useState(false)
+  const [showCards, setShowCards] = useState(false)
   const [selected, setSelected] = useState<number[]>([])
+
+  const { values, drawId } = useLoaderData<typeof loader>()
 
   // If there are no values in the draw, continue to next step.
   useEffect(() => {
@@ -148,22 +153,22 @@ export default function SelectScreen() {
     <div className="flex flex-col h-screen w-screen">
       <Header />
       <div className="grid flex-grow place-items-center space-y-8 py-12 mx-8">
-        <div className="max-w-2xl">
-          <ChatMessage
-            message={{
-              id: "1",
-              role: "assistant",
-              content: `Here are some examples of how others have answered. Your next task is to determine which of these values you think are wisest to consider for ChatGPT talking to the girl.\n\nSelect 2 or more responses you think are wise to consider by clicking on them.`,
-            }}
-            hideActions={true}
-          />
-        </div>
+        <StaticChatMessage
+          onFinished={() => {
+            setShowCards(true)
+          }}
+          text={`Here are some examples of how others have answered. Your next task is to determine which of these values you think are wisest to consider for ChatGPT talking to the girl.\n\nSelect 2 or more responses you think are wise to consider by clicking on them.`}
+        />
         <div className="grid lg:grid-cols-2 xl:grid-cols-3 mx-auto gap-4">
-          {values.map((value) => (
+          {values.map((value, index) => (
             <div
               key={value.id}
               onClick={() => onSelectValue(value.id)}
-              className={"cursor-pointer hover:opacity-80 active:opacity-70"}
+              className={cn(
+                "cursor-pointer transition-opacity ease-in duration-500",
+                showCards ? "opacity-100" : "opacity-0",
+                `delay-${index * 75}` // Make sure to add to `safelist` in tailwind.config.js if changed.
+              )}
             >
               {selected.includes(value.id) ? (
                 <SelectedValuesCard value={value as any} />
@@ -173,7 +178,11 @@ export default function SelectScreen() {
             </div>
           ))}
         </div>
-        <div className="flex flex-col justify-center items-center pt-4">
+        <div
+          className={`flex flex-col justify-center items-center pt-4 transition-opacity ease-in duration-500 delay-525 ${
+            showCards ? "opacity-100" : "opacity-0"
+          }`}
+        >
           <Button
             disabled={selected.length < minRequiredVotes || isLoading}
             onClick={() => onSubmit()}

@@ -25,6 +25,21 @@ export default {
         ring: "#A6A8AB",
       },
     },
+    transitionDelay: {
+      "0": "0ms",
+      "75": "75ms",
+      "150": "150ms",
+      "225": "225ms",
+      "300": "300ms",
+      "375": "375ms",
+      "450": "450ms",
+      "525": "525ms",
+    },
   },
   plugins: [],
+  safelist: [
+    {
+      pattern: /delay-(0|75|150|225|300|375|450|525)/,
+    },
+  ],
 } satisfies Config
