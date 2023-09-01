@@ -153,7 +153,7 @@ export default function SelectScreen() {
             message={{
               id: "1",
               role: "assistant",
-              content: `Here are some examples of how others have answered. Your next task is to determine which of these values you think are wisest to consider for ChatGPT talking to the girl.\n\nSelect the responses you think are wise to consider by clicking on them.`,
+              content: `Here are some examples of how others have answered. Your next task is to determine which of these values you think are wisest to consider for ChatGPT talking to the girl.\n\nSelect 2 or more responses you think are wise to consider by clicking on them.`,
             }}
             hideActions={true}
           />
