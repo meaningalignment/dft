@@ -1,5 +1,51 @@
+import { User } from "@prisma/client"
 import { useCurrentUser } from "../root"
 import { Button } from "./ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu"
+import { Form } from "@remix-run/react"
+import { useRef } from "react"
+
+function UserMenu({ user }: { user: User }) {
+  const formRef = useRef(null)
+
+  const handleSubmit = () => {
+    const ref = formRef.current as any
+    ref?.submit()
+  }
+
+  return (
+    <div className="flex items-center justify-between">
+      <Form method="post" action="/auth/logout" ref={formRef}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="pl-0">
+              <span className="ml-2">{user?.email}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            sideOffset={8}
+            align="start"
+            className="w-[180px]"
+          >
+            <DropdownMenuItem className="flex-col items-start">
+              <div className="text-xs text-zinc-500">{user?.email}</div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-xs" onClick={handleSubmit}>
+              <button>Sign Out</button>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </Form>
+    </div>
+  )
+}
 
 export default function Header({ chatId }: { chatId?: string }) {
   const user = useCurrentUser()
@@ -9,10 +55,7 @@ export default function Header({ chatId }: { chatId?: string }) {
       {chatId && <p className="text-xs text-gray-400">{chatId}</p>}
       <div className="flex-grow" />
       <div className="flex items-center justify-end">
-        <p className="text-sm text-gray-400">{user?.email}</p>
-        <form action="/auth/logout" method="post">
-          <Button variant={"link"}>Sign Out</Button>
-        </form>
+        {user && <UserMenu user={user} />}
       </div>
     </header>
   )
