@@ -8,7 +8,7 @@ export default function StaticChatMessage({
   text: string
   onFinished: () => void
 }) {
-  const [currentText, setCurrentText] = useState("Here are some hey")
+  const [currentText, setCurrentText] = useState("")
 
   useEffect(() => {
     setCurrentText("")
