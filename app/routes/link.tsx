@@ -193,6 +193,16 @@ export default function LinkScreen() {
     return str
   }
 
+  const remainingValuesPromptText = () => {
+    if (draw.length - index === 1) {
+      return "one more set"
+    } else if (index === 0) {
+      return `${draw.length - index} sets of values`
+    } else {
+      return `${draw.length - index} more sets`
+    }
+  }
+
   if (!draw[index]) {
     return (
       <div className="h-screen w-screen flex items-center justify-center">
@@ -209,7 +219,10 @@ export default function LinkScreen() {
           onFinished={() => {
             setShowCards(true)
           }}
-          text={`If ChatGPT follows only the top value, will it automatically be following some of the lower ones?\n\nOnce ChatGPT has the top value, some of the lower values can be left out, if the top one includes what they're really about.\n\nSelect the lower values that can be left out.`}
+          isFinished={showCards}
+          text={`Some values can be 'more comprehensive' than other values, meaning they balance a value with something else that is important while keeping what's important about both values.\n\nBelow are some values that seem to be related.\n\nIf ChatGPT were to take instructions only from **${
+            draw[index].to.title
+          }**, would it also be following some of the lower values?\n\nSelect the lower values that can be ignored if ChatGPT is taking instructions from the top value, or click *skip* if all values are important in their own way.\n\nYour next task is to do this for ${remainingValuesPromptText()}.`}
         />
         <div
           className={cn(

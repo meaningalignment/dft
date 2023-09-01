@@ -3,14 +3,21 @@ import { ChatMessage } from "./chat-message"
 
 export default function StaticChatMessage({
   text,
+  isFinished,
   onFinished,
 }: {
   text: string
+  isFinished: boolean
   onFinished: () => void
 }) {
   const [currentText, setCurrentText] = useState("")
 
   useEffect(() => {
+    if (isFinished) {
+      setCurrentText(text)
+      return
+    }
+
     setCurrentText("")
 
     let wordArray = text.split(" ")
