@@ -222,7 +222,7 @@ export default function LinkScreen() {
           isFinished={showCards}
           text={`Some values can be 'more comprehensive' than other values, meaning they balance a value with something else that is important while keeping what's important about both values.\n\nBelow are some values that seem to be related.\n\nIf ChatGPT were to take instructions only from **${
             draw[index].to.title
-          }**, would it also be following some of the lower values?\n\nSelect the lower values that can be ignored if ChatGPT is taking instructions from the top value, or click *skip* if all values are important in their own way.\n\nYour next task is to do this for ${remainingValuesPromptText()}.`}
+          }**, would it also be following some of the lower values?\n\nSelect the lower values that can be ignored if ChatGPT is taking instructions from the top value, or click *skip* if all the values are important in unique ways.\n\nYour next task is to do this for ${remainingValuesPromptText()}.`}
         />
         <div
           className={cn(
