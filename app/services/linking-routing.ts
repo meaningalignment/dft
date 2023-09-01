@@ -328,8 +328,8 @@ export default class LinkRoutingService {
 //
 
 export const hypothesize = inngest.createFunction(
-  { name: "Create Hypothetical Edges" },
-  { cron: process.env.EDGE_HYPOTHESIS_CRON ?? "0 */12 * * *" },
+  { name: "Create Hypothetical Edges", concurrency: 1 },
+  { cron: "0 */12 * * *" },
   async ({ step, logger }) => {
     logger.info("Running hypothetical links generation...")
 
