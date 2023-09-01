@@ -57,11 +57,11 @@ model CanonicalValuesCard {
   evaluationCriteria   String[]
   createdAt            DateTime                     @default(now())
   updatedAt            DateTime                     @updatedAt
+  embedding            Unsupported("vector(1536)")?
   valuesCards          ValuesCard[]
   edgesFrom            Edge[]                       @relation("FromValueRelation")
   edgesTo              Edge[]                       @relation("ToValueRelation")
   Vote                 Vote[]
-  embedding            Unsupported("vector(1536)")?
   Impression           Impression[]
   Chat                 Chat[]
   edgeHypothesisFrom   EdgeHypothesis[]             @relation("FromHypothesizedValueRelation")
@@ -93,7 +93,7 @@ model Vote {
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   drawId       String // uuid for each draw of 6 values to be voted on.
-  valuesCard   CanonicalValuesCard @relation(fields: [valuesCardId], references: [id])
+  valuesCard   CanonicalValuesCard @relation(fields: [valuesCardId], references: [id], onDelete: Cascade)
   user         User                @relation(fields: [userId], references: [id])
 }
 
@@ -105,7 +105,7 @@ model Impression {
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   user         User                @relation(fields: [userId], references: [id])
-  valuesCard   CanonicalValuesCard @relation(fields: [valuesCardId], references: [id])
+  valuesCard   CanonicalValuesCard @relation(fields: [valuesCardId], references: [id], onDelete: Cascade)
 }
 
 model Edge {
@@ -115,8 +115,8 @@ model Edge {
   createdAt DateTime            @default(now())
   updatedAt DateTime            @updatedAt
   user      User                @relation(fields: [userId], references: [id])
-  from      CanonicalValuesCard @relation("FromValueRelation", fields: [fromId], references: [id])
-  to        CanonicalValuesCard @relation("ToValueRelation", fields: [toId], references: [id])
+  from      CanonicalValuesCard @relation("FromValueRelation", fields: [fromId], references: [id], onDelete: Cascade)
+  to        CanonicalValuesCard @relation("ToValueRelation", fields: [toId], references: [id], onDelete: Cascade)
 
   @@id([userId, fromId, toId])
 }
@@ -127,8 +127,8 @@ model EdgeHypothesis {
   story     String?
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
-  from      CanonicalValuesCard? @relation("FromHypothesizedValueRelation", fields: [fromId], references: [id])
-  to        CanonicalValuesCard? @relation("ToHypothesizedValueRelation", fields: [toId], references: [id])
+  from      CanonicalValuesCard? @relation("FromHypothesizedValueRelation", fields: [fromId], references: [id], onDelete: Cascade)
+  to        CanonicalValuesCard? @relation("ToHypothesizedValueRelation", fields: [toId], references: [id], onDelete: Cascade)
 
   @@id([fromId, toId])
 }
