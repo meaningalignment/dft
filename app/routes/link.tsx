@@ -15,6 +15,8 @@ import { IconArrowRight } from "~/components/ui/icons"
 import React from "react"
 import { Separator } from "../components/ui/separator"
 import { Loader2 } from "lucide-react"
+import StaticChatMessage from "~/components/static-chat-message"
+import { cn } from "~/utils"
 
 const minRequiredLinks = 3
 
@@ -109,10 +111,13 @@ function InfoText({
 
 export default function LinkScreen() {
   const navigate = useNavigate()
-  const { draw } = useLoaderData<typeof loader>()
+
   const [index, setIndex] = useState<number>(0)
+  const [showCards, setShowCards] = useState(false)
   const [isLoading, setIsLoading] = useState<"submit" | "skip" | null>(null)
   const [selectedLesserValues, setSelectedLesserValues] = useState<number[]>([])
+
+  const { draw } = useLoaderData<typeof loader>()
 
   // If there are no values in the draw, continue to next step.
   useEffect(() => {
@@ -188,6 +193,22 @@ export default function LinkScreen() {
     return str
   }
 
+  const remainingValuesPromptText = () => {
+    if (draw.length - index === 1) {
+      return "one more set"
+    } else if (index === 0) {
+      return `${draw.length - index} sets of values`
+    } else {
+      return `${draw.length - index} more sets`
+    }
+  }
+
+  const someOtherValuesPromptText = () => {
+    if (draw[index].from.length === 1) {
+      return "the lower value"
+    }
+  }
+
   if (!draw[index]) {
     return (
       <div className="h-screen w-screen flex items-center justify-center">
@@ -200,17 +221,30 @@ export default function LinkScreen() {
     <div className="flex flex-col h-screen w-screen">
       <Header />
       <div className="grid flex-grow place-items-center space-y-4 py-12 px-8">
-        <div className="max-w-2xl">
-          <ChatMessage
-            message={{
-              id: "1",
-              role: "assistant",
-              content: `If ChatGPT follows only the top value, will it automatically be following some of the lower ones?\n\nOnce ChatGPT has the top value, some of the lower values can be left out, if the top one includes what they're really about.\n\nSelect the lower values that can be left out.`,
-            }}
-            hideActions={true}
-          />
-        </div>
-        <div className="mx-auto flex flex-col md:flex-row">
+        <StaticChatMessage
+          onFinished={() => {
+            setShowCards(true)
+          }}
+          isFinished={showCards}
+          text={`Some values can be 'more comprehensive' than other values, meaning they balance a value with another value while keeping what's important about both of them.\n\nBelow are some values that seem to be related.\n\nIf ChatGPT were to take instructions only from **${
+            draw[index].to.title
+          }**, would it also be following ${
+            draw[index].from.length === 1
+              ? "the lower value"
+              : "some of the lower values"
+          }?\n\nSelect the ${
+            draw[index].from.length === 1
+              ? "lower value if it can be ignored when"
+              : "lower values that can be ignored if"
+          } ChatGPT is taking instructions from the top value, or click *skip* if all the values are important in unique ways.\n\nYour next task is to do this for ${remainingValuesPromptText()}.`}
+        />
+        <div
+          className={cn(
+            "mx-auto flex flex-col md:flex-row",
+            "transition-opacity ease-in duration-500",
+            showCards ? "opacity-100" : "opacity-0"
+          )}
+        >
           <ValuesCard card={draw[index].to as any} />
           {selectedLesserValues.length > 0 && (
             <div className="hidden md:block">
@@ -224,7 +258,13 @@ export default function LinkScreen() {
           )}
         </div>
 
-        <div className="w-full flex items-center justify-center py-4">
+        <div
+          className={cn(
+            "w-full flex items-center justify-center py-4 transition-opacity ease-in duration-500",
+            showCards ? "opacity-100" : "opacity-0",
+            "delay-75"
+          )}
+        >
           <Separator className="max-w-2xl" />
         </div>
 
@@ -233,7 +273,11 @@ export default function LinkScreen() {
             <div
               key={value.id}
               onClick={() => onSelect(value.id)}
-              className={"cursor-pointer hover:opacity-80 active:opacity-70"}
+              className={cn(
+                "cursor-pointer transition-opacity ease-in duration-500",
+                showCards ? "opacity-100" : "opacity-0",
+                `delay-${(index + 2) * 75}` // Make sure to add to `safelist` in tailwind.config.js if changed.
+              )}
             >
               {selectedLesserValues.includes(value.id) ? (
                 <SelectedValuesCard value={value as any} />
@@ -255,35 +299,43 @@ export default function LinkScreen() {
           </div>
         )}
 
-        <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
-          <Button
-            disabled={selectedLesserValues.length === 0 || Boolean(isLoading)}
-            onClick={() => onSubmit()}
-          >
-            {isLoading == "submit" && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            {draw.length - index === 1 ? "Finish" : "Continue"}
-          </Button>
-          <Button
-            disabled={Boolean(isLoading)}
-            variant={"outline"}
-            onClick={() => onSkip()}
-          >
-            {isLoading == "skip" ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <IconArrowRight className="mr-2" />
-            )}
-            Skip
-          </Button>
-        </div>
-        <div className="flex flex-col justify-center items-center my-4 h-4">
-          <p className="text-stone-300">
-            {`Submit ${draw.length - index} more relationship${
-              draw.length - index === 1 ? "" : "s"
-            } to finish`}
-          </p>
+        <div
+          className={cn(
+            "transition-opacity ease-in duration-500",
+            showCards ? "opacity-100" : "opacity-0",
+            `delay-${draw[index].from.length + 3 * 75}`
+          )}
+        >
+          <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
+            <Button
+              disabled={selectedLesserValues.length === 0 || Boolean(isLoading)}
+              onClick={() => onSubmit()}
+            >
+              {isLoading == "submit" && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              {draw.length - index === 1 ? "Finish" : "Continue"}
+            </Button>
+            <Button
+              disabled={Boolean(isLoading)}
+              variant={"outline"}
+              onClick={() => onSkip()}
+            >
+              {isLoading == "skip" ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <IconArrowRight className="mr-2" />
+              )}
+              Skip
+            </Button>
+          </div>
+          <div className="flex flex-col justify-center items-center my-4 h-4">
+            <p className="text-stone-300">
+              {`Submit ${draw.length - index} more relationship${
+                draw.length - index === 1 ? "" : "s"
+              } to finish`}
+            </p>
+          </div>
         </div>
       </div>
     </div>

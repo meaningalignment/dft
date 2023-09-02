@@ -31,7 +31,7 @@ function UserMenu({ user }: { user: User }) {
           <DropdownMenuContent
             sideOffset={8}
             align="start"
-            className="w-[180px]"
+            className="w-[200px]"
           >
             <DropdownMenuItem className="flex-col items-start">
               <div className="text-xs text-zinc-500">{user?.email}</div>
