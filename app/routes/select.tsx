@@ -157,6 +157,7 @@ export default function SelectScreen() {
           onFinished={() => {
             setShowCards(true)
           }}
+          isFinished={showCards}
           text={`Here are some examples of how others have answered. Your next task is to determine which of these values you think are wisest to consider for ChatGPT talking to the girl.\n\nSelect 2 or more responses you think are wise to consider by clicking on them.`}
         />
         <div className="grid lg:grid-cols-2 xl:grid-cols-3 mx-auto gap-4">
@@ -166,7 +167,9 @@ export default function SelectScreen() {
               onClick={() => onSelectValue(value.id)}
               className={cn(
                 "cursor-pointer transition-opacity ease-in duration-500",
-                showCards ? "opacity-100" : "opacity-0",
+                showCards
+                  ? "hover:opacity-80 active:opacity-70 hover:duration-0 hover:transition-none opacity-100"
+                  : "opacity-0",
                 `delay-${index * 75}` // Make sure to add to `safelist` in tailwind.config.js if changed.
               )}
             >

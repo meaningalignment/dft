@@ -275,7 +275,9 @@ export default function LinkScreen() {
               onClick={() => onSelect(value.id)}
               className={cn(
                 "cursor-pointer transition-opacity ease-in duration-500",
-                showCards ? "opacity-100" : "opacity-0",
+                showCards
+                  ? "hover:opacity-80 active:opacity-70 hover:duration-0 hover:transition-none opacity-100"
+                  : "opacity-0",
                 `delay-${(index + 2) * 75}` // Make sure to add to `safelist` in tailwind.config.js if changed.
               )}
             >

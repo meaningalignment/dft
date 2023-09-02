@@ -18,7 +18,7 @@ export default function Index() {
     if (!user) {
       navigate("/auth/login")
     } else {
-      navigate("/chat")
+      navigate("/start")
     }
   }, [user, navigate])
 
