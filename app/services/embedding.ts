@@ -95,13 +95,18 @@ export default class EmbeddingService {
   }
 
   async getUserEmbedding(userId: number): Promise<number[]> {
-    const userEmbeddings: Array<Array<number>> = (
-      await db.$queryRaw<
-        Array<{ embedding: any }>
-      >`SELECT embedding::text FROM "ValuesCard" vc INNER JOIN "Chat" c  ON vc."chatId" = c."id" WHERE c."userId" = ${userId} AND vc."embedding" IS NOT NULL`
-    ).map((r) => JSON.parse(r.embedding).map((v: any) => parseFloat(v)))
+    try {
+      const userEmbeddings: Array<Array<number>> = (
+        await db.$queryRaw<
+          Array<{ embedding: any }>
+        >`SELECT embedding::text FROM "ValuesCard" vc INNER JOIN "Chat" c  ON vc."chatId" = c."id" WHERE c."userId" = ${userId} AND vc."embedding" IS NOT NULL`
+      ).map((r) => JSON.parse(r.embedding).map((v: any) => parseFloat(v)))
 
-    return calculateAverageEmbedding(userEmbeddings)
+      return calculateAverageEmbedding(userEmbeddings)
+    } catch (e) {
+      console.error(e)
+      return new Array(1536).fill(0)
+    }
   }
 
   async findValuesSimilarTo(
