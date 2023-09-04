@@ -41,7 +41,7 @@ const submitWiseValues: ChatCompletionFunctions = {
   },
 }
 
-export default class SelectionRoutingService {
+export default class SelectionService {
   private db: PrismaClient
   private openai: OpenAIApi
   private embedding: EmbeddingService
