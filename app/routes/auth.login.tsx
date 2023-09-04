@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { ActionArgs, json } from "@remix-run/node"
 import { Form, useActionData, useSearchParams } from "@remix-run/react"
-import { auth, db } from "~/config.server"
+import { auth } from "~/config.server"
 import { Button } from "~/components/ui/button"
 import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
@@ -9,32 +9,8 @@ import { Loader2 } from "lucide-react"
 import { ExternalLink } from "~/components/external-link"
 
 export async function action(args: ActionArgs) {
-  //
-  // Cowpunk auth requires a "register" flag for new users.
-  // Since we are merging signup & login here, we need to
-  // manually set the "register" flag if the user is new.
-  //
-  const data = await args.request.formData()
-  const email = data.get("email") as string
-  const user = await db.user.findFirst({ where: { email } })
-
-  if (!user) {
-    data.append("register", "true")
-  }
-
-  const newFormData = new URLSearchParams()
-  for (const [key, value] of data.entries()) {
-    newFormData.append(key, value as string)
-  }
-
-  const newRequest = new Request(args.request, {
-    body: newFormData.toString(),
-    headers: args.request.headers,
-  })
-
   try {
-    // Call the submit action with the updated args.
-    return await auth.loginSubmitAction({ ...args, request: newRequest })
+    return await auth.loginSubmitAction(args)
   } catch (error: any) {
     // Handle errors in client.
     return json({ error: error.message }, { status: 500 })
@@ -75,6 +51,7 @@ export default function LoginScreen() {
         <div className="grid gap-6">
           <Form method="post" onSubmit={() => setIsLoading(true)}>
             <input type="hidden" name="redirect" value={redirect || ""} />
+            <input type="hidden" name="autoregister" value="YES" />
             <div className="grid gap-2">
               <div className="grid gap-1">
                 <Label className="sr-only" htmlFor="email">
@@ -112,7 +89,7 @@ export default function LoginScreen() {
         <div
           className={`mt-6 w-full text-center transition-opacity duration-300 ease-in-out ${
             showError ? "opacity-100" : "opacity-0"
-          }`}
+            }`}
         >
           <div className="text-red-500">{actionData?.error ?? "error"}</div>
         </div>
