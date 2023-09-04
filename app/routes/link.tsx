@@ -98,7 +98,7 @@ function InfoText({
     ))
 
   return (
-    <div className="w-96 p-8">
+    <div className="max-w-96 p-8">
       <p className="text-neutral-500">
         It would be enough for ChatGPT to only take instructions from{" "}
         <strong className="text-black">{to.title}</strong>, because that's what{" "}
