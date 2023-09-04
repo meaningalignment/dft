@@ -66,6 +66,8 @@ model CanonicalValuesCard {
   Chat                 Chat[]
   edgeHypothesisFrom   EdgeHypothesis[]             @relation("FromHypothesizedValueRelation")
   edgeHypothesisTo     EdgeHypothesis[]             @relation("ToHypothesizedValueRelation")
+
+  @@unique([title, instructionsShort, instructionsDetailed, evaluationCriteria]) // Prevent duplicate insertions.
 }
 
 model Chat {
