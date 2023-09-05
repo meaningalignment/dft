@@ -3,22 +3,17 @@ import Header from "~/components/header"
 import { useLoaderData, useNavigate } from "@remix-run/react"
 import { LoaderArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
-import { ChatMessage } from "~/components/chat-message"
 import ValuesCard from "~/components/values-card"
 import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import LinkingService from "~/services/linking"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "~/services/embedding"
-import { CanonicalValuesCard } from "@prisma/client"
 import { IconArrowRight } from "~/components/ui/icons"
-import React from "react"
 import { Separator } from "../components/ui/separator"
 import { Loader2 } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
-
-const minRequiredLinks = 3
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
@@ -28,7 +23,7 @@ export async function loader({ request }: LoaderArgs) {
   const embedding = new EmbeddingService(openai, db)
   const service = new LinkingService(openai, db, embedding)
 
-  const draw = await service.getDraw(userId, minRequiredLinks)
+  const draw = await service.getDraw(userId, 3)
 
   return json({ draw })
 }
@@ -72,6 +67,7 @@ export default function LinkScreen() {
   const [index, setIndex] = useState<number>(0)
   const [showCards, setShowCards] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingSkip, setIsLoadingSkip] = useState(false)
   const [selectedLesserValues, setSelectedLesserValues] = useState<number[]>([])
 
   const { draw } = useLoaderData<typeof loader>()
@@ -86,6 +82,7 @@ export default function LinkScreen() {
   const onSkip = () => {
     // If we're at the end of the draw, navigate to the finish screen.
     if (index === draw.length - 1) {
+      setIsLoadingSkip(true)
       return navigate("/finished")
     }
 
@@ -182,15 +179,21 @@ export default function LinkScreen() {
             Did this person make a value upgrade?
           </h1>
           <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
-            <Button disabled={isLoading} onClick={() => onSubmit()}>
+            <Button
+              disabled={isLoading || isLoadingSkip}
+              onClick={() => onSubmit()}
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Yes
             </Button>
             <Button
-              disabled={isLoading}
+              disabled={isLoading || isLoadingSkip}
               variant={"outline"}
               onClick={() => onSkip()}
             >
+              {isLoadingSkip && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               No
             </Button>
           </div>
