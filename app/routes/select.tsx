@@ -7,7 +7,7 @@ import ValuesCard from "~/components/values-card"
 import { ChatMessage } from "~/components/chat-message"
 import { useEffect, useState } from "react"
 import { CanonicalValuesCard } from "@prisma/client"
-import SelectionRoutingService from "~/services/selection-routing"
+import SelectionService from "~/services/selection"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "~/services/embedding"
 import { Check, Loader2 } from "lucide-react"
@@ -24,7 +24,7 @@ export async function loader({ request }: LoaderArgs) {
     new Configuration({ apiKey: process.env.OPENAI_API_KEY })
   )
   const embedding = new EmbeddingService(openai, db)
-  const routing = new SelectionRoutingService(openai, db, embedding)
+  const routing = new SelectionService(openai, db, embedding)
 
   // Get the draw for this user.
   const { id, values } = await routing.getDraw(userId)
@@ -107,7 +107,7 @@ export default function SelectScreen() {
   // If there are no values in the draw, continue to next step.
   useEffect(() => {
     if (values.length === 0) {
-      navigate("/link")
+      navigate("/link-explainer")
     }
   }, [values])
 
@@ -138,7 +138,7 @@ export default function SelectScreen() {
       throw new Error("Failed to submit votes: " + text)
     }
 
-    navigate("/link")
+    navigate("/link-explainer")
   }
 
   if (values.length === 0) {

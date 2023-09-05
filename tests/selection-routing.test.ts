@@ -1,12 +1,12 @@
 import { PrismaClient } from "@prisma/client"
-import SelectionRoutingService from "~/services/selection-routing"
+import SelectionService from "~/services/selection"
 
-let service: SelectionRoutingService
+let service: SelectionService
 let db: PrismaClient
 
 beforeAll(() => {
   db = new PrismaClient()
-  service = new SelectionRoutingService(db)
+  service = new SelectionService(db)
 })
 
 test(`Test routing service`, async () => {
