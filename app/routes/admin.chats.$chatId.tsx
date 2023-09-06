@@ -6,6 +6,7 @@ import { useState } from "react"
 import toast from "react-hot-toast"
 import { ChatList } from "~/components/chat-list"
 import { Button } from "~/components/ui/button"
+import { Separator } from "~/components/ui/separator"
 import { db } from "~/config.server"
 import { evaluateTranscript } from "~/services/dialogue-evaluator"
 
@@ -86,7 +87,7 @@ export default function AdminChat() {
           <RecoverButton chatId={chatId} />
         </div>
       </div>
-
+      <Separator className="my-4 md:my-8" />
       <ChatList
         messages={messages as Message[]}
         isFinished={true}
