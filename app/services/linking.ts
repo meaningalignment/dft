@@ -1,11 +1,16 @@
-import { CanonicalValuesCard, PrismaClient, Vote } from "@prisma/client"
+import {
+  CanonicalValuesCard,
+  EdgeHypothesis,
+  PrismaClient,
+  Vote,
+} from "@prisma/client"
 import { db, inngest } from "~/config.server"
 import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "./embedding"
 import { model } from "~/lib/consts"
 import { Logger } from "inngest/middleware/logger"
 
-type EdgeHypothesis = {
+type EdgeHypothesisData = {
   to: CanonicalValuesCard
   from: CanonicalValuesCard
   story: string
@@ -98,7 +103,7 @@ const submitValueUpgrades: ChatCompletionFunctions = {
   },
 }
 
-export default class LinkRoutingService {
+export default class LinkingService {
   private db: PrismaClient
   private openai: OpenAIApi
   private embedding: EmbeddingService
@@ -115,9 +120,7 @@ export default class LinkRoutingService {
 
   async createHypotheticalEdges(
     cards: CanonicalValuesCard[]
-  ): Promise<
-    { to: CanonicalValuesCard; from: CanonicalValuesCard; story: string }[]
-  > {
+  ): Promise<EdgeHypothesisData[]> {
     // Create a message with the cards for the prompt.
     const message = JSON.stringify(
       cards.map((c) => {
@@ -163,7 +166,7 @@ export default class LinkRoutingService {
   }
 
   async addHypotheticalUpgradeToDb(
-    upgrade: EdgeHypothesis,
+    upgrade: EdgeHypothesisData,
     logger: Logger
   ): Promise<void> {
     const count = await db.edgeHypothesis.count({
@@ -208,7 +211,8 @@ export default class LinkRoutingService {
     INNER JOIN "EdgeHypothesis" eh 
     ON eh."fromId" = cvc.id
     ORDER BY 
-      "_distance" DESC;`
+      "_distance" DESC
+    LIMIT 500;`
 
     // Convert the array to a map.
     const map = new Map<number, number>()
@@ -223,14 +227,9 @@ export default class LinkRoutingService {
   async getDraw(
     userId: number,
     size: number = 3
-  ): Promise<
-    {
-      to: CanonicalValuesCard
-      from: CanonicalValuesCard[]
-    }[]
-  > {
+  ): Promise<EdgeHypothesisData[]> {
     // Find edge hypotheses that the user has not linked together yet.
-    const hypotheses = await this.db.edgeHypothesis.findMany({
+    const hypotheses = (await this.db.edgeHypothesis.findMany({
       where: {
         AND: [
           { from: { edgesFrom: { none: { userId } } } },
@@ -241,16 +240,14 @@ export default class LinkRoutingService {
         from: true,
         to: true,
       },
-    })
+    })) as (EdgeHypothesis & {
+      from: CanonicalValuesCard
+      to: CanonicalValuesCard
+    })[]
 
     // The unique values that are linked to a more comprehensive value.
     const fromValues = [...new Set(hypotheses.map((h) => h.fromId))].map(
       (id) => hypotheses.find((h) => h.fromId === id)!.from!
-    )
-
-    // The unique values that are linked to one or several less comprehensive values.
-    const toValues = [...new Set(hypotheses.map((h) => h.toId))].map(
-      (id) => hypotheses.find((h) => h.toId === id)!.to!
     )
 
     // The user's votes on the "from" values.
@@ -265,13 +262,13 @@ export default class LinkRoutingService {
     const distances = await this.getUserFromValueDistanceMap(userId)
 
     //
-    // Sort the "from" values by the following criteria:
-    //  1. If the user has voted on a value, it should be first.
+    // Sort the hypotheses by the following criteria:
+    //  1. If the user has voted on a value, it should be sorted first.
     //  2. If the user has not voted on a value, it should be sorted by similarity to the user's embedding.
     //
-    const sortedFromValues = fromValues.sort((a, b) => {
-      const voteA = votes.find((v) => v.valuesCardId === a.id)
-      const voteB = votes.find((v) => v.valuesCardId === b.id)
+    const sortedHypotheses = hypotheses.sort((a, b) => {
+      const voteA = votes.find((v) => v.valuesCardId === a.from!.id)
+      const voteB = votes.find((v) => v.valuesCardId === b.from!.id)
 
       // Sort values with a linked vote first.
       if (voteA && !voteB) {
@@ -280,46 +277,21 @@ export default class LinkRoutingService {
         return 1
       }
 
-      const distanceA = distances.get(a.id) ?? 0
-      const distanceB = distances.get(b.id) ?? 0
+      const distanceA = distances.get(a.fromId) ?? 0
+      const distanceB = distances.get(b.fromId) ?? 0
 
       // Sort values with a smaller distance as fallback.
       return distanceA - distanceB
     })
 
-    // Sort the "to" values by whichever has the lowest index in the corresponding "from" values.
-    const sortedToValues = toValues.sort((a, b) => {
-      const linksA = hypotheses.filter((h) => h.toId === a.id)
-      const linksB = hypotheses.filter((h) => h.toId === b.id)
-
-      const indexA = sortedFromValues.findIndex((f) =>
-        linksA.map((l) => l.fromId).includes(f.id)
-      )
-
-      const indexB = sortedFromValues.findIndex((f) =>
-        linksB.map((l) => l.fromId).includes(f.id)
-      )
-
-      return indexA - indexB
+    // Return the most relevant hypotheses.
+    return sortedHypotheses.slice(0, size).map((h) => {
+      return {
+        to: h.to,
+        from: h.from,
+        story: h.story,
+      } as EdgeHypothesisData
     })
-
-    //
-    // Return a sized draw from the sorted "more comprehensive" values,
-    // and for each, all the "less comprehensive" values linked to it.
-    //
-    const draw = sortedToValues.map((to) => {
-      const from = hypotheses
-        .filter((h) => h.toId === to.id)
-        .map((h) => h.from)
-        .slice(0, 3) // Only include the 3 first "less comprehensive" values, to not clutter UI.
-
-      return { to, from } as {
-        to: CanonicalValuesCard
-        from: CanonicalValuesCard[]
-      }
-    })
-
-    return draw.slice(0, size)
   }
 }
 
@@ -341,7 +313,7 @@ export const hypothesize = inngest.createFunction(
     })
     const openai = new OpenAIApi(configuration)
     const embedding = new EmbeddingService(openai, db)
-    const service = new LinkRoutingService(openai, db, embedding)
+    const service = new LinkingService(openai, db, embedding)
 
     //
     // Get all the canonical cards.
@@ -368,7 +340,7 @@ export const hypothesize = inngest.createFunction(
     const edgeHypotheses = (await step.run(
       "Identify hypothetical edges",
       async () => service.createHypotheticalEdges(cards)
-    )) as any as EdgeHypothesis[]
+    )) as any as EdgeHypothesisData[]
 
     logger.info(`Identified ${edgeHypotheses.length} possible upgrades.`)
 

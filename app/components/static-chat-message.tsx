@@ -5,10 +5,12 @@ export default function StaticChatMessage({
   text,
   isFinished,
   onFinished,
+  role,
 }: {
   text: string
   isFinished: boolean
   onFinished: () => void
+  role?: "assistant" | "user"
 }) {
   const [currentText, setCurrentText] = useState("")
 
@@ -48,7 +50,7 @@ export default function StaticChatMessage({
         message={{
           id: "1",
           content: currentText,
-          role: "assistant",
+          role: role ?? "assistant",
         }}
       />
     </div>
