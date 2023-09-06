@@ -1,12 +1,14 @@
 import { type Message } from "ai"
 
 import { Button } from "./ui/button"
-import { IconCheck, IconCopy } from "./ui/icons"
+import { IconArrowDown, IconCheck, IconCopy, IconStop } from "./ui/icons"
+import { CrossCircledIcon } from "@radix-ui/react-icons"
 import { useCopyToClipboard } from "../hooks/use-copy-to-clipboard"
 import { cn } from "../utils"
 
 interface ChatMessageActionsProps extends React.ComponentProps<"div"> {
   message: Message
+  onDelete?: (message: Message) => void
 }
 
 export function ChatMessageActions({
@@ -21,6 +23,10 @@ export function ChatMessageActions({
     copyToClipboard(message.content)
   }
 
+  const onDelete = () => {
+    props.onDelete?.(message)
+  }
+
   return (
     <div
       className={cn(
@@ -33,6 +39,13 @@ export function ChatMessageActions({
         {isCopied ? <IconCheck /> : <IconCopy />}
         <span className="sr-only">Copy message</span>
       </Button>
+
+      {props.onDelete && (
+        <Button variant="ghost" size="icon" onClick={onDelete}>
+          <CrossCircledIcon />
+          <span className="sr-only">Delete Message</span>
+        </Button>
+      )}
     </div>
   )
 }

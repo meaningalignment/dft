@@ -8,6 +8,7 @@ import { ChatScrollAnchor } from "./chat-scroll-anchor"
 import { toast } from "react-hot-toast"
 import { ValuesCardData } from "~/lib/consts"
 import { useSearchParams } from "@remix-run/react"
+import { useCurrentUser } from "~/root"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
@@ -21,6 +22,7 @@ export function Chat({
   hasSubmitted,
   className,
 }: ChatProps) {
+  const user = useCurrentUser()
   const [valueCards, setValueCards] = useState<
     { position: number; card: ValuesCardData }[]
   >([])
@@ -60,80 +62,110 @@ export function Chat({
     )
   }
 
-  const { messages, append, reload, stop, isLoading, input, setInput } =
-    useChat({
-      id,
-      api: "/api/chat",
+  const onDeleteMessage = async (message: Message) => {
+    const newMessages = messages.filter(
+      (m) => m.content !== message.content && m.role !== message.role
+    )
+
+    // Save messages in the database.
+    await fetch(`/api/messages/${id}`, {
+      method: "POST",
       headers: {
-        "X-Articulator-Config": searchParams.get('articulatorConfig') || "default",
         "Content-Type": "application/json",
       },
-      body: {
+      body: JSON.stringify({
         chatId: id,
-      },
-      initialMessages,
-      onResponse: async (response) => {
-        const articulatedCard = response.headers.get("X-Articulated-Card")
-        if (articulatedCard) {
-          onCardArticulation(JSON.parse(articulatedCard) as ValuesCardData)
-        }
-
-        const submittedCard = response.headers.get("X-Submitted-Card")
-        if (submittedCard) {
-          onCardSubmission(JSON.parse(submittedCard) as ValuesCardData)
-        }
-
-        if (response.status === 401) {
-          console.error(response.status)
-          toast.error("Failed to update chat. Please try again.")
-        }
-      },
-      onError: async (error) => {
-        console.error(error)
-        toast.error("Failed to update chat. Please try again.")
-
-        //
-        // Get the last message from the database and set it as the input.
-        //
-        const res = await fetch(`/api/messages/${id}`)
-        const json = await res.json()
-
-        if (json && json.messages) {
-          const messages = json.messages as Message[]
-          const lastMessage = messages[messages.length - 1]
-
-          console.log("messages:", messages)
-          console.log("lastMessage:", lastMessage)
-
-          if (lastMessage.role === "user") {
-            setInput(lastMessage.content)
-          }
-        }
-      },
-      onFinish: async (message) => {
-        console.log("Chat finished:", message)
-        console.log("messages:", messages)
-
-        // Save messages in the database.
-        await fetch(`/api/messages/${id}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            chatId: id,
-            messages: [
-              ...messages,
-              {
-                role: "user",
-                content: input,
-              },
-              message,
-            ],
-          }),
-        })
-      },
+        messages: newMessages,
+      }),
     })
+
+    // Set new messages on client.
+    setMessages(newMessages)
+  }
+
+  const {
+    messages,
+    append,
+    reload,
+    stop,
+    isLoading,
+    input,
+    setInput,
+    setMessages,
+  } = useChat({
+    id,
+    api: "/api/chat",
+    headers: {
+      "X-Articulator-Config":
+        searchParams.get("articulatorConfig") || "default",
+      "Content-Type": "application/json",
+    },
+    body: {
+      chatId: id,
+    },
+    initialMessages,
+    onResponse: async (response) => {
+      const articulatedCard = response.headers.get("X-Articulated-Card")
+      if (articulatedCard) {
+        onCardArticulation(JSON.parse(articulatedCard) as ValuesCardData)
+      }
+
+      const submittedCard = response.headers.get("X-Submitted-Card")
+      if (submittedCard) {
+        onCardSubmission(JSON.parse(submittedCard) as ValuesCardData)
+      }
+
+      if (response.status === 401) {
+        console.error(response.status)
+        toast.error("Failed to update chat. Please try again.")
+      }
+    },
+    onError: async (error) => {
+      console.error(error)
+      toast.error("Failed to update chat. Please try again.")
+
+      //
+      // Get the last message from the database and set it as the input.
+      //
+      const res = await fetch(`/api/messages/${id}`)
+      const json = await res.json()
+
+      if (json && json.messages) {
+        const messages = json.messages as Message[]
+        const lastMessage = messages[messages.length - 1]
+
+        console.log("messages:", messages)
+        console.log("lastMessage:", lastMessage)
+
+        if (lastMessage.role === "user") {
+          setInput(lastMessage.content)
+        }
+      }
+    },
+    onFinish: async (message) => {
+      console.log("Chat finished:", message)
+      console.log("messages:", messages)
+
+      // Save messages in the database.
+      await fetch(`/api/messages/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatId: id,
+          messages: [
+            ...messages,
+            {
+              role: "user",
+              content: input,
+            },
+            message,
+          ],
+        }),
+      })
+    },
+  })
 
   return (
     <>
@@ -146,6 +178,8 @@ export function Chat({
               isLoading={isLoading}
               valueCards={valueCards}
               onManualSubmit={onManualSubmit}
+              // onDelete={user?.isAdmin ? onDeleteMessage : undefined}
+              onDelete={true ? onDeleteMessage : undefined}
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>

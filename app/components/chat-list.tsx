@@ -10,6 +10,7 @@ export interface ChatList {
   messages: Message[]
   valueCards: { position: number; card: ValuesCardData }[]
   onManualSubmit: (card: ValuesCardData) => void
+  onDelete?: (message: Message) => void
   isFinished: boolean
   isLoading: boolean
 }
@@ -20,6 +21,7 @@ export function ChatList({
   onManualSubmit,
   isFinished,
   isLoading,
+  ...props
 }: ChatList) {
   if (!messages.length) {
     return null
@@ -39,7 +41,7 @@ export function ChatList({
               isFinished={isFinished}
             />
           )}
-          <ChatMessage message={message} />
+          <ChatMessage message={message} onDelete={props.onDelete} />
           {index < messages.length - 1 && (
             <Separator className="my-4 md:my-8" />
           )}
