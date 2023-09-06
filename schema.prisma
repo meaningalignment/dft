@@ -86,6 +86,7 @@ model Chat {
   articulatorPromptHash      String               @default("OLD")
   articulatorModel           String               @default("gpt-4-0613")
   gitCommitHash              String               @default("OLD")
+  evaluation                 Json?
 }
 
 model Vote {

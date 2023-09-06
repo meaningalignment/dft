@@ -25,7 +25,7 @@ type FunctionResult = {
   submittedCard: ValuesCardData | null
 }
 
-function normalizeMessage(message: ChatCompletionRequestMessage): ChatCompletionRequestMessage {
+export function normalizeMessage(message: ChatCompletionRequestMessage): ChatCompletionRequestMessage {
   // only role, content, name, function_call
   const { role, content, name, function_call } = message
   return { role, content, name, function_call }
