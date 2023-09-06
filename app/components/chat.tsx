@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 import { useChat, type Message } from "ai/react"
-import { cn } from "../utils"
+import { cn, removeLast } from "../utils"
 import { ChatList } from "./chat-list"
 import { ChatPanel } from "./chat-panel"
 import { EmptyScreen } from "./empty-screen"
@@ -63,24 +63,25 @@ export function Chat({
   }
 
   const onDeleteMessage = async (message: Message) => {
-    const newMessages = messages.filter(
-      (m) => m.content !== message.content && m.role !== message.role
+    // Set new messages on client.
+    setMessages(
+      removeLast(
+        messages,
+        (m) => m.content === message.content && m.role === message.role
+      )
     )
 
     // Save messages in the database.
-    await fetch(`/api/messages/${id}`, {
-      method: "POST",
+    await fetch(`/api/messages/${id}/delete`, {
+      method: "DELETE",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         chatId: id,
-        messages: newMessages,
+        message,
       }),
     })
-
-    // Set new messages on client.
-    setMessages(newMessages)
   }
 
   const {
@@ -178,8 +179,13 @@ export function Chat({
               isLoading={isLoading}
               valueCards={valueCards}
               onManualSubmit={onManualSubmit}
-              // onDelete={user?.isAdmin ? onDeleteMessage : undefined}
-              onDelete={true ? onDeleteMessage : undefined}
+              // TODO user table admin flag.
+              onDelete={
+                user?.email === "oliverklingefjord@gmail.com" ||
+                user?.email === "joe.edelman@gmail.com"
+                  ? onDeleteMessage
+                  : undefined
+              }
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>

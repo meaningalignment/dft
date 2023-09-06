@@ -2,6 +2,7 @@ import { CanonicalValuesCard, ValuesCard } from "@prisma/client"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { ValuesCardData } from "./lib/consts"
+import { Message } from "ai"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -89,4 +90,21 @@ export function toDataModelWithId(
     ...toDataModel(card),
     id: card.id,
   }
+}
+
+export function removeLast<T>(
+  arr: T[],
+  predicate: (value: T, index: number, array: T[]) => boolean
+): T[] {
+  // Create a copy of the array
+  const newArr = [...arr]
+
+  for (let i = newArr.length - 1; i >= 0; i--) {
+    if (predicate(newArr[i], i, newArr)) {
+      newArr.splice(i, 1)
+      return newArr
+    }
+  }
+
+  return newArr // Return the copy if no element matches the predicate
 }
