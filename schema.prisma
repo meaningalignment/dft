@@ -18,7 +18,6 @@ model User {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
   role       String[]     @default(["USER"])
-  isAdmin    Boolean      @default(false)
   chats      Chat[]
   votes      Vote[]
   edges      Edge[]
