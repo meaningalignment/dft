@@ -8,6 +8,13 @@ module.exports = {
   serverModuleFormat: "cjs",
   serverNodeBuiltinsPolyfill: {
     modules: {
+      crypto: true,
+      stream: true,
+      fs: true,
+      path: true,
+      "fs/promises": true,
+      os: true,
+      util: true,
     }
   },
 
