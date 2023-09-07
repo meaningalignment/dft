@@ -108,11 +108,10 @@ export default function AdminChat() {
 
         <div className="flex items-center justify-center gap-4 my-8">
           <EvaluateButton />
-          {isUser ? (
-            <EnterButton chatId={chatId} />
-          ) : (
-            <DuplicateButton chatId={chatId} />
-          )}
+
+          {isUser && <EnterButton chatId={chatId} />}
+
+          <DuplicateButton chatId={chatId} />
         </div>
       </div>
       <Separator className="my-4 md:my-8" />
