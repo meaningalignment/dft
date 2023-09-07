@@ -16,6 +16,12 @@ export interface ChatProps extends React.ComponentProps<"div"> {
   id: string
 }
 
+function isDisplayableMessage(message: Message) {
+  return (
+    message.content && (message.role === "user" || message.role === "assistant")
+  )
+}
+
 export function Chat({
   id,
   initialMessages,
@@ -37,7 +43,10 @@ export function Chat({
     let valuesCards: { position: number; card: ValuesCardData }[] = []
 
     for (const message of initialMessages) {
-      if (message.name === "show_values_card") {
+      if (
+        message.name === "show_values_card" ||
+        message.name === "articulate_values_card" // backwards compat.
+      ) {
         try {
           const card = JSON.parse(message.content)
           valuesCards.push({
@@ -47,10 +56,7 @@ export function Chat({
         } catch (e) {
           continue // We use the same function signature for the reply message, that is not json.
         }
-      } else if (
-        (message.role === "assistant" && message.content) ||
-        message.role === "user"
-      ) {
+      } else if (isDisplayableMessage(message)) {
         newMessages.push(message)
       }
     }
@@ -92,8 +98,8 @@ export function Chat({
     )
   }
 
-  const onDeleteMessage = async (message: Message) => {
-    await fetch(`/api/messages/${id}/delete`, {
+  const onDeleteMessage = (message: Message) => {
+    fetch(`/api/messages/${id}/delete`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
@@ -102,9 +108,9 @@ export function Chat({
         chatId: id,
         message,
       }),
+    }).then(() => {
+      revalidator.revalidate()
     })
-
-    revalidator.revalidate()
   }
 
   const {
@@ -197,12 +203,11 @@ export function Chat({
         {messages.length ? (
           <>
             <ChatList
-              messages={messages}
+              messages={messages.filter((m) => isDisplayableMessage(m))}
               isFinished={isFinished}
               isLoading={isLoading}
               valueCards={valueCards}
               onManualSubmit={onManualSubmit}
-              // TODO user table admin flag.
               onDelete={user?.isAdmin ? onDeleteMessage : undefined}
             />
             <ChatScrollAnchor trackVisibility={isLoading} />

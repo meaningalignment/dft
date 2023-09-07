@@ -61,6 +61,10 @@ export async function action({ request }: ActionArgs) {
     (m) => m.content === message.content && m.role === message.role
   )
 
+  console.log(
+    `Removed messages from chat ${chatId}. Before ${messages}. After ${newMessages}`
+  )
+
   await db.chat.update({
     where: { id: chatId },
     data: { transcript: newMessages as any },
