@@ -1,9 +1,8 @@
-import { ActionArgs, LoaderArgs, json, redirect } from "@remix-run/node"
+import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
 import { Form, Link, useLoaderData, useNavigation } from "@remix-run/react"
 import { Message } from "ai"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
-import toast from "react-hot-toast"
 import { ChatList } from "~/components/chat-list"
 import { Button } from "~/components/ui/button"
 import { Separator } from "~/components/ui/separator"
@@ -16,7 +15,13 @@ export async function loader({ params }: LoaderArgs) {
     where: { id: chatId },
   })
   const evaluation = chat?.evaluation as Record<string, string>
-  const messages = (chat?.transcript as any as Message[]).slice(1)
+  const messages = (chat?.transcript as any as Message[]).slice(1).map((m) => {
+    if (m.function_call) {
+      m.content = JSON.stringify(m.function_call, null, 2)
+    }
+
+    return m
+  })
   return json({ messages, evaluation, chatId })
 }
 

@@ -1,7 +1,39 @@
 import { ActionArgs, json } from "@remix-run/node"
 import { Message } from "ai"
 import { db } from "~/config.server"
-import { removeLast } from "~/utils"
+
+// Export for tests.
+export function removeLastMatchAndPrecedingFunctions(
+  messages: Message[],
+  predicate: (message: Message) => boolean
+): Message[] {
+  let shouldRemove = false
+  let userOrAssistantFound = false
+
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const isFunction =
+      messages[i].role === "function" || messages[i].function_call
+
+    if (!isFunction && predicate(messages[i])) {
+      shouldRemove = true
+      userOrAssistantFound = true
+    }
+
+    if (shouldRemove && !isFunction && !userOrAssistantFound) {
+      break
+    }
+
+    if (shouldRemove) {
+      messages.splice(i, 1)
+    }
+
+    if (shouldRemove && !isFunction) {
+      userOrAssistantFound = false
+    }
+  }
+
+  return messages
+}
 
 export async function action({ request }: ActionArgs) {
   const body = await request.json()
@@ -15,15 +47,18 @@ export async function action({ request }: ActionArgs) {
 
   const messages = chat.transcript as any as Message[]
 
-  // Remove the last occurence of a message with the matching content and role.
-  // Note that we don't store message IDs in the database, so we cannot be certain
-  // This is the correct message If there are several messages with the same role and content,
+  // Remove the last occurence of a message with the matching content and role,
+  // and all directly preceeding function calls.
+  //
+  // Note that we don't store message IDs in the database,
+  // so we cannot be certain this is the correct message.
+  // If there are several messages with the same role and content,
   // the last one will be removed regardless of which one was actually clicked.
   //
   // Since this feature is only available for admin users, this is acceptable for now.
-  const newMessages = removeLast(
+  const newMessages = removeLastMatchAndPrecedingFunctions(
     messages,
-    (m: Message) => m.content === message.content && m.role === message.role
+    (m) => m.content === message.content && m.role === message.role
   )
 
   await db.chat.update({

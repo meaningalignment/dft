@@ -1,13 +1,13 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useChat, type Message } from "ai/react"
-import { cn, removeLast } from "../utils"
+import { cn } from "../utils"
 import { ChatList } from "./chat-list"
 import { ChatPanel } from "./chat-panel"
 import { EmptyScreen } from "./empty-screen"
 import { ChatScrollAnchor } from "./chat-scroll-anchor"
 import { toast } from "react-hot-toast"
 import { ValuesCardData } from "~/lib/consts"
-import { useSearchParams } from "@remix-run/react"
+import { useRevalidator, useSearchParams } from "@remix-run/react"
 import { useCurrentUser } from "~/root"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
@@ -23,11 +23,41 @@ export function Chat({
   className,
 }: ChatProps) {
   const user = useCurrentUser()
+  const revalidator = useRevalidator()
   const [valueCards, setValueCards] = useState<
     { position: number; card: ValuesCardData }[]
   >([])
   const [isFinished, setIsFinished] = useState(hasSubmitted || false)
   const [searchParams] = useSearchParams()
+
+  // Recover the state of a conversation.
+  useEffect(() => {
+    if (!initialMessages) return
+    let newMessages: Message[] = []
+    let valuesCards: { position: number; card: ValuesCardData }[] = []
+
+    for (const message of initialMessages) {
+      if (message.name === "show_values_card") {
+        try {
+          const card = JSON.parse(message.content)
+          valuesCards.push({
+            position: newMessages.length,
+            card,
+          })
+        } catch (e) {
+          continue // We use the same function signature for the reply message, that is not json.
+        }
+      } else if (
+        (message.role === "assistant" && message.content) ||
+        message.role === "user"
+      ) {
+        newMessages.push(message)
+      }
+    }
+
+    setMessages(newMessages)
+    setValueCards(valuesCards)
+  }, [initialMessages])
 
   const onCardArticulation = (card: ValuesCardData) => {
     console.log("Card articulated:", card)
@@ -63,15 +93,6 @@ export function Chat({
   }
 
   const onDeleteMessage = async (message: Message) => {
-    // Set new messages on client.
-    setMessages(
-      removeLast(
-        messages,
-        (m) => m.content === message.content && m.role === message.role
-      )
-    )
-
-    // Save messages in the database.
     await fetch(`/api/messages/${id}/delete`, {
       method: "DELETE",
       headers: {
@@ -82,6 +103,8 @@ export function Chat({
         message,
       }),
     })
+
+    revalidator.revalidate()
   }
 
   const {
