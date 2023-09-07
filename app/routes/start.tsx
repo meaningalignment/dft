@@ -57,7 +57,7 @@ export default function StartPage() {
           </p>
           <Button disabled={isLoading} onClick={() => setIsLoading(true)}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <Link to="/chat">Let's Go</Link>
+            <Link to="/select-case">Let's Go</Link>
           </Button>
         </div>
 

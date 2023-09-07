@@ -5,6 +5,7 @@ import { Check } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
 import { Link } from "@remix-run/react"
+import { Case, cases } from "~/lib/consts"
 
 function CaseCard({ caseData }: { caseData: Case }) {
   return (
@@ -76,7 +77,7 @@ export default function SelectScreen() {
             showCases ? "opacity-100" : "opacity-0"
           }`}
         >
-          <Link to={`/chat?case=${selected?.key}`}>
+          <Link to={selected ? `/case/${selected.key}/chat` : "#"}>
             <Button disabled={!selected}>Continue</Button>
           </Link>
 

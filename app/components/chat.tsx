@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useContext, useEffect, useState } from "react"
 import { useChat, type Message } from "ai/react"
 import { cn } from "../utils"
 import { ChatList } from "./chat-list"
@@ -9,6 +9,7 @@ import { toast } from "react-hot-toast"
 import { ValuesCardData } from "~/lib/consts"
 import { useRevalidator, useSearchParams } from "@remix-run/react"
 import { useCurrentUser } from "~/root"
+import { CaseContext } from "~/context/case"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
@@ -28,6 +29,7 @@ export function Chat({
   hasSubmitted,
   className,
 }: ChatProps) {
+  const { caseId } = useContext(CaseContext)!
   const user = useCurrentUser()
   const revalidator = useRevalidator()
   const [valueCards, setValueCards] = useState<
@@ -132,6 +134,7 @@ export function Chat({
     },
     body: {
       chatId: id,
+      caseId: caseId,
     },
     initialMessages,
     onResponse: async (response) => {

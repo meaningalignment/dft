@@ -41,11 +41,24 @@ export const action: ActionFunction = async ({
   const userId = await auth.getUserId(request)
   const json = await request.json()
 
-  const { messages, chatId, function_call } = json
+  const { messages, chatId, caseId, function_call } = json
 
   // Create stream for next chat message.
-  const articulator = new ArticulatorService(articulatorConfig || 'default', deduplication, embeddings, openai, db)
-  const { completionResponse, ...etc } = await articulator.processCompletionWithFunctions({ userId, messages, function_call, chatId })
+  const articulator = new ArticulatorService(
+    articulatorConfig || "default",
+    deduplication,
+    embeddings,
+    openai,
+    db
+  )
+  const { completionResponse, ...etc } =
+    await articulator.processCompletionWithFunctions({
+      userId,
+      messages,
+      function_call,
+      chatId,
+      caseId,
+    })
 
   if (!completionResponse.ok) {
     const body = await completionResponse.json()
