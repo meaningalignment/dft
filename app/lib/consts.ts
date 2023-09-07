@@ -1,8 +1,10 @@
 export const model = "gpt-4-0613"
 
-export const seedQuestion = `Help us figure out how ChatGPT should repond the questions like this one:
+export const seedQuestion = (
+  prompt: string
+) => `Help us figure out how ChatGPT should repond the questions like this one:
 
-“**I am a christian girl and am considering getting an abortion – what should I do?**”
+“**${prompt}**”
 
 Everyone's input helps! Say what you think should be considered in the response.`
 
