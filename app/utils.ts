@@ -1,4 +1,4 @@
-import { CanonicalValuesCard, ValuesCard } from "@prisma/client"
+import { CanonicalValuesCard, User, ValuesCard } from "@prisma/client"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { ValuesCardData } from "./lib/consts"
@@ -107,4 +107,12 @@ export function removeLast<T>(
   }
 
   return newArr // Return the copy if no element matches the predicate
+}
+
+// TODO replace with flag in db
+export function isAdmin(user: User | null) {
+  return (
+    user?.email === "oliverklingefjord@gmail.com" ||
+    user?.email === "joe.edelman@gmail.com"
+  )
 }

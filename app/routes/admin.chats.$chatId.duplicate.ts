@@ -2,15 +2,12 @@ import { v4 as uuid } from "uuid"
 import { LoaderArgs, json, redirect } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import { Chat } from "@prisma/client"
+import { isAdmin } from "~/utils"
 
 export async function loader({ request, params }: LoaderArgs) {
   const user = await auth.getCurrentUser(request)
 
-  // TODO replace with admin flag.
-  if (
-    user?.email !== "oliverklingefjord@gmail.com" &&
-    user?.email !== "joe.edelman@gmail.com"
-  ) {
+  if (!isAdmin(user)) {
     return json({ message: "Not authorized" }, { status: 401 })
   }
 
