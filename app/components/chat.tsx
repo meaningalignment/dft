@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
 import { useChat, type Message } from "ai/react"
-import { cn, isAdmin } from "../utils"
+import { cn } from "../utils"
 import { ChatList } from "./chat-list"
 import { ChatPanel } from "./chat-panel"
 import { EmptyScreen } from "./empty-screen"
@@ -203,7 +203,7 @@ export function Chat({
               valueCards={valueCards}
               onManualSubmit={onManualSubmit}
               // TODO user table admin flag.
-              onDelete={isAdmin(user) ? onDeleteMessage : undefined}
+              onDelete={user?.isAdmin ? onDeleteMessage : undefined}
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>

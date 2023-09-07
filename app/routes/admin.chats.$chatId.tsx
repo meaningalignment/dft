@@ -6,11 +6,12 @@ import { useState } from "react"
 import { ChatList } from "~/components/chat-list"
 import { Button } from "~/components/ui/button"
 import { Separator } from "~/components/ui/separator"
-import { db } from "~/config.server"
+import { auth, db } from "~/config.server"
 import { evaluateTranscript } from "~/services/dialogue-evaluator"
 
-export async function loader({ params }: LoaderArgs) {
+export async function loader({ params, request }: LoaderArgs) {
   const chatId = params.chatId!
+  const userId = await auth.getUserId(request)
   const chat = await db.chat.findUnique({
     where: { id: chatId },
   })
@@ -22,7 +23,7 @@ export async function loader({ params }: LoaderArgs) {
 
     return m
   })
-  return json({ messages, evaluation, chatId })
+  return json({ messages, evaluation, chatId, isUser: chat?.userId === userId })
 }
 
 export async function action({ params }: ActionArgs) {
@@ -56,7 +57,7 @@ function EvaluateButton() {
   )
 }
 
-function RecoverButton({ chatId }: { chatId: string }) {
+function DuplicateButton({ chatId }: { chatId: string }) {
   const [isLoading, setIsLoading] = useState(false)
 
   const onClick = async () => {
@@ -67,14 +68,32 @@ function RecoverButton({ chatId }: { chatId: string }) {
     <Link to={`/admin/chats/${chatId}/duplicate`}>
       <Button variant={"secondary"} disabled={isLoading} onClick={onClick}>
         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-        Recover
+        Duplicate
+      </Button>
+    </Link>
+  )
+}
+
+function EnterButton({ chatId }: { chatId: string }) {
+  const [isLoading, setIsLoading] = useState(false)
+
+  const onClick = async () => {
+    setIsLoading(true)
+  }
+
+  return (
+    <Link to={`/chat/${chatId}`}>
+      <Button variant={"secondary"} disabled={isLoading} onClick={onClick}>
+        {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        Enter
       </Button>
     </Link>
   )
 }
 
 export default function AdminChat() {
-  const { messages, evaluation, chatId } = useLoaderData<typeof loader>()
+  const { messages, evaluation, chatId, isUser } =
+    useLoaderData<typeof loader>()
   return (
     <>
       <div className="w-full max-w-2xl mx-auto my-4">
@@ -89,7 +108,11 @@ export default function AdminChat() {
 
         <div className="flex items-center justify-center gap-4 my-8">
           <EvaluateButton />
-          <RecoverButton chatId={chatId} />
+          {isUser ? (
+            <EnterButton chatId={chatId} />
+          ) : (
+            <DuplicateButton chatId={chatId} />
+          )}
         </div>
       </div>
       <Separator className="my-4 md:my-8" />
