@@ -27,6 +27,7 @@ export async function loader({ request, params }: LoaderArgs) {
       ...(chat as any),
       id: uuid(),
       userId: user!.id,
+      copiedFrom: chat.id,
       createdAt: new Date(),
     },
   })

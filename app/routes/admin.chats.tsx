@@ -8,6 +8,7 @@ export async function loader({ params }: LoaderArgs) {
     select: {
       id: true,
       createdAt: true,
+      copiedFromId: true,
       evaluation: true,
       user: {
         select: {
@@ -51,6 +52,11 @@ export default function AdminChats() {
                 {chat.evaluation && (
                   <div className="text-sm text-red-500">
                     {(chat.evaluation as any).worst_score}
+                  </div>
+                )}
+                {chat.copiedFromId && (
+                  <div className="text-sm text-gray-500">
+                    Copied from {chat.copiedFromId}
                   </div>
                 )}
               </li>
