@@ -16,8 +16,9 @@ import { cn } from "~/utils"
 
 const minRequiredVotes = 2
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = await auth.getUserId(request)
+  const caseId = params.caseId!
 
   // Set up service.
   const openai = new OpenAIApi(
@@ -27,7 +28,7 @@ export async function loader({ request }: LoaderArgs) {
   const routing = new SelectionService(openai, db, embedding)
 
   // Get the draw for this user.
-  const { id, values } = await routing.getDraw(userId)
+  const { id, values } = await routing.getDraw(userId, caseId)
 
   return json({ values, drawId: id })
 }
