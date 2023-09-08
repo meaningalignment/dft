@@ -323,8 +323,10 @@ export default class DeduplicationService {
         vector
       )}::vector as "_distance" 
       FROM "CanonicalValuesCard" cvc
-      INNER JOIN "Chat" c 
-      ON c.id = cvc."chatId"
+      INNER JOIN "ValuesCard" vc
+      ON vc."canonicalCardId" = cvc.id
+      INNER JOIN "Chat" c
+      ON c.id = vc."chatId"
       WHERE c."caseId" = '${caseId}'
       ORDER BY "_distance" ASC
       LIMIT ${limit};`
@@ -421,8 +423,11 @@ export const deduplicateCase = inngest.createFunction(
   { name: "Deduplicate Case", concurrency: 1 }, // Run sequentially to avoid RCs.
   { event: "deduplicate.case" },
   async ({ step, logger, event }) => {
+    // The case to deduplicate.
     const caseId = event.data.caseId as string
-    if (cases.map((c) => c.id).includes(caseId)) {
+
+    // verify the case exists.
+    if (!cases.map((c) => c.id).includes(caseId)) {
       throw Error(`Unknown case "${caseId}"`)
     }
 
