@@ -289,7 +289,7 @@ export class ArticulatorService {
     // Override the card with a canonical duplicate if one exists.
     //
     if (!previousCard && !canonical && !response.critique) {
-      canonical = await this.deduplication.fetchCanonicalCard(
+      canonical = await this.deduplication.fetchSimilarCanonicalCard(
         response.values_card
       )
 

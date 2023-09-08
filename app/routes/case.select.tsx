@@ -10,7 +10,7 @@ import { Case, cases } from "~/lib/case"
 function CaseCard({ caseData }: { caseData: Case }) {
   return (
     <div
-      key={caseData.key}
+      key={caseData.id}
       className={
         "border-2 border-border rounded-xl px-6 py-6 max-w-xs min-h-xs h-full bg-white flex flex-col gap-4"
       }
@@ -54,7 +54,7 @@ export default function CaseSelectScreen() {
         <div className="grid lg:grid-cols-2 xl:grid-cols-3 mx-auto gap-4">
           {cases.map((c, i) => (
             <div
-              key={c.key}
+              key={c.id}
               onClick={() => setSelected(c)}
               className={cn(
                 "cursor-pointer transition-opacity ease-in duration-500",
@@ -64,7 +64,7 @@ export default function CaseSelectScreen() {
                 `delay-${i * 75}`
               )}
             >
-              {c.key === selected?.key ? (
+              {c.id === selected?.id ? (
                 <SelectedCaseCard caseData={c} />
               ) : (
                 <CaseCard caseData={c} />
@@ -77,7 +77,7 @@ export default function CaseSelectScreen() {
             showCases ? "opacity-100" : "opacity-0"
           }`}
         >
-          <Link to={selected ? `/case/${selected.key}/chat` : "#"}>
+          <Link to={selected ? `/case/${selected.id}/chat` : "#"}>
             <Button disabled={!selected}>Continue</Button>
           </Link>
 
