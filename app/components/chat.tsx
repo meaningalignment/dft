@@ -7,12 +7,12 @@ import { EmptyScreen } from "./empty-screen"
 import { ChatScrollAnchor } from "./chat-scroll-anchor"
 import { toast } from "react-hot-toast"
 import { ValuesCardData } from "~/lib/consts"
-import { useSearchParams } from "@remix-run/react"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
   hasSubmitted?: boolean
-  id: string
+  id: string,
+  articulatorConfig?: string,
 }
 
 export function Chat({
@@ -20,12 +20,12 @@ export function Chat({
   initialMessages,
   hasSubmitted,
   className,
+  articulatorConfig = "default",
 }: ChatProps) {
   const [valueCards, setValueCards] = useState<
     { position: number; card: ValuesCardData }[]
   >([])
   const [isFinished, setIsFinished] = useState(hasSubmitted || false)
-  const [searchParams] = useSearchParams()
 
   const onCardArticulation = (card: ValuesCardData) => {
     console.log("Card articulated:", card)
@@ -65,7 +65,7 @@ export function Chat({
       id,
       api: "/api/chat",
       headers: {
-        "X-Articulator-Config": searchParams.get('articulatorConfig') || "default",
+        "X-Articulator-Config": articulatorConfig,
         "Content-Type": "application/json",
       },
       body: {

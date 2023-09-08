@@ -9,6 +9,9 @@ export async function loader({ params }: LoaderArgs) {
       id: true,
       createdAt: true,
       evaluation: true,
+      articulatorPromptHash: true,
+      articulatorPromptVersion: true,
+      gitCommitHash: true,
       user: {
         select: {
           id: true,
@@ -42,8 +45,12 @@ export default function AdminChats() {
                 <div>{chat.user.email}</div>
                 <div>{chat.createdAt}</div>
                 {chat.evaluation && (
-                  <div className="text-sm text-red-500">
-                    {(chat.evaluation as any).worst_score}
+                  <div>
+                    <span className="text-sm text-red-500">
+                      {(chat.evaluation as any).worst_score}
+                    </span> - <span className="text-sm text-green-500">
+                      {chat.articulatorPromptHash}
+                    </span>
                   </div>
                 )}
               </li>
