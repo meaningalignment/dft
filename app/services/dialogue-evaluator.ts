@@ -122,21 +122,12 @@ const evaluateDialogueFunction = {
         enum: ["A", "B", "C", "D", "F"]
       },
       worst_score: {
-        description: "Lowest grade given for any of the criteria above.",
+        description: "Lowest grade given for any criterion above, or 'INCOMPLETE' if the dialogue does not call show_values_card or articulate_values_card.",
         type: "string",
-        enum: ["A", "B", "C", "D", "F"]
+        enum: ["A", "B", "C", "D", "F", "INCOMPLETE"]
       }
     },
     "required": [
-      "dialogue_meaningful_story",
-      "dialogue_wisdom",
-      "dialogue_perspective",
-      "dialogue_leading",
-      "dialogue_one_question",
-      "values_card_one_source",
-      "values_card_really_source",
-      "values_card_coherent",
-      "values_card_clear",
       "worst_score"
     ]
   }
@@ -152,7 +143,11 @@ A source of meaning is distinct from similar concepts:
 
 
 const evaluationPrompt = `
-I will send a dialogue. Rate it according to the following criteria:
+I will send a dialogue.
+
+If the dialogue does not include a call to show_values_card or articulate_values_card, give it a grade of "INCOMPLETE" and skip the rest of the evaluation.
+
+Otherwise, rate it according to the following criteria:
 
 About the dialogue itself:
 
