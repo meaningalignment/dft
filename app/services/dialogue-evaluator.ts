@@ -20,7 +20,8 @@ export async function evaluateTranscript(chat: Chat) {
   })
   const openai = new OpenAIApi(configuration)
   const transcript = (chat?.transcript ?? []) as any as ChatCompletionRequestMessage[]
-  const messages = transcript.map(o => normalizeMessage(o)).slice(1)
+  const messages = transcript.map(normalizeMessage).slice(1)
+  // console.log('evaluating transcript', chat.id, messages)
   const res = await openai.createChatCompletion({
     model: model,
     temperature: 0.2,
@@ -37,7 +38,9 @@ export async function evaluateTranscript(chat: Chat) {
     functions: [evaluateDialogueFunction]
   })
   const data = await res.json()
+  // console.log('got evaluation data', data)
   const result = JSON.parse(data.choices[0].message.function_call.arguments)
+  // console.log('evaluated transcript', chat.id, result)
   result.metadata = evaluatorMetadata()
   return result
 }
@@ -54,6 +57,7 @@ export const evaluateDialogues = inngest.createFunction(
       }
     })
     if (!newDialogue) return
+    logger.info(`Evaluating ${newDialogue.id}.`)
     const response = await evaluateTranscript(newDialogue)
     await db.chat.update({
       where: { id: newDialogue.id },
