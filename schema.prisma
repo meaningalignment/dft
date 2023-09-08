@@ -86,7 +86,7 @@ model Chat {
   gitCommitHash              String               @default("OLD")
   evaluation                 Json?
   copiedFromId               String? // In order to filter out copied chats from analytics and other queries.
-  case                       String               @default("christian_girl_abortion")
+  case                       String               @default("abortion")
   provisionalCanonicalCard   CanonicalValuesCard? @relation(fields: [canonicalValuesCardId], references: [id])
   ValuesCard                 ValuesCard?
   user                       User                 @relation(fields: [userId], references: [id])

@@ -5,14 +5,14 @@ import { Check } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
 import { Link } from "@remix-run/react"
-import { Case, cases } from "~/lib/consts"
+import { Case, cases } from "~/lib/case"
 
 function CaseCard({ caseData }: { caseData: Case }) {
   return (
     <div
       key={caseData.key}
       className={
-        "border-2 border-border rounded-xl px-6 pt-6 max-w-xs h-full bg-white flex flex-col gap-4"
+        "border-2 border-border rounded-xl px-6 py-6 max-w-xs min-h-xs h-full bg-white flex flex-col gap-4"
       }
     >
       <p className="text-md font-bold">{caseData.title}</p>
@@ -36,7 +36,7 @@ function SelectedCaseCard({ caseData }: { caseData: Case }) {
   )
 }
 
-export default function SelectScreen() {
+export default function CaseSelectScreen() {
   const [showCases, setShowCases] = useState(false)
   const [selected, setSelected] = useState<Case | null>(null)
 

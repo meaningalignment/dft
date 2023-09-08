@@ -1,6 +1,6 @@
 import { Chat } from "../components/chat"
 import Header from "../components/header"
-import { seedQuestion } from "~/lib/consts"
+import { seedQuestion } from "~/lib/case"
 import { LoaderArgs, json } from "@remix-run/node"
 import { db } from "~/config.server"
 import { Chat as ChatModel } from "@prisma/client"
