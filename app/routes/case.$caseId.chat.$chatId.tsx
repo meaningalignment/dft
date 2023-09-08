@@ -6,12 +6,15 @@ import { db } from "~/config.server"
 import { Chat as ChatModel } from "@prisma/client"
 import { useLoaderData, useParams } from "@remix-run/react"
 import { Message } from "ai"
+import { articulatorConfig as articulatorConfigCookie } from "~/cookies.server"
 import { CaseContext } from "~/context/case"
 
-export async function loader({ params }: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const chatId = params.chatId!
   const caseId = params.caseId!
-
+  const cookieHeader = request.headers.get("Cookie")
+  const articulatorConfig =
+    (await articulatorConfigCookie.parse(cookieHeader)) || "default"
   const chat = (await db.chat.findFirst({
     where: { id: chatId },
     include: { ValuesCard: true },
@@ -20,6 +23,10 @@ export async function loader({ params }: LoaderArgs) {
         ValuesCard: { id: string }[]
       })
     | null
+
+  if (!chat) {
+    throw Error("Chat not found")
+  }
 
   const hasSubmitted = Boolean(chat?.ValuesCard)
   const initialMessages = chat?.transcript
@@ -32,22 +39,24 @@ export async function loader({ params }: LoaderArgs) {
         },
       ]
 
-  return json({ chatId, initialMessages, hasSubmitted })
+  return json({ chatId, initialMessages, hasSubmitted, articulatorConfig })
 }
 
 export default function ChatScreen() {
   const { caseId } = useParams()
-  const { chatId, initialMessages, hasSubmitted } =
+  const { chatId, initialMessages, hasSubmitted, articulatorConfig } =
     useLoaderData<typeof loader>()
 
   return (
     <CaseContext.Provider value={{ caseId: caseId! }}>
       <div className="flex flex-col h-screen w-screen">
-        <Header chatId={chatId} />
+        <Header chatId={chatId} articulatorConfig={articulatorConfig} />
+
         <Chat
           id={chatId!}
           hasSubmitted={hasSubmitted}
-          initialMessages={initialMessages.map((m) => m as Message)}
+          initialMessages={initialMessages.map((m: any) => m as Message)}
+          articulatorConfig={articulatorConfig}
         />
       </div>
     </CaseContext.Provider>

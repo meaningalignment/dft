@@ -35,6 +35,7 @@ export function normalizeMessage(
 ): ChatCompletionRequestMessage {
   // only role, content, name, function_call
   const { role, content, name, function_call } = message
+  if (function_call && !function_call.arguments) function_call.arguments = "{}"
   return { role, content, name, function_call }
 }
 

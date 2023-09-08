@@ -183,7 +183,7 @@ In your response, include a critique of the articulated "values_card" if it does
 
 
 const config: ArticulatorConfig = {
-  name: "default",
+  name: "guess_card",
   model: "gpt-4-0613",
   prompts: {
     main: {

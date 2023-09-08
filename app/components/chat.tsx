@@ -7,7 +7,7 @@ import { EmptyScreen } from "./empty-screen"
 import { ChatScrollAnchor } from "./chat-scroll-anchor"
 import { toast } from "react-hot-toast"
 import { ValuesCardData } from "~/lib/consts"
-import { useRevalidator, useSearchParams } from "@remix-run/react"
+import { useRevalidator } from "@remix-run/react"
 import { useCurrentUser } from "~/root"
 import { CaseContext } from "~/context/case"
 
@@ -15,6 +15,7 @@ export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
   hasSubmitted?: boolean
   id: string
+  articulatorConfig?: string
 }
 
 function isDisplayableMessage(message: Message) {
@@ -28,6 +29,7 @@ export function Chat({
   initialMessages,
   hasSubmitted,
   className,
+  articulatorConfig = "default",
 }: ChatProps) {
   const { caseId } = useContext(CaseContext)!
   const user = useCurrentUser()
@@ -36,7 +38,6 @@ export function Chat({
     { position: number; card: ValuesCardData }[]
   >([])
   const [isFinished, setIsFinished] = useState(hasSubmitted || false)
-  const [searchParams] = useSearchParams()
 
   // Recover the state of a conversation.
   useEffect(() => {
@@ -104,6 +105,7 @@ export function Chat({
     fetch(`/api/messages/${id}/delete`, {
       method: "DELETE",
       headers: {
+        "X-Articulator-Config": articulatorConfig,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -128,8 +130,7 @@ export function Chat({
     id,
     api: "/api/chat",
     headers: {
-      "X-Articulator-Config":
-        searchParams.get("articulatorConfig") || "default",
+      "X-Articulator-Config": articulatorConfig,
       "Content-Type": "application/json",
     },
     body: {
