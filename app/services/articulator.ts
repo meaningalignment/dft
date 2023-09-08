@@ -135,8 +135,8 @@ export class ArticulatorService {
       await this.db.chat.create({
         data: {
           userId,
+          caseId,
           id: chatId,
-          case: caseId,
           transcript: messages as any,
           articulatorModel: metadata.model,
           articulatorPromptHash: metadata.contentHash,

@@ -12,5 +12,5 @@ export async function loader({ params }: LoaderArgs) {
     return json({ message: "Chat not found" }, { status: 404 })
   }
 
-  return redirect(`/case/${chat.case}/chat/${chatId}`)
+  return redirect(`/case/${chat.caseId}/chat/${chatId}`)
 }
