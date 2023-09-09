@@ -178,7 +178,8 @@ export class ArticulatorService {
     const { response, articulatedCard, submittedCard } = await this.handle(
       functionCall,
       messages,
-      chatId
+      chatId,
+      caseId
     )
     return {
       functionCall,
@@ -249,6 +250,7 @@ export class ArticulatorService {
 
   private async handleArticulateCardFunction(
     chatId: string,
+    caseId: string,
     messages: ChatCompletionRequestMessage[]
   ): Promise<FunctionResult> {
     //
@@ -291,7 +293,8 @@ export class ArticulatorService {
     //
     if (!previousCard && !canonical && !response.critique) {
       canonical = await this.deduplication.fetchSimilarCanonicalCard(
-        response.values_card
+        response.values_card,
+        caseId
       )
 
       if (canonical) {
@@ -342,7 +345,8 @@ export class ArticulatorService {
   async handle(
     func: { name: string; arguments: any },
     messages: any[] = [],
-    chatId: string
+    chatId: string,
+    caseId: string
   ): Promise<{
     response: Response
     articulatedCard: ValuesCardData | null
@@ -363,6 +367,7 @@ export class ArticulatorService {
       case "show_values_card": {
         functionResult = await this.handleArticulateCardFunction(
           chatId,
+          caseId,
           messages
         )
         break

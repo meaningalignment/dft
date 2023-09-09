@@ -24,10 +24,6 @@ export async function loader({ request, params }: LoaderArgs) {
       })
     | null
 
-  if (!chat) {
-    throw Error("Chat not found")
-  }
-
   const hasSubmitted = Boolean(chat?.ValuesCard)
   const initialMessages = chat?.transcript
     ? (chat?.transcript as any as Message[]).slice(1)
