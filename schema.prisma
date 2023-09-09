@@ -18,6 +18,7 @@ model User {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
   role       String[]     @default(["USER"])
+  isAdmin    Boolean      @default(false)
   chats      Chat[]
   votes      Vote[]
   edges      Edge[]
@@ -87,6 +88,9 @@ model Chat {
   articulatorModel           String               @default("gpt-4-0613")
   gitCommitHash              String               @default("OLD")
   evaluation                 Json?
+  copiedFromId               String? // In order to filter out copied chats from analytics and other queries.
+  copiedFrom                 Chat?                @relation("ChatToCopiedFrom", fields: [copiedFromId], references: [id], onDelete: Cascade)
+  copies                     Chat[]               @relation("ChatToCopiedFrom")
 }
 
 model Vote {

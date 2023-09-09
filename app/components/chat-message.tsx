@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react"
 export interface ChatMessageProps {
   message: Message
   hideActions?: boolean
+  onDelete?: (message: Message) => void
 }
 
 export function ChatMessage({
@@ -76,7 +77,9 @@ export function ChatMessage({
         >
           {message.content}
         </MemoizedReactMarkdown>
-        {!hideActions && <ChatMessageActions message={message} />}
+        {!hideActions && (
+          <ChatMessageActions message={message} onDelete={props.onDelete} />
+        )}
       </div>
     </div>
   )

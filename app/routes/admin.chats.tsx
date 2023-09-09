@@ -8,6 +8,7 @@ export async function loader({ params }: LoaderArgs) {
     select: {
       id: true,
       createdAt: true,
+      copiedFromId: true,
       evaluation: true,
       articulatorPromptHash: true,
       articulatorPromptVersion: true,
@@ -18,7 +19,7 @@ export async function loader({ params }: LoaderArgs) {
           name: true,
           email: true,
         },
-      }
+      },
     },
   })
 
@@ -29,18 +30,25 @@ export default function AdminChats() {
   const data = useLoaderData<typeof loader>()
   return (
     <div className="grid grid-cols-5">
-      <div className="col-span-1 border-r px-4 py-2 h-screen overflow-y-auto">
-        <h1 className="text-2xl font-bold mb-4" >Chats</h1>
+      <div className="col-span-1 border-r h-screen overflow-y-auto">
+        <h1 className="text-2xl font-bold mb-4 px-4 py-2">Chats</h1>
         <ul>
           {data.chats.map((chat) => (
-            <NavLink to={`/admin/chats/${chat.id}`} key={chat.id} className={({ isActive, isPending }) =>
-              isPending
-                ? "block bg-yellow-100"
-                : isActive
+            <NavLink
+              to={`/admin/chats/${chat.id}`}
+              key={chat.id}
+              className={({ isActive, isPending }) =>
+                isPending
+                  ? "block bg-slate-100"
+                  : isActive
                   ? "block bg-slate-200"
                   : ""
-            }>
-              <li key={chat.id} className="border-b border-gray-300 py-2">
+              }
+            >
+              <li
+                key={chat.id}
+                className="border-b border-gray-300 py-2 px-4 py-2 "
+              >
                 <div>{chat.user.name}</div>
                 <div>{chat.user.email}</div>
                 <div>{chat.createdAt}</div>
@@ -51,6 +59,11 @@ export default function AdminChats() {
                     </span> - <span className="text-sm text-green-500">
                       {chat.articulatorPromptHash}
                     </span>
+                  </div>
+                )}
+                {chat.copiedFromId && (
+                  <div className="text-sm text-gray-500">
+                    Copied from {chat.copiedFromId}
                   </div>
                 )}
               </li>

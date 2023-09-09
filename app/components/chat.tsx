@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useChat, type Message } from "ai/react"
 import { cn } from "../utils"
 import { ChatList } from "./chat-list"
@@ -7,12 +7,20 @@ import { EmptyScreen } from "./empty-screen"
 import { ChatScrollAnchor } from "./chat-scroll-anchor"
 import { toast } from "react-hot-toast"
 import { ValuesCardData } from "~/lib/consts"
+import { useRevalidator } from "@remix-run/react"
+import { useCurrentUser } from "~/root"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
   hasSubmitted?: boolean
-  id: string,
-  articulatorConfig?: string,
+  id: string
+  articulatorConfig?: string
+}
+
+function isDisplayableMessage(message: Message) {
+  return (
+    message.content && (message.role === "user" || message.role === "assistant")
+  )
 }
 
 export function Chat({
@@ -22,10 +30,41 @@ export function Chat({
   className,
   articulatorConfig = "default",
 }: ChatProps) {
+  const user = useCurrentUser()
+  const revalidator = useRevalidator()
   const [valueCards, setValueCards] = useState<
     { position: number; card: ValuesCardData }[]
   >([])
   const [isFinished, setIsFinished] = useState(hasSubmitted || false)
+
+  // Recover the state of a conversation.
+  useEffect(() => {
+    if (!initialMessages) return
+    let newMessages: Message[] = []
+    let valuesCards: { position: number; card: ValuesCardData }[] = []
+
+    for (const message of initialMessages) {
+      if (
+        message.name === "show_values_card" ||
+        message.name === "articulate_values_card" // backwards compat.
+      ) {
+        try {
+          const card = JSON.parse(message.content)
+          valuesCards.push({
+            position: newMessages.length,
+            card,
+          })
+        } catch (e) {
+          continue // We use the same function signature for the reply message, that is not json.
+        }
+      } else if (isDisplayableMessage(message)) {
+        newMessages.push(message)
+      }
+    }
+
+    setMessages(newMessages)
+    setValueCards(valuesCards)
+  }, [initialMessages])
 
   const onCardArticulation = (card: ValuesCardData) => {
     console.log("Card articulated:", card)
@@ -60,80 +99,104 @@ export function Chat({
     )
   }
 
-  const { messages, append, reload, stop, isLoading, input, setInput } =
-    useChat({
-      id,
-      api: "/api/chat",
+  const onDeleteMessage = (message: Message) => {
+    fetch(`/api/messages/${id}/delete`, {
+      method: "DELETE",
       headers: {
         "X-Articulator-Config": articulatorConfig,
         "Content-Type": "application/json",
       },
-      body: {
+      body: JSON.stringify({
         chatId: id,
-      },
-      initialMessages,
-      onResponse: async (response) => {
-        const articulatedCard = response.headers.get("X-Articulated-Card")
-        if (articulatedCard) {
-          onCardArticulation(JSON.parse(articulatedCard) as ValuesCardData)
-        }
-
-        const submittedCard = response.headers.get("X-Submitted-Card")
-        if (submittedCard) {
-          onCardSubmission(JSON.parse(submittedCard) as ValuesCardData)
-        }
-
-        if (response.status === 401) {
-          console.error(response.status)
-          toast.error("Failed to update chat. Please try again.")
-        }
-      },
-      onError: async (error) => {
-        console.error(error)
-        toast.error("Failed to update chat. Please try again.")
-
-        //
-        // Get the last message from the database and set it as the input.
-        //
-        const res = await fetch(`/api/messages/${id}`)
-        const json = await res.json()
-
-        if (json && json.messages) {
-          const messages = json.messages as Message[]
-          const lastMessage = messages[messages.length - 1]
-
-          console.log("messages:", messages)
-          console.log("lastMessage:", lastMessage)
-
-          if (lastMessage.role === "user") {
-            setInput(lastMessage.content)
-          }
-        }
-      },
-      onFinish: async (message) => {
-        console.log("Chat finished:", message)
-        console.log("messages:", messages)
-
-        // Save messages in the database.
-        await fetch(`/api/messages/${id}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            chatId: id,
-            messages: [
-              ...messages,
-              {
-                role: "user",
-                content: input,
-              },
-              message,
-            ],
-          }),
-        })
-      },
+        message,
+      }),
+    }).then(() => {
+      revalidator.revalidate()
     })
+  }
+
+  const {
+    messages,
+    append,
+    reload,
+    stop,
+    isLoading,
+    input,
+    setInput,
+    setMessages,
+  } = useChat({
+    id,
+    api: "/api/chat",
+    headers: {
+      "X-Articulator-Config": articulatorConfig,
+      "Content-Type": "application/json",
+    },
+    body: {
+      chatId: id,
+    },
+    initialMessages,
+    onResponse: async (response) => {
+      const articulatedCard = response.headers.get("X-Articulated-Card")
+      if (articulatedCard) {
+        onCardArticulation(JSON.parse(articulatedCard) as ValuesCardData)
+      }
+
+      const submittedCard = response.headers.get("X-Submitted-Card")
+      if (submittedCard) {
+        onCardSubmission(JSON.parse(submittedCard) as ValuesCardData)
+      }
+
+      if (response.status === 401) {
+        console.error(response.status)
+        toast.error("Failed to update chat. Please try again.")
+      }
+    },
+    onError: async (error) => {
+      console.error(error)
+      toast.error("Failed to update chat. Please try again.")
+
+      //
+      // Get the last message from the database and set it as the input.
+      //
+      const res = await fetch(`/api/messages/${id}`)
+      const json = await res.json()
+
+      if (json && json.messages) {
+        const messages = json.messages as Message[]
+        const lastMessage = messages[messages.length - 1]
+
+        console.log("messages:", messages)
+        console.log("lastMessage:", lastMessage)
+
+        if (lastMessage.role === "user") {
+          setInput(lastMessage.content)
+        }
+      }
+    },
+    onFinish: async (message) => {
+      console.log("Chat finished:", message)
+      console.log("messages:", messages)
+
+      // Save messages in the database.
+      await fetch(`/api/messages/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatId: id,
+          messages: [
+            ...messages,
+            {
+              role: "user",
+              content: input,
+            },
+            message,
+          ],
+        }),
+      })
+    },
+  })
 
   return (
     <>
@@ -141,11 +204,12 @@ export function Chat({
         {messages.length ? (
           <>
             <ChatList
-              messages={messages}
+              messages={messages.filter((m) => isDisplayableMessage(m))}
               isFinished={isFinished}
               isLoading={isLoading}
               valueCards={valueCards}
               onManualSubmit={onManualSubmit}
+              onDelete={user?.isAdmin ? onDeleteMessage : undefined}
             />
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
