@@ -25,7 +25,7 @@ export async function evaluateTranscript(chat: Chat) {
   const openai = new OpenAIApi(configuration)
   const transcript = (chat?.transcript ??
     []) as any as ChatCompletionRequestMessage[]
-  const messages = transcript.map((o) => normalizeMessage(o)).slice(1)
+  const messages = transcript.map(normalizeMessage).slice(1)
   const res = await openai.createChatCompletion({
     model: model,
     temperature: 0.2,
@@ -62,6 +62,7 @@ export const evaluateDialogues = inngest.createFunction(
       },
     })
     if (!newDialogue) return
+    logger.info(`Evaluating ${newDialogue.id}.`)
     const response = await evaluateTranscript(newDialogue)
     await db.chat.update({
       where: { id: newDialogue.id },
@@ -133,23 +134,13 @@ const evaluateDialogueFunction = {
         enum: ["A", "B", "C", "D", "F"],
       },
       worst_score: {
-        description: "Lowest grade given for any of the criteria above.",
+        description:
+          "Lowest grade given for any criterion above, or 'INCOMPLETE' if the dialogue does not call show_values_card or articulate_values_card.",
         type: "string",
-        enum: ["A", "B", "C", "D", "F"],
+        enum: ["A", "B", "C", "D", "F", "INCOMPLETE"],
       },
     },
-    required: [
-      "dialogue_meaningful_story",
-      "dialogue_wisdom",
-      "dialogue_perspective",
-      "dialogue_leading",
-      "dialogue_one_question",
-      "values_card_one_source",
-      "values_card_really_source",
-      "values_card_coherent",
-      "values_card_clear",
-      "worst_score",
-    ],
+    required: ["worst_score"],
   },
 }
 
@@ -162,7 +153,11 @@ A source of meaning is distinct from similar concepts:
 - A source of meaning is not an internalized norm – a norm the user has adopted outside of the original social context. It is a way of living that produces a sense of meaning for you, not a way of living that you think is "right" or "correct".`
 
 const evaluationPrompt = `
-I will send a dialogue. Rate it according to the following criteria:
+I will send a dialogue.
+
+If the dialogue does not include a call to show_values_card or articulate_values_card, give it a grade of "INCOMPLETE" and skip the rest of the evaluation.
+
+Otherwise, rate it according to the following criteria:
 
 About the dialogue itself:
 
