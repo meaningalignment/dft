@@ -7,6 +7,7 @@ import {
 import { db, inngest } from "~/config.server"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "./embedding"
+import { cases } from "~/lib/case"
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -157,7 +158,7 @@ export default class LinkingService {
   }
 }
 
-async function clusterCanonicalCards() {
+async function clusterCanonicalCards(caseId: string) {
   const cardDataAsJson = JSON.stringify(
     await db.canonicalValuesCard.findMany({
       select: {
@@ -165,13 +166,22 @@ async function clusterCanonicalCards() {
         instructionsShort: true,
         evaluationCriteria: true,
       },
+      where: {
+        valuesCards: {
+          some: {
+            chat: {
+              caseId,
+            },
+          },
+        },
+      },
     }),
     null,
     2
   )
-  // console.log('cardDataAsJson', cardDataAsJson)
+
   const res = await openai.createChatCompletion({
-    model: "gpt-4-32k",
+    model: "gpt-4-32k-0613",
     temperature: 0.3,
     messages: [
       { role: "system", content: clusterPrompt },
@@ -259,7 +269,9 @@ Then, cluster the values based on similarity of conditions. Clusters should NEVE
 - Make them as broad as possible, while still coherent.
 `
 
-export async function transitions(cardIds: number[]) {
+export async function generateTransitions(cardIds: number[]): Promise<{
+  transitions: Transition[]
+}> {
   const cardDataAsJson = JSON.stringify(
     await db.canonicalValuesCard.findMany({
       where: { id: { in: cardIds } },
@@ -272,9 +284,9 @@ export async function transitions(cardIds: number[]) {
     null,
     2
   )
-  console.log("cardDataAsJson", cardDataAsJson)
+
   const res = await openai.createChatCompletion({
-    model: "gpt-4-32k",
+    model: "gpt-4-32k-0613",
     temperature: 0.3,
     messages: [
       { role: "system", content: transitionsPrompt },
@@ -519,15 +531,25 @@ ${JSON.stringify(exampleTransitions, null, 2)}`
 // Ingest function for creating edge hypotheses.
 //
 
-export const hypothesize = inngest.createFunction(
-  { name: "Create Hypothetical Edges", concurrency: 1 },
-  { cron: "0 */12 * * *" },
-  async ({ step, logger }) => {
-    logger.info("Running hypothetical links generation...")
+export const hypothesizeCase = inngest.createFunction(
+  { name: "Create Hypothetical Edges for Case", concurrency: 1 },
+  { event: "hypothesize.case" },
+  async ({ step, logger, event }) => {
+    // The case to deduplicate.
+    const caseId = event.data.caseId as string
 
-    // Get all the canonical cards.
+    // verify the case exists.
+    if (!cases.map((c) => c.id).includes(caseId)) {
+      throw Error(`Unknown case "${caseId}"`)
+    }
+
+    logger.info(`Running hypothetical links generation for case ${caseId}`)
+
+    // Get clusters of canonical cards for the case.
     const clusters = (
-      await step.run("Cluster all canonical cards", clusterCanonicalCards)
+      await step.run("Cluster all canonical cards", async () =>
+        clusterCanonicalCards(caseId)
+      )
     ).clusters.filter((c) => c.ids.length > 1)
 
     logger.info(
@@ -540,7 +562,7 @@ export const hypothesize = inngest.createFunction(
       await step.run(
         `Create hypothetical edges for cluster ${cluster.condition}`,
         async () => {
-          const result = await transitions(ids)
+          const result = await generateTransitions(ids)
           for (const transition of result.transitions) {
             await db.edgeHypothesis.upsert({
               where: {
@@ -562,5 +584,26 @@ export const hypothesize = inngest.createFunction(
     }
 
     return { message: "Success." }
+  }
+)
+
+export const hypothesize = inngest.createFunction(
+  { name: "Create Hypothetical Edges", concurrency: 1 },
+  { cron: "0 */12 * * *" },
+  async ({ step, logger }) => {
+    logger.info("Creating hypothetical links for all cases.")
+
+    for (const caseData of cases) {
+      logger.info(`Creating links for case ${caseData.id}`)
+
+      await step.sendEvent({
+        name: "hypothesize.case",
+        data: { caseId: caseData.id },
+      })
+    }
+
+    return {
+      message: `Started hypothesizing for ${cases.length} cases.`,
+    }
   }
 )

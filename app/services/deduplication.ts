@@ -431,7 +431,7 @@ export const deduplicateCase = inngest.createFunction(
       throw Error(`Unknown case "${caseId}"`)
     }
 
-    console.log(`Running deduplication for case ${caseId}`)
+    logger.info(`Running deduplication for case ${caseId}`)
 
     //
     // Prepare the service.
