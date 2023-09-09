@@ -76,7 +76,6 @@ export default function LinkScreen() {
 
   // If there are no values in the draw, continue to next step.
   useEffect(() => {
-    console.log(caseId)
     if (draw.length === 0) {
       navigate("/finished")
     }
