@@ -55,10 +55,13 @@ export default function StartPage() {
             Your input will contribute to a moral graph used to fine-tune future
             models. This process will take around 15 minutes.
           </p>
-          <Button disabled={isLoading} onClick={() => setIsLoading(true)}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            <Link to="/chat">Let's Go</Link>
-          </Button>
+          {/* Disable multi-case for now. */}
+          <Link to="/case/abortion/chat">
+            <Button disabled={isLoading} onClick={() => setIsLoading(true)}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Let's Go
+            </Button>
+          </Link>
         </div>
 
         <div className="overflow-x-hidden w-screen h-full flex justify-center pt-12">

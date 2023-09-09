@@ -51,18 +51,20 @@ export default function AdminChats() {
               >
                 <div>{chat.user.name}</div>
                 <div>{chat.user.email}</div>
-                <div>{chat.createdAt}</div>
+                <div className="text-xs text-neutral-500">{chat.createdAt}</div>
                 {chat.evaluation && (
                   <div>
                     <span className="text-sm text-red-500">
                       {(chat.evaluation as any).worst_score}
-                    </span> - <span className="text-sm text-green-500">
-                      {chat.articulatorPromptHash}
+                    </span>{" "}
+                    -{" "}
+                    <span className="text-xs text-green">
+                      {chat.articulatorPromptHash.slice(0, 8)}
                     </span>
                   </div>
                 )}
                 {chat.copiedFromId && (
-                  <div className="text-sm text-gray-500">
+                  <div className="text-xs font-bold mt-2 text-neutral-500">
                     Copied from {chat.copiedFromId}
                   </div>
                 )}

@@ -1,6 +1,6 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
-import { useLoaderData, useNavigate } from "@remix-run/react"
+import { useLoaderData, useNavigate, useParams } from "@remix-run/react"
 import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
@@ -16,8 +16,9 @@ import { cn } from "~/utils"
 
 const minRequiredVotes = 2
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = await auth.getUserId(request)
+  const caseId = params.caseId!
 
   // Set up service.
   const openai = new OpenAIApi(
@@ -27,7 +28,7 @@ export async function loader({ request }: LoaderArgs) {
   const routing = new SelectionService(openai, db, embedding)
 
   // Get the draw for this user.
-  const { id, values } = await routing.getDraw(userId)
+  const { id, values } = await routing.getDraw(userId, caseId)
 
   return json({ values, drawId: id })
 }
@@ -97,6 +98,7 @@ function SelectedValuesCard({ value }: { value: CanonicalValuesCard }) {
 
 export default function SelectScreen() {
   const navigate = useNavigate()
+  const { caseId } = useParams()
 
   const [isLoading, setIsLoading] = useState(false)
   const [showCards, setShowCards] = useState(false)
@@ -107,7 +109,7 @@ export default function SelectScreen() {
   // If there are no values in the draw, continue to next step.
   useEffect(() => {
     if (values.length === 0) {
-      navigate("/link-explainer")
+      navigate(`/case/${caseId}/link-explainer`)
     }
   }, [values])
 
@@ -124,7 +126,7 @@ export default function SelectScreen() {
 
     const body = { values, selected, drawId }
 
-    const response = await fetch("/select", {
+    const response = await fetch(`/case/${caseId}/select`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -138,7 +140,7 @@ export default function SelectScreen() {
       throw new Error("Failed to submit votes: " + text)
     }
 
-    navigate("/link-explainer")
+    navigate(`/case/${caseId}/link-explainer`)
   }
 
   if (values.length === 0) {

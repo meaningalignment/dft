@@ -5,8 +5,13 @@ import {
   ValuesCard,
 } from "@prisma/client"
 import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge/types/api"
-import { ArticulatorConfig, configs, metadata, summarize } from "./articulator-config"
-import { ValuesCardData, } from "~/lib/consts"
+import {
+  ArticulatorConfig,
+  configs,
+  metadata,
+  summarize,
+} from "./articulator-config"
+import { ValuesCardData } from "~/lib/consts"
 import { OpenAIStream } from "~/lib/openai-stream"
 import { capitalize, toDataModel } from "~/utils"
 import EmbeddingService from "./embedding"
@@ -25,7 +30,9 @@ type FunctionResult = {
   submittedCard: ValuesCardData | null
 }
 
-export function normalizeMessage(message: ChatCompletionRequestMessage): ChatCompletionRequestMessage {
+export function normalizeMessage(
+  message: ChatCompletionRequestMessage
+): ChatCompletionRequestMessage {
   // only role, content, name, function_call
   const { role, content, name, function_call } = message
   if (function_call && !function_call.arguments) function_call.arguments = "{}"
@@ -61,58 +68,77 @@ export class ArticulatorService {
   }
 
   // TODO: put it in a transaction
-  private async addServerSideMessage({ chatId, messages, message, data }: {
-    chatId: string,
-    messages: ChatCompletionRequestMessage[],
-    message: ChatCompletionRequestMessage,
-    data?: { provisionalCard?: ValuesCardData, provisionalCanonicalCardId?: number | null }
+  private async addServerSideMessage({
+    chatId,
+    messages,
+    message,
+    data,
+  }: {
+    chatId: string
+    messages: ChatCompletionRequestMessage[]
+    message: ChatCompletionRequestMessage
+    data?: {
+      provisionalCard?: ValuesCardData
+      provisionalCanonicalCardId?: number | null
+    }
   }) {
     messages.push(message)
     const chat = await this.db.chat.findUnique({
       where: { id: chatId },
     })
-    const transcript = (chat?.transcript ?? []) as any as ChatCompletionRequestMessage[]
+    const transcript = (chat?.transcript ??
+      []) as any as ChatCompletionRequestMessage[]
     transcript.push(message)
     await this.db.chat.update({
       where: { id: chatId },
       data: {
         transcript: transcript as any,
-        ...data
-      }
+        ...data,
+      },
     })
   }
 
-
-  async processCompletionWithFunctions({ userId, messages, function_call, chatId }: {
-    userId: number,
-    messages: ChatCompletionRequestMessage[],
-    function_call: { name: string } | null,
+  async processCompletionWithFunctions({
+    userId,
+    messages,
+    function_call,
+    chatId,
+    caseId,
+  }: {
+    userId: number
+    messages: ChatCompletionRequestMessage[]
+    function_call: { name: string } | null
     chatId: string
+    caseId: string
   }) {
-
     // update the db
     // TODO: put it in a transaction
     const chat = await this.db.chat.findUnique({ where: { id: chatId } })
     if (chat) {
-      const transcript = (chat?.transcript ?? []) as any as ChatCompletionRequestMessage[]
+      const transcript = (chat?.transcript ??
+        []) as any as ChatCompletionRequestMessage[]
       const lastMessage = messages[messages.length - 1]
       transcript.push(lastMessage)
-      messages = transcript.map(o => normalizeMessage(o))
+      messages = transcript.map((o) => normalizeMessage(o))
       await this.db.chat.update({
         where: { id: chatId },
         data: {
           transcript: transcript as any,
-        }
+        },
       })
     } else {
       const metadata = this.metadata()
       // Prepend the system message.
-      messages = [{ role: "system", content: this.config.prompts.main.prompt }, ...messages]
+      messages = [
+        { role: "system", content: this.config.prompts.main.prompt },
+        ...messages,
+      ]
       await this.db.chat.create({
         data: {
+          userId,
+          caseId,
           id: chatId,
           transcript: messages as any,
-          userId,
           articulatorModel: metadata.model,
           articulatorPromptHash: metadata.contentHash,
           articulatorPromptVersion: metadata.name,
@@ -147,19 +173,20 @@ export class ArticulatorService {
           name: functionCall.name,
           arguments: JSON.stringify(functionCall.arguments),
         },
-      }
+      },
     })
     const { response, articulatedCard, submittedCard } = await this.handle(
       functionCall,
       messages,
-      chatId
+      chatId,
+      caseId
     )
     return {
       functionCall,
       response,
       articulatedCard,
       submittedCard,
-      completionResponse
+      completionResponse,
     }
   }
 
@@ -173,7 +200,7 @@ export class ArticulatorService {
   //
   async getFunctionCall(
     res: Response
-  ): Promise<{ name: string, arguments: object } | null> {
+  ): Promise<{ name: string; arguments: object } | null> {
     const stream = OpenAIStream(res.clone()) // .clone() since we don't want to consume the response.
     const reader = stream.getReader()
 
@@ -218,11 +245,12 @@ export class ArticulatorService {
     // The following is needed due to tokens being streamed with escape characters.
     json["arguments"] = JSON.parse(json["arguments"])
     console.log(`Function call: ${JSON.stringify(json)}`)
-    return json as { name: string, arguments: object }
+    return json as { name: string; arguments: object }
   }
 
   private async handleArticulateCardFunction(
     chatId: string,
+    caseId: string,
     messages: ChatCompletionRequestMessage[]
   ): Promise<FunctionResult> {
     //
@@ -249,7 +277,9 @@ export class ArticulatorService {
     // If the card is not yet meeting the guidelines, generate a follow-up question.
     //
     if (response.critique) {
-      const message = summarize(this.config, 'show_values_card_critique', { critique: response.critique })
+      const message = summarize(this.config, "show_values_card_critique", {
+        critique: response.critique,
+      })
 
       return {
         message,
@@ -262,8 +292,9 @@ export class ArticulatorService {
     // Override the card with a canonical duplicate if one exists.
     //
     if (!previousCard && !canonical && !response.critique) {
-      canonical = await this.deduplication.fetchCanonicalCard(
-        response.values_card
+      canonical = await this.deduplication.fetchSimilarCanonicalCard(
+        response.values_card,
+        caseId
       )
 
       if (canonical) {
@@ -278,15 +309,17 @@ export class ArticulatorService {
       message: {
         role: "function",
         name: "show_values_card",
-        content: JSON.stringify(response.values_card)
+        content: JSON.stringify(response.values_card),
       },
       data: {
         provisionalCard: newCard!,
         provisionalCanonicalCardId: canonical?.id ?? null,
-      }
+      },
     })
 
-    const message = summarize(this.config, 'show_values_card', { title: newCard!.title })
+    const message = summarize(this.config, "show_values_card", {
+      title: newCard!.title,
+    })
     return { message, articulatedCard: newCard, submittedCard: null }
   }
 
@@ -310,9 +343,10 @@ export class ArticulatorService {
   }
 
   async handle(
-    func: { name: string, arguments: any },
+    func: { name: string; arguments: any },
     messages: any[] = [],
-    chatId: string
+    chatId: string,
+    caseId: string
   ): Promise<{
     response: Response
     articulatedCard: ValuesCardData | null
@@ -322,7 +356,7 @@ export class ArticulatorService {
 
     switch (func.name) {
       case "guess_values_card": {
-        console.log('Guessed!', func.arguments)
+        console.log("Guessed!", func.arguments)
         functionResult = {
           message: null,
           articulatedCard: null,
@@ -333,6 +367,7 @@ export class ArticulatorService {
       case "show_values_card": {
         functionResult = await this.handleArticulateCardFunction(
           chatId,
+          caseId,
           messages
         )
         break
@@ -356,7 +391,7 @@ export class ArticulatorService {
           role: "function",
           name: func.name,
           content: functionResult.message,
-        }
+        },
       })
     }
 
@@ -405,7 +440,7 @@ export class ArticulatorService {
 
     // Embed card.
     await this.embeddings.embedNonCanonicalCard(result)
-    return summarize(this.config, 'submit_values_card', { title: card.title })
+    return summarize(this.config, "submit_values_card", { title: card.title })
   }
 
   /** Create a values card from a transcript of the conversation. */
@@ -427,7 +462,10 @@ export class ArticulatorService {
     const res = await this.openai.createChatCompletion({
       model: this.config.model,
       messages: [
-        { role: "system", content: this.config.prompts.show_values_card.prompt },
+        {
+          role: "system",
+          content: this.config.prompts.show_values_card.prompt,
+        },
         { role: "user", content: transcript },
       ],
       functions: this.config.prompts.show_values_card.functions,

@@ -1,12 +1,13 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
-import { useNavigate } from "@remix-run/react"
+import { useNavigate, useParams } from "@remix-run/react"
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
 
 export default function LinkExplainerScreen() {
+  const { caseId } = useParams()
   const [isLoading, setIsLoading] = useState(false)
   const [showNext, setShowNext] = useState(false)
 
@@ -14,7 +15,7 @@ export default function LinkExplainerScreen() {
 
   const onContinue = () => {
     setIsLoading(true)
-    navigate("/link")
+    navigate(`/case/${caseId}/link`)
   }
 
   return (

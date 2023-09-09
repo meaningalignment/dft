@@ -58,6 +58,7 @@ export default class SelectionService {
 
   async fetchHottestValues(
     userId: number,
+    caseId: string,
     limit = 12
   ): Promise<CanonicalValuesCard[]> {
     const cards = (await db.canonicalValuesCard.findMany({
@@ -74,6 +75,13 @@ export default class SelectionService {
         Impression: {
           none: {
             userId,
+          },
+        },
+        valuesCards: {
+          some: {
+            chat: {
+              caseId,
+            },
           },
         },
       },
@@ -101,6 +109,7 @@ export default class SelectionService {
 
   async fetchNewestValues(
     userId: number,
+    caseId: string,
     limit = 12
   ): Promise<CanonicalValuesCard[]> {
     return (await db.canonicalValuesCard.findMany({
@@ -113,6 +122,13 @@ export default class SelectionService {
         Impression: {
           none: {
             userId,
+          },
+        },
+        valuesCards: {
+          some: {
+            chat: {
+              caseId,
+            },
           },
         },
       },
@@ -186,11 +202,11 @@ export default class SelectionService {
   /**
    * Generate a draw for the user with id `userId`.
    */
-  async getDraw(userId: number): Promise<Draw> {
+  async getDraw(userId: number, caseId: string): Promise<Draw> {
     // Get canidates.
     const candidates = await Promise.all([
-      this.fetchNewestValues(userId, 12),
-      this.fetchHottestValues(userId, 12),
+      this.fetchNewestValues(userId, caseId, 12),
+      this.fetchHottestValues(userId, caseId, 12),
     ]).then((r) => [...r[0], ...r[1]])
 
     // Remove duplicates.

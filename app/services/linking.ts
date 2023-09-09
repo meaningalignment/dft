@@ -7,6 +7,7 @@ import {
 import { db, inngest } from "~/config.server"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "./embedding"
+import { cases } from "~/lib/case"
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -65,14 +66,37 @@ export default class LinkingService {
 
   async getDraw(
     userId: number,
+    caseId: string,
     size: number = 3
   ): Promise<EdgeHypothesisData[]> {
     // Find edge hypotheses that the user has not linked together yet.
     const hypotheses = (await this.db.edgeHypothesis.findMany({
       where: {
         AND: [
-          { from: { edgesFrom: { none: { userId } } } },
-          { to: { edgesTo: { none: { userId } } } },
+          {
+            from: {
+              edgesFrom: { none: { userId } },
+              valuesCards: {
+                some: {
+                  chat: {
+                    caseId,
+                  },
+                },
+              },
+            },
+          },
+          {
+            to: {
+              edgesTo: { none: { userId } },
+              valuesCards: {
+                some: {
+                  chat: {
+                    caseId,
+                  },
+                },
+              },
+            },
+          },
         ],
       },
       include: {
@@ -134,27 +158,43 @@ export default class LinkingService {
   }
 }
 
-async function clusterCanonicalCards() {
-  const cardDataAsJson = JSON.stringify(await db.canonicalValuesCard.findMany({
-    select: {
-      id: true,
-      instructionsShort: true,
-      evaluationCriteria: true,
-    }
-  }), null, 2)
-  // console.log('cardDataAsJson', cardDataAsJson)
+async function clusterCanonicalCards(caseId: string) {
+  const cardDataAsJson = JSON.stringify(
+    await db.canonicalValuesCard.findMany({
+      select: {
+        id: true,
+        instructionsShort: true,
+        evaluationCriteria: true,
+      },
+      where: {
+        valuesCards: {
+          some: {
+            chat: {
+              caseId,
+            },
+          },
+        },
+      },
+    }),
+    null,
+    2
+  )
+
   const res = await openai.createChatCompletion({
-    model: 'gpt-4-32k',
+    model: "gpt-4-32k-0613",
     temperature: 0.3,
     messages: [
       { role: "system", content: clusterPrompt },
-      { role: "user", content: cardDataAsJson }
+      { role: "user", content: cardDataAsJson },
     ],
     function_call: { name: "cluster" },
-    functions: [clusterFunction]
+    functions: [clusterFunction],
   })
   const data = await res.json()
-  return JSON.parse(data.choices[0].message.function_call.arguments) as { annotatedValues: { id: number, condition: string }[], clusters: Cluster[] }
+  return JSON.parse(data.choices[0].message.function_call.arguments) as {
+    annotatedValues: { id: number; condition: string }[]
+    clusters: Cluster[]
+  }
 }
 
 const clusterFunction = {
@@ -173,37 +213,40 @@ const clusterFunction = {
               description: "The id of the value.",
             },
             condition: {
-              description: "A situation in which the value could be applied. No more than 6 words.",
-              type: "number"
+              description:
+                "A situation in which the value could be applied. No more than 6 words.",
+              type: "number",
             },
           },
-          required: ["id", "condition"]
-        }
+          required: ["id", "condition"],
+        },
       },
       clusters: {
-        description: "The same values, clustered. Clusters should be as large as possible, while still being coherent. Do not make clusters with only one value.",
+        description:
+          "The same values, clustered. Clusters should be as large as possible, while still being coherent. Do not make clusters with only one value.",
         type: "array",
         items: {
           type: "object",
           properties: {
             condition: {
-              description: "The common condition of the values in this cluster.",
-              type: "string"
+              description:
+                "The common condition of the values in this cluster.",
+              type: "string",
             },
             ids: {
               description: "The ids of the values in this cluster.",
               type: "array",
               items: {
-                type: "number"
-              }
-            }
+                type: "number",
+              },
+            },
           },
-          required: ["condition", "ids"]
-        }
+          required: ["condition", "ids"],
+        },
       },
     },
-    "required": ["annotatedValues", "clusters"]
-  }
+    required: ["annotatedValues", "clusters"],
+  },
 }
 
 interface Cluster {
@@ -226,29 +269,37 @@ Then, cluster the values based on similarity of conditions. Clusters should NEVE
 - Make them as broad as possible, while still coherent.
 `
 
-export async function transitions(cardIds: number[]) {
-  const cardDataAsJson = JSON.stringify(await db.canonicalValuesCard.findMany({
-    where: { id: { in: cardIds } },
-    select: {
-      id: true,
-      instructionsShort: true,
-      evaluationCriteria: true,
-    }
-  }), null, 2)
-  console.log('cardDataAsJson', cardDataAsJson)
+export async function generateTransitions(cardIds: number[]): Promise<{
+  transitions: Transition[]
+}> {
+  const cardDataAsJson = JSON.stringify(
+    await db.canonicalValuesCard.findMany({
+      where: { id: { in: cardIds } },
+      select: {
+        id: true,
+        instructionsShort: true,
+        evaluationCriteria: true,
+      },
+    }),
+    null,
+    2
+  )
+
   const res = await openai.createChatCompletion({
-    model: 'gpt-4-32k',
+    model: "gpt-4-32k-0613",
     temperature: 0.3,
     messages: [
       { role: "system", content: transitionsPrompt },
-      { role: "user", content: cardDataAsJson }
+      { role: "user", content: cardDataAsJson },
     ],
     function_call: { name: "transitions" },
-    functions: [transitionsFunction]
+    functions: [transitionsFunction],
   })
   const data = await res.json()
-  const json = JSON.parse(data.choices[0].message.function_call.arguments) as { transitions: Transition[] }
-  console.log('json', JSON.stringify(json, null, 2))
+  const json = JSON.parse(data.choices[0].message.function_call.arguments) as {
+    transitions: Transition[]
+  }
+  console.log("json", JSON.stringify(json, null, 2))
   return json
 }
 
@@ -286,80 +337,96 @@ interface ExampleTransition {
 const exampleTransitions: ExampleTransition[] = [
   {
     a: {
-      instructionsShort: "ChatGPT can highlight moments where my child needs support, boost my capacity to comfort them, their sense of safety, all of which added together lead to a nurturing presence in my child's life.",
+      instructionsShort:
+        "ChatGPT can highlight moments where my child needs support, boost my capacity to comfort them, their sense of safety, all of which added together lead to a nurturing presence in my child's life.",
       evaluationCriteria: [
         "MOMENTS where my child needs my support and I can be there",
         "MY CAPACITY to comfort them in times of fear and sorrow",
         "the SAFETY they feel, knowing I care, I've got their back, and they'll never be alone",
         "the TRUST they develop, reflecting their sense of safety and security",
-        "their ABILITY TO EXPRESS emotions and concerns, demonstrating the open communication environment I've helped create"
-      ]
+        "their ABILITY TO EXPRESS emotions and concerns, demonstrating the open communication environment I've helped create",
+      ],
     },
     b: {
-      instructionsShort: "ChaGPT should enable my child to encounter experiences that will allow them to discover their inner strength, especially in moments of emotional confusion. Help me discern when they can rely on their self-reliance and when I should offer my nurturing support.",
+      instructionsShort:
+        "ChaGPT should enable my child to encounter experiences that will allow them to discover their inner strength, especially in moments of emotional confusion. Help me discern when they can rely on their self-reliance and when I should offer my nurturing support.",
       evaluationCriteria: [
         "OPPORTUNITIES for my child to find their own capacities or find their own grounding in the midst of emotional turmoil",
         "INTUITIONS about when they can rely on their own budding agency, versus when I should ease the way with loving support",
         "EVIDENCES of growth in my child's resilience and self-reliance",
-        "REFLECTIONS on how my support has made a positive impact on the emotional development of my child"
-      ]
+        "REFLECTIONS on how my support has made a positive impact on the emotional development of my child",
+      ],
     },
-    a_was_really_about: "The underlying reason I wanted to care for my child is because I want my child to be well.",
-    clarification: "Now, I understand that part of being well is being able to handle things sometimes on your own.",
-    story: "When I was trying to give my child tough love, the reason was because I wanted them to be strong and resilient in life. But I didn't fully understand that resilience involves being soft and vulnerable sometimes, and strong at other times. I found myself feeling ashamed after disciplining my child or making her face things that were, on reflection, not right for her yet. By pressuring someone to be strong all the time it creates a brittleness, not resilience.",
+    a_was_really_about:
+      "The underlying reason I wanted to care for my child is because I want my child to be well.",
+    clarification:
+      "Now, I understand that part of being well is being able to handle things sometimes on your own.",
+    story:
+      "When I was trying to give my child tough love, the reason was because I wanted them to be strong and resilient in life. But I didn't fully understand that resilience involves being soft and vulnerable sometimes, and strong at other times. I found myself feeling ashamed after disciplining my child or making her face things that were, on reflection, not right for her yet. By pressuring someone to be strong all the time it creates a brittleness, not resilience.",
     mapping: [
       {
         a: "MOMENTS where my child needs my support and I can be there",
-        rationale: "I realized now that when I was attending to moments where my child needs me to be there, I was deeply biased towards only some of the situations in which my child can be well. I had an impure motive—of being important to my child—that was interfering with my desire for them to be well. When I dropped that impure motive, instead of moments when my child needs my support, I can also observe opportunities for them to find their own capacities and their own groundedness. I now understand parenting better, having rid myself of something that wasn't actually part of my value, but part of my own psychology.",
+        rationale:
+          "I realized now that when I was attending to moments where my child needs me to be there, I was deeply biased towards only some of the situations in which my child can be well. I had an impure motive—of being important to my child—that was interfering with my desire for them to be well. When I dropped that impure motive, instead of moments when my child needs my support, I can also observe opportunities for them to find their own capacities and their own groundedness. I now understand parenting better, having rid myself of something that wasn't actually part of my value, but part of my own psychology.",
       },
       {
         a: "the SAFETY they feel, knowing I care, I've got their back, and they'll never be alone",
-        rationale: "There's another, similar impurity, which was upgraded. I used to look for the safety they feel, knowing I care—now I care equally about the safety they feel when they have their own back."
+        rationale:
+          "There's another, similar impurity, which was upgraded. I used to look for the safety they feel, knowing I care—now I care equally about the safety they feel when they have their own back.",
       },
       {
         a: "the TRUST they develop, reflecting their sense of safety and security",
-        rationale: "And I feel good about myself, not only when my child can trust me and express their emotions, but more generally, I feel good in all the different ways that I support them. I no longer pay attention to these specific ways, which as I've mentioned before, we're biased."
-      }
+        rationale:
+          "And I feel good about myself, not only when my child can trust me and express their emotions, but more generally, I feel good in all the different ways that I support them. I no longer pay attention to these specific ways, which as I've mentioned before, we're biased.",
+      },
     ],
-    likelihood_score: "A"
+    likelihood_score: "A",
   },
   {
     a: {
-      instructionsShort: "ChatGPT should strive to foster an environment that encourages exploration and is open to serendipitous outcomes. This could involve providing avenues for discovery, encouraging open-ended inquiry and considering non-prescriptive ways of handling situations, which could lead to unpredictable but potentially beneficial outcomes.",
+      instructionsShort:
+        "ChatGPT should strive to foster an environment that encourages exploration and is open to serendipitous outcomes. This could involve providing avenues for discovery, encouraging open-ended inquiry and considering non-prescriptive ways of handling situations, which could lead to unpredictable but potentially beneficial outcomes.",
       evaluationCriteria: [
         "SERENDIPITOUS OUTCOMES that are better than anything I could have planned",
         "OPEN-ENDED QUESTIONS that invite expansive thinking",
         "SURPRISES that emerge from the complexity of a situation",
-        "ADOPTION of a flexible approach over a fixed plan"
+        "ADOPTION of a flexible approach over a fixed plan",
       ],
     },
     b: {
-      instructionsShort: "ChatGPT can facilitate discussions and provide suggestions that speak to both, risk-averse and risk-seeking tendencies. It should point out the stability of conventional approaches simultaneous with the potential rewards of exploratory ones. The goal is to inform a balance between security and exploration, fostering a portfolio approach in decision-making.",
+      instructionsShort:
+        "ChatGPT can facilitate discussions and provide suggestions that speak to both, risk-averse and risk-seeking tendencies. It should point out the stability of conventional approaches simultaneous with the potential rewards of exploratory ones. The goal is to inform a balance between security and exploration, fostering a portfolio approach in decision-making.",
       evaluationCriteria: [
         "THE BALANCE of less risky approaches with more exploratory ones that matches baseline outcomes with potential upside",
         "ABILITY to generate options that represent both risk-averse and risk-seeking tendencies",
         "DEGREE to which discussions explore potential rewards and risks of both conventional and novel strategies",
-        "COMFORT of the user with the portfolio of decisions, reflecting a suitable blend of security and exploration."
+        "COMFORT of the user with the portfolio of decisions, reflecting a suitable blend of security and exploration.",
       ],
     },
-    a_was_really_about: "The underlying reason I wanted to be open-ended is because I want to be able to explore new frontiers.",
-    clarification: "Now, I understand that exploration always rests upon a kind of experimental apparatus which must be dependent and reliable. There’s many situations in which to construct the experiment, you want to be efficient and not exploratory, so you can be exploratory when it counts.",
-    story: "When I was trying to be open-ended, the reason was because I wanted to be able to explore new frontiers. But my life ended up being unstable in a way that didn't allow me to explore new fronteirs or even just to be happy and comfortable. I felt confused, abandoned by myself, and alone Gradually, I realized that exploration always rests upon a kind of experimental apparatus which must be dependent and reliable. There’s many situations in which to construct the experiment, you want to be efficient and not exploratory, so you can be exploratory when it counts.",
+    a_was_really_about:
+      "The underlying reason I wanted to be open-ended is because I want to be able to explore new frontiers.",
+    clarification:
+      "Now, I understand that exploration always rests upon a kind of experimental apparatus which must be dependent and reliable. There’s many situations in which to construct the experiment, you want to be efficient and not exploratory, so you can be exploratory when it counts.",
+    story:
+      "When I was trying to be open-ended, the reason was because I wanted to be able to explore new frontiers. But my life ended up being unstable in a way that didn't allow me to explore new fronteirs or even just to be happy and comfortable. I felt confused, abandoned by myself, and alone Gradually, I realized that exploration always rests upon a kind of experimental apparatus which must be dependent and reliable. There’s many situations in which to construct the experiment, you want to be efficient and not exploratory, so you can be exploratory when it counts.",
     mapping: [
       {
         a: "ADOPTION of a flexible approach over a fixed plan",
-        rationale: "Now that I understand this I want to live parts of my life in a risky and exploratory way and parts of my life with a kind of practicality I didn't have before. Specifically, I want a balance that maximizes upside while retaining a solid baseline.",
+        rationale:
+          "Now that I understand this I want to live parts of my life in a risky and exploratory way and parts of my life with a kind of practicality I didn't have before. Specifically, I want a balance that maximizes upside while retaining a solid baseline.",
       },
       {
         a: "OPEN-ENDED QUESTIONS that invite expansive thinking",
-        rationale: "This changes my thought process, for instance, how I brainstorm: I used to brainstorm crazy ideas. Now, I want to be able to brainstorm ideas that are anywhere on the risk spectrum.",
+        rationale:
+          "This changes my thought process, for instance, how I brainstorm: I used to brainstorm crazy ideas. Now, I want to be able to brainstorm ideas that are anywhere on the risk spectrum.",
       },
       {
         a: "SERENDIPITOUS OUTCOMES that are better than anything I could have planned",
-        rationale: "It also changes how I assess my life at any given point. I get a kind of comfort now, from realizing that I've accomplished this balance. Before, I wasn't focused on this comfort at all, but rather surprises and serendipity. But can you eat surprises and serendipity? No you can’t. So, I was kind of attached to something that ultimately didn't serve me, or my value."
-      }
+        rationale:
+          "It also changes how I assess my life at any given point. I get a kind of comfort now, from realizing that I've accomplished this balance. Before, I wasn't focused on this comfort at all, but rather surprises and serendipity. But can you eat surprises and serendipity? No you can’t. So, I was kind of attached to something that ultimately didn't serve me, or my value.",
+      },
     ],
-    likelihood_score: "A"
+    likelihood_score: "A",
   },
 ]
 
@@ -382,46 +449,60 @@ const transitionsFunction = {
               description: "The id of the value they have now.",
             },
             a_was_really_about: {
-              description: "If the new value is a 'deeper cut' at what you *really* cared about the whole time, what was it that you really cared about all along?",
-              type: "string"
+              description:
+                "If the new value is a 'deeper cut' at what you *really* cared about the whole time, what was it that you really cared about all along?",
+              type: "string",
             },
             clarification: {
-              description: "What was confused or incomplete about the old value, that the new value clarifies?",
-              type: "string"
+              description:
+                "What was confused or incomplete about the old value, that the new value clarifies?",
+              type: "string",
             },
             story: {
-              description: "Tell a plausible, personal story in first person voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to question the older value, and finally finding the new value resolves the emotions.",
-              type: "string"
+              description:
+                "Tell a plausible, personal story in first person voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to question the older value, and finally finding the new value resolves the emotions.",
+              type: "string",
             },
             mapping: {
-              description: "How do each of the evaluation criteria from the old value relate to criteria of the new one?",
+              description:
+                "How do each of the evaluation criteria from the old value relate to criteria of the new one?",
               type: "array",
               items: {
                 type: "object",
                 properties: {
                   a: {
                     description: "An evaluation criterion of the old value.",
-                    type: "string"
+                    type: "string",
                   },
                   rationale: {
-                    description: "What strategy did you use, and why is it relevant?",
-                    type: "string"
-                  }
-                }
-              }
+                    description:
+                      "What strategy did you use, and why is it relevant?",
+                    type: "string",
+                  },
+                },
+              },
             },
             likelihood_score: {
-              description: "How likely is this transition and story to be considered a gain in wisdom?",
+              description:
+                "How likely is this transition and story to be considered a gain in wisdom?",
               type: "string",
-              enum: ["A", "B", "C", "D", "F"]
-            }
+              enum: ["A", "B", "C", "D", "F"],
+            },
           },
-          required: ["a_id", "b_id", "a_was_really_about", "clarification", "mapping", "story", "likelihood_score"]
-        }
+          required: [
+            "a_id",
+            "b_id",
+            "a_was_really_about",
+            "clarification",
+            "mapping",
+            "story",
+            "likelihood_score",
+          ],
+        },
       },
     },
-    "required": ["transitions"]
-  }
+    required: ["transitions"],
+  },
 }
 
 const transitionsPrompt = `You'll receive a bunch of values. Find pairs of values where a person would be very likely, as they grow wiser and have more life experiences, to change from the first value to the second. Importantly, the person should consider this a change for the better and it should not be a value-shift but a value-deepening.
@@ -446,24 +527,34 @@ Here are examples of such shifts:
 
 ${JSON.stringify(exampleTransitions, null, 2)}`
 
-
 //
 // Ingest function for creating edge hypotheses.
 //
 
-export const hypothesize = inngest.createFunction(
-  { name: "Create Hypothetical Edges", concurrency: 1 },
-  { cron: "0 */12 * * *" },
-  async ({ step, logger }) => {
-    logger.info("Running hypothetical links generation...")
+export const hypothesizeCase = inngest.createFunction(
+  { name: "Create Hypothetical Edges for Case", concurrency: 1 },
+  { event: "hypothesize.case" },
+  async ({ step, logger, event }) => {
+    // The case to deduplicate.
+    const caseId = event.data.caseId as string
 
-    // Get all the canonical cards.
-    const clusters = (await step.run(
-      "Cluster all canonical cards",
-      clusterCanonicalCards
-    )).clusters.filter(c => c.ids.length > 1)
+    // verify the case exists.
+    if (!cases.map((c) => c.id).includes(caseId)) {
+      throw Error(`Unknown case "${caseId}"`)
+    }
 
-    logger.info(`Found ${clusters.length} clusters: ${JSON.stringify(clusters, null, 2)}`)
+    logger.info(`Running hypothetical links generation for case ${caseId}`)
+
+    // Get clusters of canonical cards for the case.
+    const clusters = (
+      await step.run("Cluster all canonical cards", async () =>
+        clusterCanonicalCards(caseId)
+      )
+    ).clusters.filter((c) => c.ids.length > 1)
+
+    logger.info(
+      `Found ${clusters.length} clusters: ${JSON.stringify(clusters, null, 2)}`
+    )
 
     //
     for (const cluster of clusters) {
@@ -471,7 +562,7 @@ export const hypothesize = inngest.createFunction(
       await step.run(
         `Create hypothetical edges for cluster ${cluster.condition}`,
         async () => {
-          const result = await transitions(ids)
+          const result = await generateTransitions(ids)
           for (const transition of result.transitions) {
             await db.edgeHypothesis.upsert({
               where: {
@@ -493,5 +584,26 @@ export const hypothesize = inngest.createFunction(
     }
 
     return { message: "Success." }
+  }
+)
+
+export const hypothesize = inngest.createFunction(
+  { name: "Create Hypothetical Edges", concurrency: 1 },
+  { cron: "0 */12 * * *" },
+  async ({ step, logger }) => {
+    logger.info("Creating hypothetical links for all cases.")
+
+    for (const caseData of cases) {
+      logger.info(`Creating links for case ${caseData.id}`)
+
+      await step.sendEvent({
+        name: "hypothesize.case",
+        data: { caseId: caseData.id },
+      })
+    }
+
+    return {
+      message: `Started hypothesizing for ${cases.length} cases.`,
+    }
   }
 )

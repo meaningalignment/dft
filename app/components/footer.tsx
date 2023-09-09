@@ -13,7 +13,7 @@ export function FooterText({ className, ...props }: React.ComponentProps<"p">) {
       {...props}
     >
       Built by the{" "}
-      <ExternalLink href="https://meaningalignment.institute">
+      <ExternalLink href="https://meaningalignment.org">
         Institute for Meaning Alignment
       </ExternalLink>
       .

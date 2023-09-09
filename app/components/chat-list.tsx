@@ -49,7 +49,7 @@ export function ChatList({
       ))}
       {!isLoading && valueCard(messages.length - 1) && (
         <Button
-          className="relative ml-12 -top-8 md:ml-0 md:-top-0"
+          className="relative ml-12 -top-8 md:ml-0 md:-top-0 mb-12"
           onClick={() => onManualSubmit(valueCard(messages.length - 1)!.card)}
         >
           Submit Card

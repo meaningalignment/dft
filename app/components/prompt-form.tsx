@@ -1,4 +1,4 @@
-import * as React from "react"
+import { useContext, useRef, useEffect } from "react"
 import Textarea from "react-textarea-autosize"
 import { UseChatHelpers } from "ai/react"
 
@@ -8,6 +8,7 @@ import { IconArrowElbow, IconArrowRight, IconRefresh } from "./ui/icons"
 import { useEnterSubmit } from "~/hooks/use-enter-submit"
 import { Link, useNavigate } from "@remix-run/react"
 import { useCurrentUserValues } from "~/root"
+import { CaseContext } from "~/context/case"
 
 export interface PromptProps
   extends Pick<UseChatHelpers, "input" | "setInput"> {
@@ -16,8 +17,8 @@ export interface PromptProps
   isFinished?: boolean
 }
 
-const FinishedView = () => {
-  const navigate = useNavigate()
+function FinishedView() {
+  const { caseId } = useContext(CaseContext)!
   const values = useCurrentUserValues()
   const count = (values?.length ?? 0) + 1
   const suffix = count === 1 ? "" : "s"
@@ -44,7 +45,7 @@ const FinishedView = () => {
         </Button>
         <Button className="ml-2">
           <IconArrowRight className="mr-2" />
-          <Link to="/select">Continue</Link>
+          <Link to={`/case/${caseId!}/select`}>Continue</Link>
         </Button>
       </div>
     </div>
@@ -59,9 +60,9 @@ export function PromptForm({
   isFinished,
 }: PromptProps) {
   const { formRef, onKeyDown } = useEnterSubmit()
-  const inputRef = React.useRef<HTMLTextAreaElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus()
     }

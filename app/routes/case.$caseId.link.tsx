@@ -15,15 +15,16 @@ import { Loader2 } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = await auth.getUserId(request)
+  const caseId = params.caseId!
 
   const config = new Configuration({ apiKey: process.env.OPENAI_API_KEY })
   const openai = new OpenAIApi(config)
   const embedding = new EmbeddingService(openai, db)
   const service = new LinkingService(openai, db, embedding)
 
-  const draw = await service.getDraw(userId, 3)
+  const draw = await service.getDraw(userId, caseId, 3)
 
   return json({ draw })
 }
@@ -137,7 +138,9 @@ export default function LinkScreen() {
     <div className="flex flex-col h-screen w-screen">
       <Header />
       <div className="grid place-items-center space-y-4 py-12 px-8">
-        <h1 className="text-neutral-500 mb-2">{`User Story ${index + 1}/3`}</h1>
+        <h1 className="text-neutral-500 mb-2">{`User Story ${index + 1}/${
+          draw.length
+        }`}</h1>
         <StaticChatMessage
           onFinished={() => {
             setShowCards(true)

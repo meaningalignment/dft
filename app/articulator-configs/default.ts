@@ -99,9 +99,9 @@ Below are some critiques of values cards, and how they could be improved by foll
     "CAPACITIES that develop when a person tries to be free and self-directed",
     "WISDOM that emerges in a discursive, responsible context",
   ],
-    "instructions_detailed":"ChatGPT can foster new leaders, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
-      "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
-        "title":"Faith in People",
+  "instructions_detailed":"ChatGPT can foster new leaders, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "title":"Faith in People",
 }
 
 ### Critique
@@ -120,9 +120,9 @@ Below are some critiques of values cards, and how they could be improved by foll
     "CAPACITIES that develop when a person tries to be free and self-directed",
     "WISDOM that emerges in a discursive, responsible context",
   ],
-    "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
-      "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
-        "title":"Faith in People",
+  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
+  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
+  "title":"Faith in People",
 }
 
 ## Example 2
@@ -137,9 +137,9 @@ Below are some critiques of values cards, and how they could be improved by foll
     "EMOTIONS that spark her agency and power",
     "ACTIONS she could take that would address those emotions",
   ],
-    "instructions_detailed":"ChatGPT can help her find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take."
+  "instructions_detailed":"ChatGPT can help her find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take."
   "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
-    "title":"Embodied Justice",
+  "title":"Embodied Justice",
 }
 
 ### Critique
@@ -158,14 +158,13 @@ Below are some critiques of values cards, and how they could be improved by foll
     "EMOTIONS that spark her agency and power",
     "ACTIONS she could take that would address those emotions",
   ],
-    "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
-      "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
-        "title":"Embodied Justice"
+  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
+  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "title":"Embodied Justice"
 }
 
 
 In your response, include a critique of the articulated "values_card" if it does not meet the guidelines above.`
-
 
 const config: ArticulatorConfig = {
   name: "default",
@@ -173,76 +172,81 @@ const config: ArticulatorConfig = {
   prompts: {
     main: {
       prompt: mainPrompt,
-      functions: [{
-        name: "show_values_card",
-        description:
-          "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do, but has not yet articulated a values card or the articulated values card is not yet satisfactory to the user. Should only be called when you are confident you have found a source of meaning, and you know several things that the user thinks ChatGPT should pay attention to in the situation, which fit together in a coherent way.",
-        parameters: {
-          type: "object",
-          properties: {},
+      functions: [
+        {
+          name: "show_values_card",
+          description:
+            "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do, but has not yet articulated a values card or the articulated values card is not yet satisfactory to the user. Should only be called when you are confident you have found a source of meaning, and you know several things that the user thinks ChatGPT should pay attention to in the situation, which fit together in a coherent way.",
+          parameters: {
+            type: "object",
+            properties: {},
+          },
         },
-      }, {
-        name: "submit_values_card",
-        description:
-          "Called when a values card has been articulated to the user, and the user is satisfied with the articulation.",
-        parameters: {
-          type: "object",
-          properties: {},
+        {
+          name: "submit_values_card",
+          description:
+            "Called when a values card has been articulated to the user, and the user is satisfied with the articulation.",
+          parameters: {
+            type: "object",
+            properties: {},
+          },
         },
-      }]
+      ],
     },
     show_values_card: {
       prompt: articulationPrompt,
-      functions: [{
-        name: "format_card",
-        description:
-          "Attempt to format a values card. Include a critique if applicable.",
-        parameters: {
-          type: "object",
-          properties: {
-            values_card: {
-              type: "object",
-              properties: {
-                evaluation_criteria: {
-                  type: "array",
-                  items: {
-                    type: "string",
+      functions: [
+        {
+          name: "format_card",
+          description:
+            "Attempt to format a values card. Include a critique if applicable.",
+          parameters: {
+            type: "object",
+            properties: {
+              values_card: {
+                type: "object",
+                properties: {
+                  evaluation_criteria: {
+                    type: "array",
+                    items: {
+                      type: "string",
+                    },
+                    description:
+                      "A list of things to attend to that clearly distinguish whether ChatGPT is following this source of meaning. Items should be precise, but general, instructions such that almost anyone could see how to attend to them.",
                   },
-                  description:
-                    "A list of things to attend to that clearly distinguish whether ChatGPT is following this source of meaning. Items should be precise, but general, instructions such that almost anyone could see how to attend to them."
-                },
-                instructions_detailed: {
-                  type: "string",
-                  description:
-                    "A detailed instruction for how ChatGPT could act based on this source of meaning.",
-                },
-                instructions_short: {
-                  type: "string",
-                  description:
-                    "A short instruction for how ChatGPT could act based on this source of meaning.",
-                },
-                title: {
-                  type: "string",
-                  description: "The title of the values card.",
+                  instructions_detailed: {
+                    type: "string",
+                    description:
+                      "A detailed instruction for how ChatGPT could act based on this source of meaning.",
+                  },
+                  instructions_short: {
+                    type: "string",
+                    description:
+                      "A short instruction for how ChatGPT could act based on this source of meaning.",
+                  },
+                  title: {
+                    type: "string",
+                    description: "The title of the values card.",
+                  },
                 },
               },
+              critique: {
+                type: "string",
+                description:
+                  "A critique of the values card, if the values card is not following the provided guidelines, or is too ambiguous given the story in the transcript.",
+              },
             },
-            critique: {
-              type: "string",
-              description:
-                "A critique of the values card, if the values card is not following the provided guidelines, or is too ambiguous given the story in the transcript.",
-            },
+            required: ["values_card"],
           },
-          required: ["values_card"],
         },
-      }]
-    }
+      ],
+    },
   },
   summarizers: {
     show_values_card: `<A card ({{title}}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`,
     show_values_card_critique: `<A card was articulated, but it is not yet meeting the guidelines. The following critique was receieved: "{{critique}}". Continue the dialogue with the user until you are able to solve for the critique.>`,
-    submit_values_card: `<the values card ({{title}}) was submitted. The user has now submitted 1 value in total. Proceed to thank the user for submitting their value.>`
-  }
+    submit_values_card: `<the values card ({{title}}) was submitted. The user has now submitted 1 value in total. Proceed to thank the user for submitting their value.>`,
+  },
 }
 
 export default config

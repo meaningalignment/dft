@@ -32,5 +32,5 @@ export async function loader({ request, params }: LoaderArgs) {
   })
 
   // Redirect to duplicate.
-  return redirect(`/chat/${newChat.id}`)
+  return redirect(`/case/${newChat.caseId}/chat/${newChat.id}`)
 }

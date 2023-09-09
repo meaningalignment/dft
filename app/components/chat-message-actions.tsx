@@ -5,7 +5,6 @@ import { IconArrowDown, IconCheck, IconCopy, IconStop } from "./ui/icons"
 import { CrossCircledIcon } from "@radix-ui/react-icons"
 import { useCopyToClipboard } from "../hooks/use-copy-to-clipboard"
 import { cn } from "../utils"
-import { seedQuestion } from "~/lib/consts"
 
 interface ChatMessageActionsProps extends React.ComponentProps<"div"> {
   message: Message
@@ -41,7 +40,7 @@ export function ChatMessageActions({
         <span className="sr-only">Copy message</span>
       </Button>
 
-      {props.onDelete && message.content !== seedQuestion && (
+      {props.onDelete && (
         <Button variant="ghost" size="icon" onClick={onDelete}>
           <CrossCircledIcon />
           <span className="sr-only">Delete Message</span>
