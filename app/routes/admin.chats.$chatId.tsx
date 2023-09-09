@@ -155,29 +155,3 @@ export default function AdminChat() {
     </>
   )
 }
-
-// <<<<<<< HEAD
-//   const { messages, evaluation, chatId, isUser } =
-//     useLoaderData<typeof loader>()
-//   return (
-//     <>
-//       <div className="w-full max-w-2xl mx-auto my-4">
-//         {evaluation && (
-//           <>
-//             <h1 className="text-2xl font-bold mb-4">Evaluation</h1>
-//             <pre className="whitespace-pre-wrap">
-//               {JSON.stringify(evaluation, null, 2)}
-//             </pre>
-//           </>
-//         )}
-
-//         <div className="flex items-center justify-center gap-4 my-8">
-//           <EvaluateButton />
-
-//           {isUser && <EnterButton chatId={chatId} />}
-
-//           <DuplicateButton chatId={chatId} />
-//         </div>
-//       </div>
-//       <Separator className="my-4 md:my-8" />
-// =======
