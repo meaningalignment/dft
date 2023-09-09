@@ -66,7 +66,13 @@ function EvaluateButton() {
   )
 }
 
-function DuplicateButton({ chatId }: { chatId: string }) {
+function DebugButton({
+  chatId,
+  shouldDuplicate,
+}: {
+  chatId: string
+  shouldDuplicate: boolean
+}) {
   const [isLoading, setIsLoading] = useState(false)
 
   const onClick = async () => {
@@ -74,27 +80,14 @@ function DuplicateButton({ chatId }: { chatId: string }) {
   }
 
   return (
-    <Link to={`/admin/chats/${chatId}/duplicate`}>
-      <Button variant={"secondary"} disabled={isLoading} onClick={onClick}>
+    <Link
+      to={
+        shouldDuplicate ? `/admin/chats/${chatId}/duplicate` : `/chat/${chatId}`
+      }
+    >
+      <Button disabled={isLoading} onClick={onClick}>
         {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-        Duplicate
-      </Button>
-    </Link>
-  )
-}
-
-function EnterButton({ chatId }: { chatId: string }) {
-  const [isLoading, setIsLoading] = useState(false)
-
-  const onClick = async () => {
-    setIsLoading(true)
-  }
-
-  return (
-    <Link to={`/chat/${chatId}`}>
-      <Button variant={"secondary"} disabled={isLoading} onClick={onClick}>
-        {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-        Enter
+        {shouldDuplicate ? "Duplicate & Debug" : "Debug"}
       </Button>
     </Link>
   )
@@ -143,13 +136,15 @@ export default function AdminChat() {
         ) : null}
         <EvaluateButton />
       </div>
-
-      <div className="flex items-center justify-center gap-4 my-8">
-        <EvaluateButton />
-        {isUser && <EnterButton chatId={chatId} />}
-        <DuplicateButton chatId={chatId} />
+      <div className="w-full max-w-2xl mx-auto my-4">
+        <div className="flex items-center justify-center gap-4 my-8">
+          <DebugButton
+            chatId={chatId}
+            shouldDuplicate={!(isUser && chat.copiedFromId)}
+          />
+        </div>
       </div>
-
+      <Separator className="my-4 md:my-8" />
       <ChatList
         messages={messages as Message[]}
         isFinished={true}
