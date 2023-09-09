@@ -1,14 +1,15 @@
-import { useContext, useRef, useEffect } from "react"
+import { useContext, useRef, useEffect, useState } from "react"
 import Textarea from "react-textarea-autosize"
 import { UseChatHelpers } from "ai/react"
 
 import { Button } from "./ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
-import { IconArrowElbow, IconArrowRight, IconRefresh } from "./ui/icons"
+import { IconArrowElbow, IconRefresh } from "./ui/icons"
 import { useEnterSubmit } from "~/hooks/use-enter-submit"
-import { Link, useNavigate } from "@remix-run/react"
+import { Link } from "@remix-run/react"
 import { useCurrentUserValues } from "~/root"
 import { CaseContext } from "~/context/case"
+import ContinueButton from "./continue-button"
 
 export interface PromptProps
   extends Pick<UseChatHelpers, "input" | "setInput"> {
@@ -43,10 +44,9 @@ function FinishedView() {
           <IconRefresh className="mr-2" />
           Articulate Another Value
         </Button>
-        <Button className="ml-2">
-          <IconArrowRight className="mr-2" />
-          <Link to={`/case/${caseId!}/select`}>Continue</Link>
-        </Button>
+        <Link to={`/case/${caseId!}/select`} className="ml-2">
+          <ContinueButton showArrow={true} />
+        </Link>
       </div>
     </div>
   )

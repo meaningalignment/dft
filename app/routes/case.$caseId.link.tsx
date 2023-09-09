@@ -1,6 +1,6 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
-import { useLoaderData, useNavigate } from "@remix-run/react"
+import { useLoaderData, useNavigate, useParams } from "@remix-run/react"
 import { LoaderArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
@@ -64,6 +64,7 @@ export async function action({ request }: LoaderArgs) {
 
 export default function LinkScreen() {
   const navigate = useNavigate()
+  const { caseId } = useParams()
 
   const [index, setIndex] = useState<number>(0)
   const [showCards, setShowCards] = useState(false)
@@ -75,6 +76,7 @@ export default function LinkScreen() {
 
   // If there are no values in the draw, continue to next step.
   useEffect(() => {
+    console.log(caseId)
     if (draw.length === 0) {
       navigate("/finished")
     }
@@ -99,7 +101,7 @@ export default function LinkScreen() {
 
     // Post the relationship to the server in the background,
     // and reset in case it fails.
-    const response = await fetch("/link", {
+    const response = await fetch(`/case/${caseId}/link`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

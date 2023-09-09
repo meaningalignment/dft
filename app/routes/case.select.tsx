@@ -6,6 +6,7 @@ import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
 import { Link } from "@remix-run/react"
 import { Case, cases } from "~/lib/case"
+import ContinueButton from "~/components/continue-button"
 
 function CaseCard({ caseData }: { caseData: Case }) {
   return (
@@ -78,7 +79,7 @@ export default function CaseSelectScreen() {
           }`}
         >
           <Link to={selected ? `/case/${selected.id}/chat` : "#"}>
-            <Button disabled={!selected}>Continue</Button>
+            <ContinueButton />
           </Link>
 
           <div className="flex flex-col justify-center items-center my-4 h-4">
