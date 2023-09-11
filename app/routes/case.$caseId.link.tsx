@@ -32,32 +32,25 @@ export async function loader({ request, params }: LoaderArgs) {
 export async function action({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
   const body = await request.json()
-  const { values, selected } = body
+  const { edge } = body
 
-  console.log(
-    `Submitting lesser values ${selected} for more comprehensive value ${values.to.id}`
-  )
+  console.log(`Submitting edge from ${edge.from.id} to ${edge.to.id}`)
 
-  // Upsert all the edges in the database.
-  await Promise.all(
-    selected.map((id: number) =>
-      db.edge.upsert({
-        where: {
-          userId_fromId_toId: {
-            userId,
-            fromId: id,
-            toId: values.to.id,
-          },
-        },
-        create: {
-          fromId: id,
-          toId: values.to.id,
-          userId,
-        },
-        update: {},
-      })
-    )
-  )
+  await db.edge.upsert({
+    where: {
+      userId_fromId_toId: {
+        userId,
+        fromId: edge.from.id,
+        toId: edge.to.id,
+      },
+    },
+    create: {
+      userId,
+      toId: edge.to.id,
+      fromId: edge.from.id,
+    },
+    update: {},
+  })
 
   return json({})
 }
@@ -70,7 +63,6 @@ export default function LinkScreen() {
   const [showCards, setShowCards] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingSkip, setIsLoadingSkip] = useState(false)
-  const [selectedLesserValues, setSelectedLesserValues] = useState<number[]>([])
 
   const { draw } = useLoaderData<typeof loader>()
 
@@ -81,7 +73,7 @@ export default function LinkScreen() {
     }
   }, [draw])
 
-  const onSkip = () => {
+  const onNoValueUpgrade = () => {
     // If we're at the end of the draw, navigate to the finish screen.
     if (index === draw.length - 1) {
       setIsLoadingSkip(true)
@@ -90,13 +82,10 @@ export default function LinkScreen() {
 
     // Move to the next pair.
     setIndex((i) => i + 1)
-    setSelectedLesserValues([])
   }
 
-  const onSubmit = async () => {
+  const onValueUpgrade = async () => {
     setIsLoading(true)
-
-    const body = { values: draw[index], selected: selectedLesserValues }
 
     // Post the relationship to the server in the background,
     // and reset in case it fails.
@@ -105,7 +94,7 @@ export default function LinkScreen() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ edge: draw[index] }),
     })
 
     if (!response.ok) {
@@ -124,7 +113,6 @@ export default function LinkScreen() {
     // Move to the next pair.
     setIsLoading(false)
     setIndex((i) => i + 1)
-    setSelectedLesserValues([])
   }
 
   if (!draw[index]) {
@@ -185,7 +173,7 @@ export default function LinkScreen() {
           <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
             <Button
               disabled={isLoading || isLoadingSkip}
-              onClick={() => onSubmit()}
+              onClick={() => onValueUpgrade()}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Yes
@@ -193,7 +181,7 @@ export default function LinkScreen() {
             <Button
               disabled={isLoading || isLoadingSkip}
               variant={"outline"}
-              onClick={() => onSkip()}
+              onClick={() => onNoValueUpgrade()}
             >
               {isLoadingSkip && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
