@@ -38,7 +38,7 @@ function FinishedView() {
           variant="outline"
           className="bg-white"
           onClick={() => {
-            window.location.href = "/chat"
+            window.location.href = `/case/${caseId}/chat`
           }}
         >
           <IconRefresh className="mr-2" />

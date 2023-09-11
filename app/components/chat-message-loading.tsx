@@ -6,29 +6,27 @@ import { ChatContext } from "~/context/case"
 
 export default function ChatMessageLoading() {
   const { chatId } = useContext(ChatContext)!
-  const [currentFunction, setCurrentFunction] = useState<string | null>(
-    "Articulating Values Card"
-  )
+  const [currentFunction, setCurrentFunction] = useState<string | null>(null)
 
   // Poll for the current function call.
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     const res = await fetch(`/api/chat/${chatId}/function`)
-  //     const json = await res.json()
+  useEffect(() => {
+    const fetchData = async () => {
+      const res = await fetch(`/api/chat/${chatId}/function`)
+      const json = await res.json()
 
-  //     if (json && json.function_call) {
-  //       setCurrentFunction(json.function_call.name)
-  //     }
-  //   }
+      if (json && json.function) {
+        setCurrentFunction(json.function)
+      }
+    }
 
-  //   fetchData()
+    fetchData()
 
-  //   const interval = setInterval(fetchData, 1000)
+    const interval = setInterval(fetchData, 1000)
 
-  //   return () => {
-  //     clearInterval(interval)
-  //   }
-  // }, [])
+    return () => {
+      clearInterval(interval)
+    }
+  }, [])
 
   return (
     <div className={cn("group relative mb-4 flex items-start md:-ml-12")}>
@@ -41,7 +39,7 @@ export default function ChatMessageLoading() {
       </div>
       <div className="ml-4 flex-1 space-y-2 overflow-hidden px-1">
         <div className="flex flex-row align-center">
-          {true ? (
+          {currentFunction ? (
             <div className="bg-white rounded-md px-2 py-1 ml-2 border border-border animate-pulse flex flex-row align-center justify-center gap-1">
               <Loader2 className="mt-0.5 h-4 w-4 animate-spin text-gray-400" />
               <span className="text-sm text-gray-400">{currentFunction}</span>

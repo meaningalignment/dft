@@ -195,7 +195,7 @@ export function Chat({
             <ChatList
               messages={messages.filter((m) => isDisplayableMessage(m))}
               isFinished={isFinished}
-              isLoading={true}
+              isLoading={isLoading}
               valueCards={valueCards}
               onManualSubmit={onManualSubmit}
               onDelete={user?.isAdmin ? onDeleteMessage : undefined}

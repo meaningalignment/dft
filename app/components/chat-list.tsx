@@ -56,12 +56,12 @@ export function ChatList({
           Submit Card
         </Button>
       )}
-      {/* {isLoading && messages[messages.length - 1]?.role === "user" && ( */}
-      <>
-        <Separator className="my-4 md:my-8" />
-        <ChatMessageLoading />
-      </>
-      {/* )} */}
+      {isLoading && messages[messages.length - 1]?.role === "user" && (
+        <>
+          <Separator className="my-4 md:my-8" />
+          <ChatMessageLoading />
+        </>
+      )}
     </div>
   )
 }

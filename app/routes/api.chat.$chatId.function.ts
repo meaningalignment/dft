@@ -1,10 +1,4 @@
-import {
-  ActionArgs,
-  ActionFunction,
-  LoaderArgs,
-  LoaderFunction,
-  json,
-} from "@remix-run/node"
+import { LoaderArgs, LoaderFunction, json } from "@remix-run/node"
 import { Message } from "ai"
 import { db } from "~/config.server"
 
@@ -12,7 +6,7 @@ function getDisplayName(functionName?: string) {
   switch (functionName) {
     case "show_values_card":
       return "Articulating Values Card"
-    case "submit_card":
+    case "submit_values_card":
       return "Submitting Card"
   }
 
