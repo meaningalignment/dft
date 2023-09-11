@@ -4,6 +4,8 @@ import { PromptForm } from "./prompt-form"
 import { ButtonScrollToBottom } from "./button-scroll-to-bottom"
 import { IconRefresh, IconStop } from "./ui/icons"
 import { FooterText } from "./footer"
+import { useContext } from "react"
+import { ChatContext } from "~/context/case"
 
 export interface ChatPanelProps
   extends Pick<
@@ -21,7 +23,6 @@ export interface ChatPanelProps
 }
 
 export function ChatPanel({
-  id,
   isLoading,
   isFinished,
   stop,
@@ -31,6 +32,8 @@ export function ChatPanel({
   setInput,
   messages,
 }: ChatPanelProps) {
+  const { chatId } = useContext(ChatContext)!
+
   return (
     <div className="fixed inset-x-0 bottom-0 bg-gradient-to-b from-muted/10 from-10% to-muted/30 to-50%">
       <ButtonScrollToBottom />
@@ -65,7 +68,7 @@ export function ChatPanel({
           <PromptForm
             onSubmit={async (value) => {
               await append({
-                id,
+                id: chatId,
                 content: value,
                 role: "user",
               })

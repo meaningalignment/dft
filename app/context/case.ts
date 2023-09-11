@@ -1,3 +1,6 @@
 import { createContext } from "react"
 
-export const CaseContext = createContext<{ caseId: string } | null>(null)
+export const ChatContext = createContext<{
+  chatId: string
+  caseId: string
+} | null>(null)

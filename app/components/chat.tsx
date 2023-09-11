@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState } from "react"
 import { useChat, type Message } from "ai/react"
-import { cn } from "../utils"
+import { cn, isDisplayableMessage } from "../utils"
 import { ChatList } from "./chat-list"
 import { ChatPanel } from "./chat-panel"
 import { EmptyScreen } from "./empty-screen"
@@ -9,29 +9,21 @@ import { toast } from "react-hot-toast"
 import { ValuesCardData } from "~/lib/consts"
 import { useRevalidator } from "@remix-run/react"
 import { useCurrentUser } from "~/root"
-import { CaseContext } from "~/context/case"
+import { ChatContext } from "~/context/case"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
   hasSubmitted?: boolean
-  id: string
   articulatorConfig?: string
 }
 
-function isDisplayableMessage(message: Message) {
-  return (
-    message.content && (message.role === "user" || message.role === "assistant")
-  )
-}
-
 export function Chat({
-  id,
   initialMessages,
   hasSubmitted,
   className,
   articulatorConfig = "default",
 }: ChatProps) {
-  const { caseId } = useContext(CaseContext)!
+  const { chatId, caseId } = useContext(ChatContext)!
   const user = useCurrentUser()
   const revalidator = useRevalidator()
   const [valueCards, setValueCards] = useState<
@@ -102,16 +94,13 @@ export function Chat({
   }
 
   const onDeleteMessage = (message: Message) => {
-    fetch(`/api/messages/${id}/delete`, {
+    fetch(`/api/messages/${chatId}/delete`, {
       method: "DELETE",
       headers: {
         "X-Articulator-Config": articulatorConfig,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        chatId: id,
-        message,
-      }),
+      body: JSON.stringify({ chatId, message }),
     }).then(() => {
       revalidator.revalidate()
     })
@@ -127,16 +116,13 @@ export function Chat({
     setInput,
     setMessages,
   } = useChat({
-    id,
+    id: chatId,
     api: "/api/chat",
     headers: {
       "X-Articulator-Config": articulatorConfig,
       "Content-Type": "application/json",
     },
-    body: {
-      chatId: id,
-      caseId: caseId,
-    },
+    body: { chatId, caseId },
     initialMessages,
     onResponse: async (response) => {
       const articulatedCard = response.headers.get("X-Articulated-Card")
@@ -161,7 +147,7 @@ export function Chat({
       //
       // Get the last message from the database and set it as the input.
       //
-      const res = await fetch(`/api/messages/${id}`)
+      const res = await fetch(`/api/messages/${chatId}`)
       const json = await res.json()
 
       if (json && json.messages) {
@@ -181,13 +167,13 @@ export function Chat({
       console.log("messages:", messages)
 
       // Save messages in the database.
-      await fetch(`/api/messages/${id}`, {
+      await fetch(`/api/messages/${chatId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          chatId: id,
+          chatId,
           messages: [
             ...messages,
             {
@@ -223,7 +209,6 @@ export function Chat({
         )}
       </div>
       <ChatPanel
-        id={id}
         isLoading={isLoading}
         isFinished={isFinished}
         stop={stop}

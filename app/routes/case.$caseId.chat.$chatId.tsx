@@ -7,7 +7,7 @@ import { Chat as ChatModel } from "@prisma/client"
 import { useLoaderData, useParams } from "@remix-run/react"
 import { Message } from "ai"
 import { articulatorConfig as articulatorConfigCookie } from "~/cookies.server"
-import { CaseContext } from "~/context/case"
+import { ChatContext } from "~/context/case"
 
 export async function loader({ request, params }: LoaderArgs) {
   const chatId = params.chatId!
@@ -39,22 +39,21 @@ export async function loader({ request, params }: LoaderArgs) {
 }
 
 export default function ChatScreen() {
-  const { caseId } = useParams()
+  const { caseId } = useParams() as { caseId: string }
   const { chatId, initialMessages, hasSubmitted, articulatorConfig } =
     useLoaderData<typeof loader>()
 
   return (
-    <CaseContext.Provider value={{ caseId: caseId! }}>
+    <ChatContext.Provider value={{ chatId, caseId }}>
       <div className="flex flex-col h-screen w-screen">
         <Header chatId={chatId} articulatorConfig={articulatorConfig} />
 
         <Chat
-          id={chatId!}
           hasSubmitted={hasSubmitted}
           initialMessages={initialMessages.map((m: any) => m as Message)}
           articulatorConfig={articulatorConfig}
         />
       </div>
-    </CaseContext.Provider>
+    </ChatContext.Provider>
   )
 }

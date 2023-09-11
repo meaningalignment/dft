@@ -146,6 +146,7 @@ export default function AdminChat() {
       </div>
       <Separator className="my-4 md:my-8" />
       <ChatList
+        id={chatId}
         messages={messages as Message[]}
         isFinished={true}
         isLoading={false}

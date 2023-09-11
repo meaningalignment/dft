@@ -8,7 +8,7 @@ import { IconArrowElbow, IconRefresh } from "./ui/icons"
 import { useEnterSubmit } from "~/hooks/use-enter-submit"
 import { Link } from "@remix-run/react"
 import { useCurrentUserValues } from "~/root"
-import { CaseContext } from "~/context/case"
+import { ChatContext } from "~/context/case"
 import ContinueButton from "./continue-button"
 
 export interface PromptProps
@@ -19,7 +19,7 @@ export interface PromptProps
 }
 
 function FinishedView() {
-  const { caseId } = useContext(CaseContext)!
+  const { caseId } = useContext(ChatContext)!
   const values = useCurrentUserValues()
   const count = (values?.length ?? 0) + 1
   const suffix = count === 1 ? "" : "s"
@@ -38,7 +38,7 @@ function FinishedView() {
           variant="outline"
           className="bg-white"
           onClick={() => {
-            window.location.href = "/chat"
+            window.location.href = `/case/${caseId}/chat`
           }}
         >
           <IconRefresh className="mr-2" />
