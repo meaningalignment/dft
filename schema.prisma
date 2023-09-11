@@ -45,7 +45,7 @@ model ValuesCard {
   updatedAt            DateTime                     @updatedAt
   canonicalCardId      Int?
   chatId               String                       @unique
-  chat                 Chat                         @relation(fields: [chatId], references: [id])
+  chat                 Chat                         @relation(fields: [chatId], references: [id], onDelete: Cascade)
   canonicalCard        CanonicalValuesCard?         @relation(fields: [canonicalCardId], references: [id])
   embedding            Unsupported("vector(1536)")?
 }
