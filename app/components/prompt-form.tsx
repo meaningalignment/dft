@@ -10,12 +10,36 @@ import { Link } from "@remix-run/react"
 import { useCurrentUserValues } from "~/root"
 import { ChatContext } from "~/context/case"
 import ContinueButton from "./continue-button"
+import { Loader2 } from "lucide-react"
 
 export interface PromptProps
   extends Pick<UseChatHelpers, "input" | "setInput"> {
   onSubmit: (value: string) => Promise<void>
   isLoading: boolean
   isFinished?: boolean
+}
+
+function ArticulateAnotherButton({ caseId }: { caseId: string }) {
+  const [isLoading, setIsLoading] = useState(false)
+
+  return (
+    <Button
+      variant="outline"
+      className="bg-white"
+      onClick={() => {
+        setIsLoading(true)
+        window.location.href = `/case/${caseId}/chat`
+      }}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <IconRefresh className="mr-2" />
+      )}
+      Articulate Another Value
+    </Button>
+  )
 }
 
 function FinishedView() {
@@ -34,16 +58,7 @@ function FinishedView() {
         . Would you like to continue?
       </p>
       <div className="flex justify-center pt-2">
-        <Button
-          variant="outline"
-          className="bg-white"
-          onClick={() => {
-            window.location.href = `/case/${caseId}/chat`
-          }}
-        >
-          <IconRefresh className="mr-2" />
-          Articulate Another Value
-        </Button>
+        <ArticulateAnotherButton caseId={caseId} />
         <Link to={`/case/${caseId!}/select`} className="ml-2">
           <ContinueButton showArrow={true} />
         </Link>
