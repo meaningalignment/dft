@@ -37,7 +37,7 @@ export async function evaluateTranscript(chat: Chat) {
       ...messages,
     ],
     function_call: {
-      name: "evaluate-dialogue",
+      name: "evaluate_dialogue",
     },
     functions: [evaluateDialogueFunction],
   })
@@ -49,27 +49,41 @@ export async function evaluateTranscript(chat: Chat) {
 
 export const evaluateDialogues = inngest.createFunction(
   { name: "Evaluate dialogues" },
-  { cron: "*/20 * * * *" },
+  { cron: "0 * * * *" },
   async ({ logger }) => {
     const newDialogue = await db.chat.findFirst({
       where: {
         evaluation: {
           equals: Prisma.DbNull,
         },
+        user: {
+          isAdmin: {
+            not: {
+              equals: true,
+            },
+          },
+        },
         copiedFromId: {
           equals: null,
         },
       },
     })
-    if (!newDialogue) return
+
+    if (!newDialogue) {
+      logger.info("No new dialogues to evaluate.")
+      return
+    }
+
     logger.info(`Evaluating ${newDialogue.id}.`)
     const response = await evaluateTranscript(newDialogue)
+
     await db.chat.update({
       where: { id: newDialogue.id },
       data: {
         evaluation: response,
       },
     })
+
     const message = `Evaluation of ${newDialogue.id} is ${JSON.stringify(
       response
     )}.`
@@ -79,7 +93,7 @@ export const evaluateDialogues = inngest.createFunction(
 )
 
 const evaluateDialogueFunction = {
-  name: "evaluate-dialogue",
+  name: "evaluate_dialogue",
   parameters: {
     type: "object",
     properties: {
