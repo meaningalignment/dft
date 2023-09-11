@@ -28,7 +28,7 @@ function FinishedView() {
     <div className="flex flex-col items-center justify-center">
       <p className="p-2 pb-4 text-md">
         {"You have articulated "}
-        <a className="underline font-semibold cursor-pointer">
+        <a className="underline font-semibold">
           {count} value{suffix}
         </a>
         . Would you like to continue?
