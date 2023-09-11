@@ -1,10 +1,11 @@
 import { type Message } from "ai"
 
 import { Separator } from "./ui/separator"
-import { ChatMessage, LoadingChatMessage } from "./chat-message"
+import { ChatMessage } from "./chat-message"
 import ChatValuesCard from "./chat-values-card"
 import { ValuesCardData } from "~/lib/consts"
 import { Button } from "./ui/button"
+import ChatMessageLoading from "./chat-message-loading"
 
 export interface ChatList {
   messages: Message[]
@@ -55,12 +56,12 @@ export function ChatList({
           Submit Card
         </Button>
       )}
-      {isLoading && messages[messages.length - 1]?.role === "user" && (
-        <>
-          <Separator className="my-4 md:my-8" />
-          <LoadingChatMessage />
-        </>
-      )}
+      {/* {isLoading && messages[messages.length - 1]?.role === "user" && ( */}
+      <>
+        <Separator className="my-4 md:my-8" />
+        <ChatMessageLoading />
+      </>
+      {/* )} */}
     </div>
   )
 }

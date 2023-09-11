@@ -1,18 +1,13 @@
-import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
 import { Link, useNavigate, useParams } from "@remix-run/react"
 import { useState } from "react"
-import { Loader2 } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
 import ContinueButton from "~/components/continue-button"
 
 export default function LinkExplainerScreen() {
   const { caseId } = useParams()
-  const [isLoading, setIsLoading] = useState(false)
   const [showNext, setShowNext] = useState(false)
-
-  const navigate = useNavigate()
 
   return (
     <div className="flex flex-col h-screen w-screen">
