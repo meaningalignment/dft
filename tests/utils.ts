@@ -73,8 +73,10 @@ export async function evaluateTranscript(
   return params.passes_evaluation as boolean
 }
 
-export function readTranscript(name: string): ChatCompletionRequestMessage[] {
-  const filePath = path.resolve(__dirname, `transcripts/${name}.json`)
+export function readTranscript(
+  fileName: string
+): ChatCompletionRequestMessage[] {
+  const filePath = path.resolve(__dirname, `transcripts/${fileName}`)
   const rawData = fs.readFileSync(filePath, "utf-8")
 
   const messages = JSON.parse(rawData) as any as ChatCompletionRequestMessage[]

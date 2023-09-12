@@ -13,7 +13,7 @@ import {
 } from "./articulator-config"
 import { ValuesCardData } from "~/lib/consts"
 import { OpenAIStream } from "~/lib/openai-stream"
-import { capitalize, toDataModel } from "~/utils"
+import { capitalize, isDisplayableMessage, toDataModel } from "~/utils"
 import EmbeddingService from "./embedding"
 import DeduplicationService from "./deduplication"
 
@@ -281,6 +281,20 @@ export class ArticulatorService {
         critique: response.critique,
       })
 
+      await this.addServerSideMessage({
+        chatId,
+        messages,
+        message: {
+          role: "function",
+          name: "show_values_card",
+          content: JSON.stringify(response.values_card),
+        },
+        data: {
+          provisionalCard: newCard!,
+          provisionalCanonicalCardId: canonical?.id ?? null,
+        },
+      })
+
       return {
         message,
         articulatedCard: null,
@@ -450,13 +464,21 @@ export class ArticulatorService {
   ): Promise<ArticulateCardResponse> {
     console.log("Articulating values card...")
 
-    let transcript = messages
-      .filter((m) => m.role === "assistant" || m.role === "user")
-      .map((m) => `${capitalize(m.role)}: ${m.content}`)
-      .join("\n")
+    let transcript =
+      "Transcript:\n\n" +
+      messages
+        .filter(
+          (m) =>
+            isDisplayableMessage(m) ||
+            (m.name === "show_values_card" && m.content)
+        )
+        .map((m) => `${capitalize(m.role)}: ${m.content}`)
+        .join("\n")
 
     if (previousCard) {
-      transcript += `Previous card: ${JSON.stringify(previousCard)}`
+      transcript += `\n\nArticulate new, revised card based on: ${JSON.stringify(
+        previousCard
+      )}`
     }
 
     const res = await this.openai.createChatCompletion({

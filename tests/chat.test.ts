@@ -15,7 +15,7 @@ beforeAll(() => {
 test("No function call when insufficient information to articulate card", async () => {
   const response = await openai.createChatCompletion({
     model,
-    messages: readTranscript("no_function_call"),
+    messages: readTranscript("no_function_call.json"),
     temperature: 0.0,
     functions: config.prompts.main.functions,
   })
@@ -29,7 +29,7 @@ test("No function call when insufficient information to articulate card", async 
 test("`articulate_values_card` called when sufficient information to articulate card", async () => {
   const response = await openai.createChatCompletion({
     model,
-    messages: readTranscript("articulate_values_card_called"),
+    messages: readTranscript("articulate_values_card_called.json"),
     temperature: 0.0,
     functions: config.prompts.main.functions,
   })
@@ -41,7 +41,7 @@ test("`articulate_values_card` called when sufficient information to articulate 
 }, 10_000)
 
 test("After a long tangent, the assistant refers the user back to the original question", async () => {
-  const messages = readTranscript("long_tangent")
+  const messages = readTranscript("long_tangent.json")
   const response = await openai.createChatCompletion({
     model,
     messages,
