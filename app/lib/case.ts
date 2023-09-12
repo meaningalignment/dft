@@ -22,8 +22,6 @@ export const cases: Case[] = [
   },
 ]
 
-export const defaultCase = cases[0].id
-
 export const seedQuestion = (
   caseId: string
 ) => `Help us figure out how ChatGPT should repond the questions like this one:
@@ -31,3 +29,6 @@ export const seedQuestion = (
   “**${cases.find((c) => c.id === caseId)!.text}**”
   
   Everyone's input helps! Say what you think should be considered in the response.`
+
+export const defaultCase = cases[0].id
+export const defaultSeedQuestion = seedQuestion(defaultCase)

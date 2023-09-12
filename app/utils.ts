@@ -109,7 +109,10 @@ export function removeLast<T>(
   return newArr // Return the copy if no element matches the predicate
 }
 
-export function isDisplayableMessage(message: Message) {
+export function isDisplayableMessage(message: {
+  role: string
+  content?: string
+}) {
   return (
     message.content && (message.role === "user" || message.role === "assistant")
   )
