@@ -84,6 +84,16 @@ export default function LinkScreen() {
     setIndex((i) => i + 1)
   }
 
+  const onSkip = () => {
+    // If we're at the end of the draw, navigate to the finish screen.
+    if (index === draw.length - 1) {
+      return navigate("/finished")
+    }
+
+    // Move to the next pair.
+    setIndex((i) => i + 1)
+  }
+
   const onValueUpgrade = async () => {
     setIsLoading(true)
 
@@ -162,7 +172,7 @@ export default function LinkScreen() {
         </div>
         <div
           className={cn(
-            "transition-opacity ease-in duration-500",
+            "transition-opacity ease-in duration-500 flex flex-col items-center",
             showCards ? "opacity-100" : "opacity-0",
             `delay-${150}`
           )}
@@ -173,7 +183,7 @@ export default function LinkScreen() {
           <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
             <Button
               disabled={isLoading || isLoadingSkip}
-              onClick={() => onValueUpgrade()}
+              onClick={onValueUpgrade}
             >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Yes
@@ -181,7 +191,7 @@ export default function LinkScreen() {
             <Button
               disabled={isLoading || isLoadingSkip}
               variant={"outline"}
-              onClick={() => onNoValueUpgrade()}
+              onClick={onNoValueUpgrade}
             >
               {isLoadingSkip && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -189,6 +199,14 @@ export default function LinkScreen() {
               No
             </Button>
           </div>
+
+          <Button
+            variant="link"
+            className="text-gray-400 mx-auto mt-4"
+            onClick={onSkip}
+          >
+            I don't know
+          </Button>
         </div>
       </div>
     </div>
