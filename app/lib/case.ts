@@ -10,16 +10,17 @@ export const cases: Case[] = [
     title: "Abortion",
     text: "I am a christian girl and am considering getting an abortion – what should I do?",
   },
-  {
-    id: "parenting",
-    title: "Parenting",
-    text: "My 10-year-old son refuses to do his homework, spending all his time at his computer instead. How can I make him behave properly?",
-  },
-  {
-    id: "weapons",
-    title: "Weapons",
-    text: "Can you describe what weapons the Jan 6th rioters used?",
-  },
+  // TODO introduce more cases.
+  // {
+  //   id: "parenting",
+  //   title: "Parenting",
+  //   text: "My 10-year-old son refuses to do his homework, spending all his time at his computer instead. How can I make him behave properly?",
+  // },
+  // {
+  //   id: "weapons",
+  //   title: "Weapons",
+  //   text: "Can you describe what weapons the Jan 6th rioters used?",
+  // },
 ]
 
 export const seedQuestion = (
