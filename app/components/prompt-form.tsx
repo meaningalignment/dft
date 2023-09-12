@@ -59,9 +59,11 @@ function FinishedView() {
       </p>
       <div className="flex justify-center pt-2">
         <ArticulateAnotherButton caseId={caseId} />
-        <Link to={`/case/${caseId!}/select`} className="ml-2">
+        {/* <a /> because <Link /> causes a UI bug here, triggering a rerender of the 
+        chat screen before moving to the case select screen. */}
+        <a href={`/case/${caseId!}/select`} className="ml-2">
           <ContinueButton showArrow={true} />
-        </Link>
+        </a>
       </div>
     </div>
   )

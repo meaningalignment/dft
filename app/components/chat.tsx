@@ -29,7 +29,7 @@ export function Chat({
   const [valueCards, setValueCards] = useState<
     { position: number; card: ValuesCardData }[]
   >([])
-  const [isFinished, setIsFinished] = useState(hasSubmitted || false)
+  const [isFinished, setIsFinished] = useState(hasSubmitted === true)
 
   // Recover the state of a conversation.
   useEffect(() => {
