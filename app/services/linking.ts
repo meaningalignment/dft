@@ -460,7 +460,7 @@ const transitionsFunction = {
             },
             story: {
               description:
-                "Tell a plausible, personal story in first person voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to question the older value, and finally finding the new value resolves the emotions.",
+                "Tell a plausible, personal story in first person voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to question the older value, and finally finding the new value resolves the emotions. It should also mention the situation in which you think the new value is broadly applicable.",
               type: "string",
             },
             mapping: {
@@ -521,7 +521,7 @@ Third, map all the old value's evaluation criteria to the new one's. Each criter
 - Strategy #2. **The previous criterion had an impurite motive**. In this case, the old criterion must be a mix of something that is actually part of the value, and something that is not, such as a desire for social status or to avoid shame or to be seen as a good person, or some deep conceptual mistake. The new criterion is what remains when the impurity is removed.
 - Strategy #3. **The new criterion is just more skillful to pay attention to, and accomplishes the same thing**. For example, a transition from "skate towards the puck" to "skate to where the puck is going" is a transition from a less skillful way of paying attention to the same thing to a more skillful thing to pay attention to.
 
-Finally, with each transition, you should be able to make up a plausible, personal story in first person voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to question the older value, and finally finding the new value resolves the emotions.
+Finally, with each transition, you should be able to make up a plausible, personal story in first person voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to question the older value, and finally finding the new value resolves the emotions. The story should also mention the situation in which you think the new value is broadly applicable.
 
 Here are examples of such shifts:
 
