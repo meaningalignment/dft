@@ -205,13 +205,18 @@ export default function LinkScreen() {
             </div>
           </RadioGroup>
 
-          <Input
-            className="w-full"
-            value={""}
-            onChange={() => {}}
-            placeholder="Add Your Reasoning"
-            name="reasoning"
-          />
+          <div className="grid w-full max-w-sm items-center gap-1.5">
+            <Label htmlFor="4">Why?</Label>
+            <Input
+              id="4"
+              className="w-full"
+              value={""}
+              onChange={() => {}}
+              placeholder="Add Your Reasoning"
+              name="reasoning"
+            />
+          </div>
+
           <div className="mt-6">
             <ContinueButton />
           </div>
