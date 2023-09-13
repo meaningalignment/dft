@@ -14,6 +14,10 @@ import { Separator } from "../components/ui/separator"
 import { Loader2 } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
+import { Label } from "~/components/ui/label"
+import { Input } from "~/components/ui/input"
+import ContinueButton from "~/components/continue-button"
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = await auth.getUserId(request)
@@ -60,7 +64,7 @@ export default function LinkScreen() {
   const { caseId } = useParams()
 
   const [index, setIndex] = useState<number>(0)
-  const [showCards, setShowCards] = useState(false)
+  const [showCards, setShowCards] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingSkip, setIsLoadingSkip] = useState(false)
 
@@ -172,41 +176,45 @@ export default function LinkScreen() {
         </div>
         <div
           className={cn(
-            "transition-opacity ease-in duration-500 flex flex-col items-center",
+            "transition-opacity ease-in duration-500 flex flex-col items-center justify-center w-full max-w-xs",
             showCards ? "opacity-100" : "opacity-0",
             `delay-${150}`
           )}
         >
-          <h1 className="font-bold text-center">
+          <h1 className="font-bold sm:text-center mr-auto sm:mr-0 mb-6">
             Did this person make a value upgrade?
           </h1>
-          <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
-            <Button
-              disabled={isLoading || isLoadingSkip}
-              onClick={onValueUpgrade}
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Yes
-            </Button>
-            <Button
-              disabled={isLoading || isLoadingSkip}
-              variant={"outline"}
-              onClick={onNoValueUpgrade}
-            >
-              {isLoadingSkip && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              No
-            </Button>
-          </div>
-
-          <Button
-            variant="link"
-            className="text-gray-400 mx-auto mt-4"
-            onClick={onSkip}
+          <RadioGroup
+            className="w-full mb-6"
+            value={"yes"}
+            onValueChange={() => {}}
           >
-            I don't know
-          </Button>
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:justify-center">
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="a_more_comprehensive" id="1" />
+                <Label htmlFor="1">Yes</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="b_more_comprehensive" id="2" />
+                <Label htmlFor="2">No</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="incommensurable" id="3" />
+                <Label htmlFor="3">Not Sure</Label>
+              </div>
+            </div>
+          </RadioGroup>
+
+          <Input
+            className="w-full"
+            value={""}
+            onChange={() => {}}
+            placeholder="Add Your Reasoning"
+            name="reasoning"
+          />
+          <div className="mt-6">
+            <ContinueButton />
+          </div>
         </div>
       </div>
     </div>
