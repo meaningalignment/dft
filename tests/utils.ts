@@ -4,6 +4,7 @@ import { defaultSeedQuestion } from "~/lib/case"
 import { capitalize } from "~/utils"
 import fs from "fs"
 import path from "path"
+import { CanonicalValuesCard } from "@prisma/client"
 
 /**
  * Utility function for evaluating the last message sent by the assistant based on some high-level criteria.
@@ -86,4 +87,14 @@ export function readTranscript(
     { role: "assistant", content: defaultSeedQuestion },
     ...messages,
   ] as ChatCompletionRequestMessage[]
+}
+
+export function readValue(
+  fileName: string
+): CanonicalValuesCard & { embedding: number[] } {
+  const filePath = path.resolve(__dirname, `values/${fileName}`)
+  const rawData = fs.readFileSync(filePath, "utf-8")
+  return JSON.parse(rawData) as any as CanonicalValuesCard & {
+    embedding: number[]
+  }
 }

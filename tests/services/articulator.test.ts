@@ -3,13 +3,13 @@ import {
   Configuration,
   OpenAIApi,
 } from "openai-edge"
-import { ArticulatorService } from "../app/services/articulator"
+import { ArticulatorService } from "../../app/services/articulator"
 import { PrismaClient } from "@prisma/client"
 import { mockDeep } from "jest-mock-extended"
 import DeduplicationService from "~/services/deduplication"
 import EmbeddingService from "~/services/embedding"
 import { defaultSeedQuestion } from "~/lib/case"
-import { readTranscript } from "./utils"
+import { readTranscript } from "../utils"
 
 let articulator: ArticulatorService
 let openai: OpenAIApi
@@ -46,7 +46,7 @@ test(`Articulation of a card when there is too little information generates a cr
   expect(response.critique).not.toBe("")
 }, 60_000)
 
-test("test ellie", async () => {
+test("Test Ellie's articulation results in card without critque", async () => {
   const messages = readTranscript("ellie_articulation.json")
   const card = {
     title: "Intuition-Guided Decisions",
@@ -63,5 +63,9 @@ test("test ellie", async () => {
 
   const result = await articulator.articulateValuesCard(messages, card)
 
-  expect(result.critique).toBe(null || undefined || "")
+  expect(
+    result.critique === null ||
+      result.critique === undefined ||
+      result.critique === ""
+  ).toBe(true)
 }, 60_000)

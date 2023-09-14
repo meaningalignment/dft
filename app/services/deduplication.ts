@@ -229,8 +229,6 @@ export default class DeduplicationService {
    * Create an entry in `CanonicalValuesCard`.
    */
   async createCanonicalCard(data: ValuesCardData) {
-    console.log("Creating canonical card with title " + data.title)
-
     // Create a canonical values card.
     const canonical = await this.db.canonicalValuesCard.create({
       data: {
@@ -240,10 +238,8 @@ export default class DeduplicationService {
         evaluationCriteria: data.evaluation_criteria,
       },
     })
-
     // Embed the canonical values card.
     await this.embeddings.embedCanonicalCard(canonical)
-
     return canonical
   }
 
@@ -259,7 +255,7 @@ export default class DeduplicationService {
 
     // Call prompt.
     const response = await this.openai.createChatCompletion({
-      model,
+      model: "gpt-4-32k-0613",
       messages: [
         { role: "system", content: clusterPrompt },
         { role: "user", content: message },
@@ -310,26 +306,27 @@ export default class DeduplicationService {
     return toDataModel(card)
   }
 
-  private async similaritySearch(
+  async similaritySearch(
     vector: number[],
     caseId: string,
     limit: number = 10,
     minimumDistance: number = 0.1
   ): Promise<Array<CanonicalValuesCard>> {
-    const result = await this.db.$queryRaw<
+    const query = `SELECT DISTINCT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> '${JSON.stringify(
+      vector
+    )}'::vector as "_distance" 
+    FROM "CanonicalValuesCard" cvc
+    INNER JOIN "ValuesCard" vc
+    ON vc."canonicalCardId" = cvc.id
+    INNER JOIN "Chat" c
+    ON c.id = vc."chatId"
+    WHERE c."caseId" = '${caseId}'
+    ORDER BY "_distance" ASC
+    LIMIT ${limit};`
+
+    const result = await this.db.$queryRawUnsafe<
       Array<CanonicalValuesCard & { _distance: number }>
-    >`
-      SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${JSON.stringify(
-        vector
-      )}::vector as "_distance" 
-      FROM "CanonicalValuesCard" cvc
-      INNER JOIN "ValuesCard" vc
-      ON vc."canonicalCardId" = cvc.id
-      INNER JOIN "Chat" c
-      ON c.id = vc."chatId"
-      WHERE c."caseId" = '${caseId}'
-      ORDER BY "_distance" ASC
-      LIMIT ${limit};`
+    >(query)
 
     return result.filter((r) => r._distance < minimumDistance)
   }
@@ -387,7 +384,7 @@ export default class DeduplicationService {
     return canonical.find((c) => c.id === matchingId) ?? null
   }
 
-  async fetchNonCanonicalizedValues(caseId: string, limit: number = 20) {
+  async fetchNonCanonicalizedValues(caseId: string, limit: number = 200) {
     return (await db.valuesCard.findMany({
       where: {
         canonicalCardId: null,

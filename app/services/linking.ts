@@ -33,7 +33,7 @@ export default class LinkingService {
     this.embedding = embedding
   }
 
-  private async getUserFromValueDistanceMap(
+  async getDistanceFromUserValuesMap(
     userId: number
   ): Promise<Map<number, number>> {
     // Get the user's embedding vector.
@@ -122,7 +122,7 @@ export default class LinkingService {
     })) as Vote[]
 
     // The map of distances between the user's embedding and the "from" values.
-    const distances = await this.getUserFromValueDistanceMap(userId)
+    const distances = await this.getDistanceFromUserValuesMap(userId)
 
     //
     // Sort the hypotheses by the following criteria:
