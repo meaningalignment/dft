@@ -33,7 +33,7 @@ export default class LinkingService {
     this.embedding = embedding
   }
 
-  private async getUserFromValueDistanceMap(
+  async getDistanceFromUserValuesMap(
     userId: number
   ): Promise<Map<number, number>> {
     // Get the user's embedding vector.
@@ -122,7 +122,7 @@ export default class LinkingService {
     })) as Vote[]
 
     // The map of distances between the user's embedding and the "from" values.
-    const distances = await this.getUserFromValueDistanceMap(userId)
+    const distances = await this.getDistanceFromUserValuesMap(userId)
 
     //
     // Sort the hypotheses by the following criteria:
@@ -296,11 +296,64 @@ export async function generateTransitions(cardIds: number[]): Promise<{
     functions: [transitionsFunction],
   })
   const data = await res.json()
-  const json = JSON.parse(data.choices[0].message.function_call.arguments) as {
+  return JSON.parse(data.choices[0].message.function_call.arguments) as {
     transitions: Transition[]
   }
-  console.log("json", JSON.stringify(json, null, 2))
-  return json
+}
+
+async function upsertTransitions(
+  transitions: Transition[],
+  runId: string
+): Promise<void> {
+  await Promise.all(
+    transitions.map((t) =>
+      db.edgeHypothesis.upsert({
+        where: {
+          fromId_toId: {
+            fromId: t.a_id,
+            toId: t.b_id,
+          },
+        },
+        create: {
+          from: { connect: { id: t.a_id } },
+          to: { connect: { id: t.b_id } },
+          story: t.story,
+          runId,
+        },
+        update: {},
+      })
+    )
+  )
+}
+
+async function cleanupTransitions(runId: string): Promise<{
+  old: number
+  added: number
+}> {
+  const newTransitions = await db.edgeHypothesis.count({ where: { runId } })
+  const oldTransitions = await db.edgeHypothesis.count({
+    where: { runId: { not: runId } },
+  })
+
+  if (newTransitions < 3) {
+    throw Error(
+      "Fewer than 3 new transitions found by prompt, will break screen 3"
+    )
+  }
+
+  console.log(
+    `Deleting ${oldTransitions} old transitions. Adding ${newTransitions} new ones.`
+  )
+
+  await db.edgeHypothesis.deleteMany({
+    where: {
+      runId: {
+        not: runId,
+      },
+    },
+  })
+
+  return { old: oldTransitions, added: newTransitions }
 }
 
 interface Value {
@@ -460,7 +513,7 @@ const transitionsFunction = {
             },
             story: {
               description:
-                "Tell a plausible, personal story in first person voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to question the older value, and finally finding the new value resolves the emotions.",
+                "Tell a plausible, personal story in first person voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to question the older value, and finally finding the new value resolves the emotions. It should also mention the situation in which you think the new value is broadly applicable.",
               type: "string",
             },
             mapping: {
@@ -505,7 +558,7 @@ const transitionsFunction = {
   },
 }
 
-const transitionsPrompt = `You'll receive a bunch of values. Find pairs of values where a person would be very likely, as they grow wiser and have more life experiences, to change from the first value to the second. Importantly, the person should consider this a change for the better and it should not be a value-shift but a value-deepening.
+const transitionsPrompt = `You'll receive a bunch of values. Find pairs of values where a person would be very likely, as they grow wiser and have more life experiences, to upgrade from the first value to the second. Importantly, the person should consider this a change for the better and it should not be a value-shift but a value-deepening.
 
 All pairs found should meet certain criteria:
 
@@ -518,10 +571,10 @@ Second, the values should be closely related in the following way: the new value
 Third, map all the old value's evaluation criteria to the new one's. Each criterion from the old value should match one (or several) in the new one. Do this by using three strategies:
 
 - Strategy #1. **The previous criterion focused only on part of the problem**. In this case, the new criterion focuses on the whole problem, once it is rightly in view, or the new criterion strikes a balance between the old concerns and an inherent compensatory factor. You should be able to say why just pursuing the old criterion would be unsustainable or unwise.
-- Strategy #2. **The previous criterion had an impurite motive**. In this case, the old criterion must be a mix of something that is actually part of the value, and something that is not, such as a desire for social status or to avoid shame or to be seen as a good person, or some deep conceptual mistake. The new criterion is what remains when the impurity is removed.
+- Strategy #2. **The previous criterion had an impure motive**. In this case, the old criterion must be a mix of something that is actually part of the value, and something that is not, such as a desire for social status or to avoid shame or to be seen as a good person, or some deep conceptual mistake. The new criterion is what remains when the impurity is removed.
 - Strategy #3. **The new criterion is just more skillful to pay attention to, and accomplishes the same thing**. For example, a transition from "skate towards the puck" to "skate to where the puck is going" is a transition from a less skillful way of paying attention to the same thing to a more skillful thing to pay attention to.
 
-Finally, with each transition, you should be able to make up a plausible, personal story in first person voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to question the older value, and finally finding the new value resolves the emotions.
+Finally, with each transition, you should be able to make up a plausible, personal story in first person voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to question the older value, and finally finding the new value resolves the emotions. The story should also mention the situation in which you think the new value is broadly applicable.
 
 Here are examples of such shifts:
 
@@ -534,9 +587,13 @@ ${JSON.stringify(exampleTransitions, null, 2)}`
 export const hypothesizeCase = inngest.createFunction(
   { name: "Create Hypothetical Edges for Case", concurrency: 1 },
   { event: "hypothesize.case" },
-  async ({ step, logger, event }) => {
+  async ({ step, logger, event, runId }) => {
     // The case to deduplicate.
     const caseId = event.data.caseId as string
+
+    // Use the run ID from the cron job to prevent RCs.
+    // Or, if this is a manual run, use the run ID from this inngest function.
+    const id = (event.data.runId ?? runId) as string
 
     // verify the case exists.
     if (!cases.map((c) => c.id).includes(caseId)) {
@@ -552,45 +609,43 @@ export const hypothesizeCase = inngest.createFunction(
       )
     ).clusters.filter((c) => c.ids.length > 1)
 
-    logger.info(
-      `Found ${clusters.length} clusters: ${JSON.stringify(clusters, null, 2)}`
-    )
+    logger.info(`Found ${clusters.length} clusters.`)
 
-    //
+    // Create and upsert transitions for each cluster.
     for (const cluster of clusters) {
       const ids = cluster.ids as any as number[]
+
+      const { transitions } = (await step.run(
+        `Generate transitions for cluster ${cluster.condition}`,
+        async () => generateTransitions(ids)
+      )) as any as { transitions: Transition[] }
+
+      console.log(
+        `Created ${transitions.length} transitions for cluster ${cluster.condition}.`
+      )
+
       await step.run(
-        `Create hypothetical edges for cluster ${cluster.condition}`,
-        async () => {
-          const result = await generateTransitions(ids)
-          for (const transition of result.transitions) {
-            await db.edgeHypothesis.upsert({
-              where: {
-                fromId_toId: {
-                  fromId: transition.a_id,
-                  toId: transition.b_id,
-                },
-              },
-              create: {
-                from: { connect: { id: transition.a_id } },
-                to: { connect: { id: transition.b_id } },
-                story: transition.story,
-              },
-              update: {},
-            })
-          }
-        }
+        `Add transitions for cluster ${cluster.condition} to database`,
+        async () => upsertTransitions(transitions, id)
       )
     }
 
-    return { message: "Success." }
+    // Clear out old transitions.
+    const { old, added } = (await step.run(
+      `Remove old transitions from database`,
+      async () => cleanupTransitions(id)
+    )) as any as { old: number; added: number }
+
+    return {
+      message: `Success. Removed ${old} transitions. Added ${added} transitions.`,
+    }
   }
 )
 
 export const hypothesize = inngest.createFunction(
   { name: "Create Hypothetical Edges", concurrency: 1 },
   { cron: "0 */12 * * *" },
-  async ({ step, logger }) => {
+  async ({ step, logger, runId }) => {
     logger.info("Creating hypothetical links for all cases.")
 
     for (const caseData of cases) {
@@ -598,7 +653,7 @@ export const hypothesize = inngest.createFunction(
 
       await step.sendEvent({
         name: "hypothesize.case",
-        data: { caseId: caseData.id },
+        data: { caseId: caseData.id, runId },
       })
     }
 
