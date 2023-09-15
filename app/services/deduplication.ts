@@ -67,84 +67,6 @@ A source of meaning is distinct from similar concepts:
 7. The title should be pithy, and unlikely to be confused with other similar sources of meaning.
 8. The values card should be written from the perspective of how ChatGPT should respond to the situation in the first message. They should reflect the user's sources of meaning, not yours or those of ChatGPT's creators.
 
-
-# Card Critiques
-
-Below are some critiques of values cards, and how they could be improved by following the guidelines above. This will help you better understand what makes a good values card.
-
-### Card
-
-{{
-  "evaluation_criteria":[
-    "MOMENTS where people become leaders.",
-    "INSIGHTS that emerge through grappling with morally fraught questions",
-    "CAPACITIES that develop when a person tries to be free and self-directed",
-    "WISDOM that emerges in a discursive, responsible context",
-  ],
-  "instructions_detailed":"ChatGPT can foster new leaders, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
-  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
-  "title":"Faith in People",
-}}
-
-### Critique
-
-- **Cards should be indeterminate:**
-
-    The “new leaders” / “Moments” entries seems useful only if it leads to that one outcome.
-
-
-### Improved Card
-
-{{
-  "evaluation_criteria":[
-    "CHANGES in people when entrusted with the work of self-determination",
-    "INSIGHTS that emerge through grappling with morally fraught questions",
-    "CAPACITIES that develop when a person tries to be free and self-directed",
-    "WISDOM that emerges in a discursive, responsible context",
-  ],
-  "instructions_detailed":"ChatGPT can foster changes in people, insights they can have, capacities they can develop, and wisdom that emerges in deliberation, which together add up to a democratic empowerment.",
-  "instructions_short":"ChatGPT should foster participation by helping people become leaders.",
-  "title":"Faith in People",
-}}
-
-## Example 2
-
-### Card
-
-{{
-  "evaluation_criteria":[
-    "COURSES she could take about the subject",
-    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
-    "DISCREPANCIES between the status quo and her own moral compass",
-    "EMOTIONS that spark her agency and power",
-    "ACTIONS she could take that would address those emotions",
-  ],
-  "instructions_detailed":"ChatGPT can help her find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take."
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
-  "title":"Embodied Justice",
-}}
-
-### Critique
-
-- **Cards should not have unnecessary elements.**
-
-    Courses are unrelated to this value.
-
-
-### Improved Card
-
-{{
-  "evaluation_criteria":[
-    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
-    "DISCREPANCIES between the status quo and her own moral compass",
-    "EMOTIONS that spark her agency and power",
-    "ACTIONS she could take that would address those emotions",
-  ],
-  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
-  "title":"Embodied Justice"
-}}
-
 # Output
 
 You should return the "id" of the "values card" that is best formulated according to the guidelines and critique examples above.`
@@ -290,7 +212,7 @@ export default class DeduplicationService {
     const response = await this.openai.createChatCompletion({
       model,
       messages: [
-        { role: "system", content: dedupePrompt },
+        { role: "system", content: bestValuesCardPrompt },
         { role: "user", content: message },
       ],
       functions: [submitBestValuesCard],
