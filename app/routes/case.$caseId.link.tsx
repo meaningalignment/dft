@@ -14,6 +14,11 @@ import { Separator } from "../components/ui/separator"
 import { Loader2 } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
+import { Label } from "~/components/ui/label"
+import { Textarea } from "~/components/ui/textarea"
+
+type Relationship = "upgrade" | "no_upgrade" | "not_sure"
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = await auth.getUserId(request)
@@ -32,9 +37,11 @@ export async function loader({ request, params }: LoaderArgs) {
 export async function action({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
   const body = await request.json()
-  const { edge } = body
+  const { edge, comment, relationship } = body
 
-  console.log(`Submitting edge from ${edge.from.id} to ${edge.to.id}`)
+  console.log(
+    `Submitting edge from ${edge.from.id} to ${edge.to.id} as ${relationship}`
+  )
 
   await db.edge.upsert({
     where: {
@@ -48,8 +55,13 @@ export async function action({ request }: LoaderArgs) {
       userId,
       toId: edge.to.id,
       fromId: edge.from.id,
+      relationship,
+      comment,
     },
-    update: {},
+    update: {
+      relationship,
+      comment,
+    },
   })
 
   return json({})
@@ -57,12 +69,14 @@ export async function action({ request }: LoaderArgs) {
 
 export default function LinkScreen() {
   const navigate = useNavigate()
+
   const { caseId } = useParams()
 
   const [index, setIndex] = useState<number>(0)
   const [showCards, setShowCards] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [isLoadingSkip, setIsLoadingSkip] = useState(false)
+  const [relationship, setRelationship] = useState<Relationship | null>(null)
+  const [comment, setComment] = useState<string | null>(null)
 
   const { draw } = useLoaderData<typeof loader>()
 
@@ -73,38 +87,21 @@ export default function LinkScreen() {
     }
   }, [draw])
 
-  const onNoValueUpgrade = () => {
-    // If we're at the end of the draw, navigate to the finish screen.
-    if (index === draw.length - 1) {
-      setIsLoadingSkip(true)
-      return navigate("/finished")
-    }
-
-    // Move to the next pair.
-    setIndex((i) => i + 1)
-  }
-
-  const onSkip = () => {
-    // If we're at the end of the draw, navigate to the finish screen.
-    if (index === draw.length - 1) {
-      return navigate("/finished")
-    }
-
-    // Move to the next pair.
-    setIndex((i) => i + 1)
-  }
-
-  const onValueUpgrade = async () => {
+  const onContinue = async () => {
     setIsLoading(true)
 
-    // Post the relationship to the server in the background,
-    // and reset in case it fails.
+    const body = {
+      edge: draw[index],
+      relationship,
+      comment,
+    }
+
     const response = await fetch(`/case/${caseId}/link`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ edge: draw[index] }),
+      body: JSON.stringify(body),
     })
 
     if (!response.ok) {
@@ -120,8 +117,11 @@ export default function LinkScreen() {
       return navigate("/finished")
     }
 
-    // Move to the next pair.
+    setRelationship(null)
     setIsLoading(false)
+    setComment(null)
+
+    // Move to the next pair.
     setIndex((i) => i + 1)
   }
 
@@ -172,41 +172,54 @@ export default function LinkScreen() {
         </div>
         <div
           className={cn(
-            "transition-opacity ease-in duration-500 flex flex-col items-center",
+            "transition-opacity ease-in duration-500 flex flex-col items-center justify-center w-full max-w-xs",
             showCards ? "opacity-100" : "opacity-0",
             `delay-${150}`
           )}
         >
-          <h1 className="font-bold text-center">
+          <h1 className="font-bold mr-auto">
             Did this person make a value upgrade?
           </h1>
-          <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
-            <Button
-              disabled={isLoading || isLoadingSkip}
-              onClick={onValueUpgrade}
-            >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Yes
-            </Button>
-            <Button
-              disabled={isLoading || isLoadingSkip}
-              variant={"outline"}
-              onClick={onNoValueUpgrade}
-            >
-              {isLoadingSkip && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              No
-            </Button>
+          <RadioGroup
+            key={relationship}
+            className="w-full"
+            value={relationship ?? undefined}
+            onValueChange={(r) => setRelationship(r as Relationship)}
+          >
+            <div className="flex flex-col space-y-2  w-full space-between mt-4">
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value={"upgrade"} id="yes" />
+                <Label htmlFor="yes">Yes</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="no_upgrade" id="no" />
+                <Label htmlFor="no">No</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="not_sure" id="not_sure" />
+                <Label htmlFor="not_sure">Not Sure</Label>
+              </div>
+            </div>
+          </RadioGroup>
+
+          <div className="grid w-full max-w-sm items-center gap-2 mt-8">
+            <Label htmlFor="comment">Why?</Label>
+            <Textarea
+              id="comment"
+              disabled={!relationship}
+              className="bg-white"
+              onChange={(e) => setComment(e.target.value)}
+              value={comment ?? ""}
+              placeholder="Add your reasoning"
+            />
           </div>
 
-          <Button
-            variant="link"
-            className="text-gray-400 mx-auto mt-4"
-            onClick={onSkip}
-          >
-            I don't know
-          </Button>
+          <div className="mt-8">
+            <Button disabled={!relationship || isLoading} onClick={onContinue}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {draw.length - index === 1 ? "Finish" : "Continue"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
