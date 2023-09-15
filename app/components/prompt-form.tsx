@@ -4,7 +4,7 @@ import { UseChatHelpers } from "ai/react"
 
 import { Button } from "./ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
-import { IconArrowElbow, IconRefresh } from "./ui/icons"
+import { IconArrowElbow, IconArrowRight, IconRefresh } from "./ui/icons"
 import { useEnterSubmit } from "~/hooks/use-enter-submit"
 import { Link } from "@remix-run/react"
 import { useCurrentUserValues } from "~/root"
@@ -47,6 +47,13 @@ function FinishedView() {
   const values = useCurrentUserValues()
   const count = (values?.length ?? 0) + 1
   const suffix = count === 1 ? "" : "s"
+  const [isLoading, setIsLoading] = useState(false)
+
+  const onContinue = () => {
+    setIsLoading(true)
+    // Hard reset to prevent state reuse issues.
+    window.location.href = `/case/${caseId}/select`
+  }
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -59,11 +66,14 @@ function FinishedView() {
       </p>
       <div className="flex justify-center pt-2">
         <ArticulateAnotherButton caseId={caseId} />
-        {/* <a /> because <Link /> causes a UI bug here, triggering a rerender of the 
-        chat screen before moving to the case select screen. */}
-        <a href={`/case/${caseId!}/select`} className="ml-2">
-          <ContinueButton showArrow={true} />
-        </a>
+        <Button disabled={isLoading} onClick={onContinue} className="ml-2">
+          {isLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <IconArrowRight className="mr-2" />
+          )}
+          Continue
+        </Button>
       </div>
     </div>
   )
