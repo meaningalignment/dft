@@ -161,10 +161,7 @@ Below are some critiques of values cards, and how they could be improved by foll
   "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
   "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
   "title":"Embodied Justice"
-}
-
-
-In your response, include a critique of the articulated "values_card" if it does not meet the guidelines above.`
+}`
 
 const config: ArticulatorConfig = {
   name: "default",
@@ -198,8 +195,7 @@ const config: ArticulatorConfig = {
       functions: [
         {
           name: "format_card",
-          description:
-            "Attempt to format a values card. Include a critique if applicable.",
+          description: "Format a values card.",
           parameters: {
             type: "object",
             properties: {
@@ -229,11 +225,6 @@ const config: ArticulatorConfig = {
                     description: "The title of the values card.",
                   },
                 },
-              },
-              critique: {
-                type: "string",
-                description:
-                  "A critique of the values card, if the values card is not following the provided guidelines, or is too ambiguous given the story in the transcript.",
               },
             },
             required: ["values_card"],

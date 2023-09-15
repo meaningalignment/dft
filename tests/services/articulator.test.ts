@@ -1,14 +1,9 @@
-import {
-  ChatCompletionRequestMessage,
-  Configuration,
-  OpenAIApi,
-} from "openai-edge"
+import { Configuration, OpenAIApi } from "openai-edge"
 import { ArticulatorService } from "../../app/services/articulator"
 import { PrismaClient } from "@prisma/client"
 import { mockDeep } from "jest-mock-extended"
 import DeduplicationService from "~/services/deduplication"
 import EmbeddingService from "~/services/embedding"
-import { defaultSeedQuestion } from "~/lib/case"
 import { readTranscript } from "../utils"
 
 let articulator: ArticulatorService
@@ -27,24 +22,24 @@ beforeAll(() => {
   )
 })
 
-test(`Articulation of a card when there is too little information generates a critique`, async () => {
-  const messages: ChatCompletionRequestMessage[] = [
-    { role: "system", content: articulator.config.prompts.main.prompt },
-    { role: "assistant", content: defaultSeedQuestion },
-    {
-      role: "user",
-      content: "She should do what is right to do as a christian.",
-    },
-  ]
+// test(`Articulation of a card when there is too little information generates a critique`, async () => {
+//   const messages: ChatCompletionRequestMessage[] = [
+//     { role: "system", content: articulator.config.prompts.main.prompt },
+//     { role: "assistant", content: defaultSeedQuestion },
+//     {
+//       role: "user",
+//       content: "She should do what is right to do as a christian.",
+//     },
+//   ]
 
-  const response = await articulator.articulateValuesCard(messages, null)
+//   const response = await articulator.articulateValuesCard(messages, null)
 
-  console.log(`Values Card Critique: ${response.critique}`)
+//   console.log(`Values Card Critique: ${response.critique}`)
 
-  expect(response.critique).not.toBeUndefined()
-  expect(response.critique).not.toBeNull()
-  expect(response.critique).not.toBe("")
-}, 60_000)
+//   expect(response.critique).not.toBeUndefined()
+//   expect(response.critique).not.toBeNull()
+//   expect(response.critique).not.toBe("")
+// }, 60_000)
 
 test("Test Ellie's articulation results in card without critque", async () => {
   const messages = readTranscript("ellie_articulation.json")
