@@ -588,7 +588,7 @@ export const hypothesizeCase = inngest.createFunction(
   { name: "Create Hypothetical Edges for Case", concurrency: 1 },
   { event: "hypothesize.case" },
   async ({ step, logger, event, runId }) => {
-    // The case to deduplicate.
+    // The case to hypothesize.
     const caseId = event.data.caseId as string
 
     // Use the run ID from the cron job to prevent RCs.
@@ -648,6 +648,26 @@ export const hypothesize = inngest.createFunction(
   async ({ step, logger, runId }) => {
     logger.info("Creating hypothetical links for all cases.")
 
+    //
+    // Don't run the expensive prompt if the latest card is older than last time
+    // this cron job ran.
+    //
+    const latestCanonicalCard = await db.canonicalValuesCard.findFirst({
+      orderBy: { createdAt: "desc" },
+    })
+
+    if (
+      latestCanonicalCard &&
+      latestCanonicalCard.createdAt < new Date(Date.now() - 12 * 60 * 60 * 1000)
+    ) {
+      return {
+        message: "Latest card is more than 12 hours old, skipping.",
+      }
+    }
+
+    //
+    // Create links for each case.
+    //
     for (const caseData of cases) {
       logger.info(`Creating links for case ${caseData.id}`)
 

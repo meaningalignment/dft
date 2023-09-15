@@ -447,6 +447,8 @@ export const deduplicateCase = inngest.createFunction(
     )) as any as ValuesCard[]
 
     if (cards.length === 0) {
+      logger.info(`No cards to deduplicate for case ${caseId}.`)
+
       return {
         message: `No cards to deduplicate for case ${caseId}.`,
       }
