@@ -6,10 +6,8 @@ import { Button } from "./ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
 import { IconArrowElbow, IconArrowRight, IconRefresh } from "./ui/icons"
 import { useEnterSubmit } from "~/hooks/use-enter-submit"
-import { Link } from "@remix-run/react"
 import { useCurrentUserValues } from "~/root"
 import { ChatContext } from "~/context/case"
-import ContinueButton from "./continue-button"
 import { Loader2 } from "lucide-react"
 
 export interface PromptProps
