@@ -230,7 +230,6 @@ export default class DeduplicationService {
 
   async similaritySearch(
     vector: number[],
-    caseId: string,
     limit: number = 10,
     minimumDistance: number = 0.1
   ): Promise<Array<CanonicalValuesCard>> {
@@ -238,11 +237,6 @@ export default class DeduplicationService {
       vector
     )}'::vector as "_distance" 
     FROM "CanonicalValuesCard" cvc
-    INNER JOIN "ValuesCard" vc
-    ON vc."canonicalCardId" = cvc.id
-    INNER JOIN "Chat" c
-    ON c.id = vc."chatId"
-    WHERE c."caseId" = '${caseId}'
     ORDER BY "_distance" ASC
     LIMIT ${limit};`
 
@@ -259,24 +253,17 @@ export default class DeduplicationService {
    */
   async fetchSimilarCanonicalCard(
     candidate: ValuesCardData,
-    caseId: string,
-    limit: number = 3,
-    logger?: any
+    limit: number = 3
   ): Promise<CanonicalValuesCard | null> {
     // Embed the candidate.
     const embeddings = await this.embeddings.embedCandidate(candidate)
 
     // Fetch `limit` canonical cards for the case based on similarity.
-    const canonical = await this.similaritySearch(
-      embeddings,
-      caseId,
-      limit,
-      0.1
-    )
+    const canonical = await this.similaritySearch(embeddings, limit, 0.1)
 
     // If we have no canonical cards, we can't deduplicate.
     if (canonical.length === 0) {
-      logger?.info("No canonical cards found for candidate.")
+      console.log("No canonical cards found for candidate.")
       return null
     }
 
@@ -306,14 +293,9 @@ export default class DeduplicationService {
     return canonical.find((c) => c.id === matchingId) ?? null
   }
 
-  async fetchNonCanonicalizedValues(caseId: string, limit: number = 200) {
+  async fetchNonCanonicalizedValues(limit: number = 200) {
     return (await db.valuesCard.findMany({
-      where: {
-        canonicalCardId: null,
-        chat: {
-          caseId,
-        },
-      },
+      where: { canonicalCardId: null },
       take: limit,
     })) as ValuesCard[]
   }
@@ -338,19 +320,11 @@ export default class DeduplicationService {
 // Thread with caution.
 //
 
-export const deduplicateCase = inngest.createFunction(
-  { name: "Deduplicate Case", concurrency: 1 }, // Run sequentially to avoid RCs.
-  { event: "deduplicate.case" },
-  async ({ step, logger, event }) => {
-    // The case to deduplicate.
-    const caseId = event.data.caseId as string
-
-    // verify the case exists.
-    if (!cases.map((c) => c.id).includes(caseId)) {
-      throw Error(`Unknown case "${caseId}"`)
-    }
-
-    logger.info(`Running deduplication for case ${caseId}`)
+export const deduplicate = inngest.createFunction(
+  { name: "Deduplicate", concurrency: 1 }, // Run sequentially to avoid RCs.
+  { cron: "0 */3 * * *" },
+  async ({ step, logger }) => {
+    logger.info(`Running deduplication.`)
 
     //
     // Prepare the service.
@@ -364,15 +338,15 @@ export const deduplicateCase = inngest.createFunction(
 
     // Get all non-canonicalized submitted values cards.
     const cards = (await step.run(
-      `Get non-canonicalized cards from database for case ${caseId}`,
-      async () => service.fetchNonCanonicalizedValues(caseId)
+      `Get non-canonicalized cards from database`,
+      async () => service.fetchNonCanonicalizedValues()
     )) as any as ValuesCard[]
 
     if (cards.length === 0) {
-      logger.info(`No cards to deduplicate for case ${caseId}.`)
+      logger.info(`No cards to deduplicate.`)
 
       return {
-        message: `No cards to deduplicate for case ${caseId}.`,
+        message: `No cards to deduplicate.`,
       }
     }
 
@@ -402,7 +376,7 @@ export const deduplicateCase = inngest.createFunction(
 
       const existingCanonicalDuplicate = (await step.run(
         "Fetch canonical duplicate",
-        async () => service.fetchSimilarCanonicalCard(representative, caseId)
+        async () => service.fetchSimilarCanonicalCard(representative)
       )) as any as CanonicalValuesCard | null
 
       if (existingCanonicalDuplicate) {
@@ -430,27 +404,6 @@ export const deduplicateCase = inngest.createFunction(
 
     return {
       message: `Deduplicated ${cards.length} cards.`,
-    }
-  }
-)
-
-export const deduplicate = inngest.createFunction(
-  { name: "Deduplicate", concurrency: 1 }, // Run sequentially to avoid RCs.
-  { cron: "0 */3 * * *" },
-  async ({ step, logger }) => {
-    logger.info("Deduplicating cases.")
-
-    for (const caseData of cases) {
-      logger.info(`Deduplicating case ${caseData.id}`)
-
-      await step.sendEvent({
-        name: "deduplicate.case",
-        data: { caseId: caseData.id },
-      })
-    }
-
-    return {
-      message: `Started deduplication for ${cases.length} cases.`,
     }
   }
 )
