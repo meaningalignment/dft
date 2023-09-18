@@ -19,14 +19,14 @@ export default function LinkExplainerScreen() {
           }}
           isFinished={showNext}
           text={
-            "As we navigate the ever-changing landscape of life, our values naturally evolve to reflect our experiences.\n\nWe're about to present you with accounts of individuals who have undergone significant shifts in their values. Your next task is to evaluate whether you believe each person has become wiser through their journey.\n\nYou'll be engaged with three compelling stories.\n\nAre you ready?"
+            "As we navigate the ever-changing landscape of life, our values naturally evolve to reflect our experiences.\n\nWe're about to present you with accounts of individuals who have undergone significant shifts in their values. Your next task is to evaluate whether you believe each person has become wiser through their journey.\n\nYou'll be engaged with three compelling stories – note that they may not relate to the original user question you selected.\n\nAre you ready?"
           }
         />
         <div
           className={cn(
             "transition-opacity ease-in duration-500",
             showNext ? "opacity-100" : "opacity-0",
-            `delay-${75}`
+            `delay-${125}`
           )}
         >
           <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
