@@ -1,4 +1,4 @@
-import { LoaderArgs, json, redirect } from "@remix-run/node"
+import { json } from "@remix-run/node"
 import { Button } from "~/components/ui/button"
 import { Link, useLoaderData } from "@remix-run/react"
 import Header from "~/components/header"
@@ -7,7 +7,7 @@ import { db } from "~/config.server"
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader() {
   const carouselValues = await db.canonicalValuesCard.findMany({
     take: 12,
     include: {
@@ -55,8 +55,7 @@ export default function StartPage() {
             Your input will contribute to a moral graph used to fine-tune future
             models. This process will take around 15 minutes.
           </p>
-          {/* Disable multi-case for now. */}
-          <Link to="/case/abortion/chat">
+          <Link to="/case/select">
             <Button disabled={isLoading} onClick={() => setIsLoading(true)}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Let's Go
