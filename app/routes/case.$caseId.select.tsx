@@ -160,7 +160,7 @@ export default function SelectScreen() {
             setShowCards(true)
           }}
           isFinished={showCards}
-          text={`Here are some examples of how others have answered. Your next task is to determine which of these values you think are wisest to consider for ChatGPT talking to the girl.\n\nSelect 2 or more responses you think are wise to consider by clicking on them.`}
+          text={`Here are some examples of how others have answered. Your next task is to determine which of these values you think are wisest to consider for ChatGPT talking to the user.\n\nSelect 2 or more responses by clicking on them.`}
         />
         <div className="grid lg:grid-cols-2 xl:grid-cols-3 mx-auto gap-4">
           {values.map((value, index) => (
