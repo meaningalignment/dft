@@ -4,10 +4,14 @@ import { articulatorConfig } from "~/cookies.server"
 
 export async function loader({ request }: LoaderArgs) {
   const url = new URL(request.url)
-  const prompt = url.searchParams.get("prompt") || "default"
-  return redirect(`/chat/${uuid()}`, {
-    headers: {
-      "Set-Cookie": await articulatorConfig.serialize(prompt),
-    },
-  })
+  let prompt = url.searchParams.get("prompt") || "default"
+  // randomize it!
+  if (!prompt)
+    prompt = Math.random() > 0.5 ? "default" : "guess_card"
+}
+return redirect(`/chat/${uuid()}`, {
+  headers: {
+    "Set-Cookie": await articulatorConfig.serialize(prompt),
+  },
+})
 }

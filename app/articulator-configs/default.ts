@@ -22,13 +22,13 @@ const exampleCards = `{
 
 {
   "evaluation_criteria":[
-    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
-    "DISCREPANCIES between the status quo and her own moral compass",
-    "EMOTIONS that spark her agency and power",
-    "ACTIONS she could take that would address those emotions",
+    "QUIET PLACES and PEOPLE that make it is easier for someone to decide for themselves",
+    "DISCREPANCIES between the status quo and the user's own moral compass",
+    "EMOTIONS that spark agency and power",
+    "ACTIONS the user could take that would address those emotions",
   ],
-  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "instructions_detailed":"ChatGPT can help the user find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
+  "instructions_short":"ChatGPT should ask the user to feel into what they think is right.",
   "title":"Embodied Justice"
 }`
 
@@ -75,7 +75,7 @@ export const articulationPrompt = `You are a meaning assistant, helping a user a
 
     ${sourceOfMeaningDefinition}
 
-The values card should be written from the perspective of how ChatGPT should respond to the situation in the first message. They should reflect the user's sources of meaning, not yours or those of ChatGPT's creators.
+The values card should be written from the perspective of how ChatGPT should respond to the situation in the first message, but should not contain specific details from that situation or reference the subjects exactly. (Instead of "the girl" you can write "the user" or "a person"). The card should reflect the user's sources of meaning, not yours or those of ChatGPT's creators.
 
 # Card Guidelines
 
@@ -131,14 +131,14 @@ Below are some critiques of values cards, and how they could be improved by foll
 
 {
   "evaluation_criteria":[
-    "COURSES she could take about the subject",
-    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
-    "DISCREPANCIES between the status quo and her own moral compass",
-    "EMOTIONS that spark her agency and power",
-    "ACTIONS she could take that would address those emotions",
+    "COURSES the user could take about the subject",
+    "QUIET PLACES and PEOPLE that make it is easier for someone to decide for themselves",
+    "DISCREPANCIES between the status quo and the user's own moral compass",
+    "EMOTIONS that spark agency and power",
+    "ACTIONS the user could take that would address those emotions",
   ],
-  "instructions_detailed":"ChatGPT can help her find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take."
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "instructions_detailed":"ChatGPT can help the user find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take."
+  "instructions_short":"ChatGPT should ask the user to feel into what they think is right.",
   "title":"Embodied Justice",
 }
 
@@ -153,13 +153,13 @@ Below are some critiques of values cards, and how they could be improved by foll
 
 {
   "evaluation_criteria":[
-    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
-    "DISCREPANCIES between the status quo and her own moral compass",
-    "EMOTIONS that spark her agency and power",
-    "ACTIONS she could take that would address those emotions",
+    "QUIET PLACES and PEOPLE that make it is easier for someone to decide for themselves",
+    "DISCREPANCIES between the status quo and the user's own moral compass",
+    "EMOTIONS that spark agency and power",
+    "ACTIONS the user could take that would address those emotions",
   ],
-  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "instructions_detailed":"ChatGPT can help the user find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
+  "instructions_short":"ChatGPT should ask the user to feel into what they think is right.",
   "title":"Embodied Justice"
 }`
 
