@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderArgs) {
   const config = new Configuration({ apiKey: process.env.OPENAI_API_KEY })
   const openai = new OpenAIApi(config)
   const embedding = new EmbeddingService(openai, db)
-  const service = new LinkingService(openai, db, embedding)
+  const service = new LinkingService(db, embedding)
 
   const draw = await service.getDraw(userId, caseId, 3)
 
@@ -55,10 +55,14 @@ export async function action({ request }: LoaderArgs) {
       userId,
       toId: edge.to.id,
       fromId: edge.from.id,
+      story: edge.story,
+      runId: edge.runId,
       relationship,
       comment,
     },
     update: {
+      story: edge.story,
+      runId: edge.runId,
       relationship,
       comment,
     },
