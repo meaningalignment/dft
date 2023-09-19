@@ -250,7 +250,6 @@ export class ArticulatorService {
 
   private async handleArticulateCardFunction(
     chatId: string,
-    caseId: string,
     messages: ChatCompletionRequestMessage[]
   ): Promise<FunctionResult> {
     //
@@ -307,8 +306,7 @@ export class ArticulatorService {
     //
     if (!previousCard && !canonical && !response.critique) {
       canonical = await this.deduplication.fetchSimilarCanonicalCard(
-        response.values_card,
-        caseId
+        response.values_card
       )
 
       if (canonical) {
@@ -381,7 +379,6 @@ export class ArticulatorService {
       case "show_values_card": {
         functionResult = await this.handleArticulateCardFunction(
           chatId,
-          caseId,
           messages
         )
         break
