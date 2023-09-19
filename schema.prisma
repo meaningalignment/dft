@@ -120,6 +120,8 @@ model Edge {
   userId       Int
   fromId       Int
   toId         Int
+  story        String              @default("OLD")
+  runId        String              @default("OLD")
   relationship String              @default("upgrade")
   comment      String?
   createdAt    DateTime            @default(now())

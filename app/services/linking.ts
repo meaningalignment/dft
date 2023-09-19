@@ -18,17 +18,14 @@ type EdgeHypothesisData = {
   to: CanonicalValuesCard
   from: CanonicalValuesCard
   story: string
+  runId: string
 }
 
 export default class LinkingService {
   private db: PrismaClient
   private embedding: EmbeddingService
 
-  constructor(
-    openai: OpenAIApi,
-    db: PrismaClient,
-    embedding: EmbeddingService
-  ) {
+  constructor(db: PrismaClient, embedding: EmbeddingService) {
     this.db = db
     this.embedding = embedding
   }
@@ -153,6 +150,7 @@ export default class LinkingService {
         to: h.to,
         from: h.from,
         story: h.story,
+        runId: h.runId,
       } as EdgeHypothesisData
     })
   }
