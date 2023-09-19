@@ -257,14 +257,11 @@ export class ArticulatorService {
     //
     const chat = (await this.db.chat.findUnique({
       where: { id: chatId },
-      include: { provisionalCanonicalCard: true },
-    })) as Chat & { provisionalCanonicalCard: CanonicalValuesCard | null }
+    })) as Chat
 
     const previousCard = chat.provisionalCard
       ? (chat.provisionalCard as ValuesCardData)
       : null
-
-    let canonical = chat.provisionalCanonicalCard
 
     // Articulate the values card.
     const response = await this.articulateValuesCard(messages, previousCard)
@@ -286,12 +283,9 @@ export class ArticulatorService {
         message: {
           role: "function",
           name: "show_values_card",
-          content: JSON.stringify(response.values_card),
+          content: JSON.stringify(newCard),
         },
-        data: {
-          provisionalCard: newCard!,
-          provisionalCanonicalCardId: canonical?.id ?? null,
-        },
+        data: { provisionalCard: newCard! },
       })
 
       return {
@@ -304,12 +298,22 @@ export class ArticulatorService {
     //
     // Override the card with a canonical duplicate if one exists.
     //
-    if (!previousCard && !canonical && !response.critique) {
-      canonical = await this.deduplication.fetchSimilarCanonicalCard(
+    // Only do this the first time the articulate function is called,
+    // since subsequent calls mean the user is revising the card.
+    //
+    let provisionalCanonicalCardId: number | null = null
+
+    if (
+      !previousCard &&
+      !chat.provisionalCanonicalCardId &&
+      !response.critique
+    ) {
+      let canonical = await this.deduplication.fetchSimilarCanonicalCard(
         response.values_card
       )
 
       if (canonical) {
+        provisionalCanonicalCardId = canonical.id
         console.log(`Found duplicate ${canonical.id} for chat ${chatId}`)
         newCard = toDataModel(canonical)
       }
@@ -321,11 +325,11 @@ export class ArticulatorService {
       message: {
         role: "function",
         name: "show_values_card",
-        content: JSON.stringify(response.values_card),
+        content: JSON.stringify(newCard),
       },
       data: {
         provisionalCard: newCard!,
-        provisionalCanonicalCardId: canonical?.id ?? null,
+        provisionalCanonicalCardId,
       },
     })
 
