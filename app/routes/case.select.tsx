@@ -1,4 +1,3 @@
-import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
 import { useState } from "react"
 import { Check } from "lucide-react"
@@ -17,7 +16,7 @@ function CaseCard({ caseData }: { caseData: Case }) {
       }
     >
       <p className="text-md font-bold">{caseData.title}</p>
-      <p className="text-md text-neutral-500">{caseData.text}</p>
+      <p className="text-md text-neutral-500">{'"' + caseData.text + '"'}</p>
       <div className="flex-grow" />
     </div>
   )
@@ -50,7 +49,7 @@ export default function CaseSelectScreen() {
             setShowCases(true)
           }}
           isFinished={showCases}
-          text={`Below are some questions that have been posed to ChatGPT by users. Weigh in on how ChatGPT should respond to the user.\n\nSelect a case to continue`}
+          text={`Below are some questions that have been posed to ChatGPT by users. Weigh in on how ChatGPT should respond to the user.\n\nSelect a user question to continue.`}
         />
         <div className="grid lg:grid-cols-2 xl:grid-cols-3 mx-auto gap-4">
           {cases.map((c, i) => (
@@ -78,14 +77,14 @@ export default function CaseSelectScreen() {
             showCases ? "opacity-100" : "opacity-0"
           }`}
         >
-          <Link to={selected ? `/case/${selected.id}/chat` : "#"}>
+          <Link to={selected ? `/case/${selected.id}/chat-explainer` : "#"}>
             <ContinueButton />
           </Link>
 
           <div className="flex flex-col justify-center items-center my-4 h-4">
             {!selected && (
               <p className="text-stone-300">
-                {`Select a user prompt to continue`}
+                {`Select a user question to continue`}
               </p>
             )}
           </div>

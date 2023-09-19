@@ -20,20 +20,14 @@ export default function Carousel({ cards }: { cards: CardWithCounts[] }) {
     return card._count.Vote
   }
 
-  const footerText = (card: CardWithCounts) => {
-    return (
-      `Articulated by ${Math.max(1, uniqueArticulations(card))} participant${
-        uniqueArticulations(card) > 1 ? "s" : ""
-      }.` +
-      `${
-        uniqueVotes(card) > 0
-          ? ` Endorsed by ${uniqueVotes(card)} participant${
-              uniqueVotes(card) > 1 ? "s" : ""
-            }.`
-          : ``
-      }`
-    )
-  }
+  const footerText = (card: CardWithCounts) =>
+    `${
+      uniqueVotes(card) > 0
+        ? ` Endorsed by ${uniqueVotes(card)} participant${
+            uniqueVotes(card) > 1 ? "s" : ""
+          }.`
+        : ``
+    }`
 
   useEffect(() => {
     let position = 0

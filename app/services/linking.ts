@@ -7,7 +7,6 @@ import {
 import { db, inngest } from "~/config.server"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "./embedding"
-import { cases } from "~/lib/case"
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -63,37 +62,14 @@ export default class LinkingService {
 
   async getDraw(
     userId: number,
-    caseId: string,
     size: number = 3
   ): Promise<EdgeHypothesisData[]> {
     // Find edge hypotheses that the user has not linked together yet.
     const hypotheses = (await this.db.edgeHypothesis.findMany({
       where: {
         AND: [
-          {
-            from: {
-              edgesFrom: { none: { userId } },
-              valuesCards: {
-                some: {
-                  chat: {
-                    caseId,
-                  },
-                },
-              },
-            },
-          },
-          {
-            to: {
-              edgesTo: { none: { userId } },
-              valuesCards: {
-                some: {
-                  chat: {
-                    caseId,
-                  },
-                },
-              },
-            },
-          },
+          { from: { edgesFrom: { none: { userId } } } },
+          { to: { edgesTo: { none: { userId } } } },
         ],
       },
       include: {
@@ -156,22 +132,13 @@ export default class LinkingService {
   }
 }
 
-async function clusterCanonicalCards(caseId: string) {
+async function clusterCanonicalCards() {
   const cardDataAsJson = JSON.stringify(
     await db.canonicalValuesCard.findMany({
       select: {
         id: true,
         instructionsShort: true,
         evaluationCriteria: true,
-      },
-      where: {
-        valuesCards: {
-          some: {
-            chat: {
-              caseId,
-            },
-          },
-        },
       },
     }),
     null,
@@ -582,64 +549,6 @@ ${JSON.stringify(exampleTransitions, null, 2)}`
 // Ingest function for creating edge hypotheses.
 //
 
-export const hypothesizeCase = inngest.createFunction(
-  { name: "Create Hypothetical Edges for Case", concurrency: 1 },
-  { event: "hypothesize.case" },
-  async ({ step, logger, event, runId }) => {
-    // The case to hypothesize.
-    const caseId = event.data.caseId as string
-
-    // Use the run ID from the cron job to prevent RCs.
-    // Or, if this is a manual run, use the run ID from this inngest function.
-    const id = (event.data.runId ?? runId) as string
-
-    // verify the case exists.
-    if (!cases.map((c) => c.id).includes(caseId)) {
-      throw Error(`Unknown case "${caseId}"`)
-    }
-
-    logger.info(`Running hypothetical links generation for case ${caseId}`)
-
-    // Get clusters of canonical cards for the case.
-    const clusters = (
-      await step.run("Cluster all canonical cards", async () =>
-        clusterCanonicalCards(caseId)
-      )
-    ).clusters.filter((c) => c.ids.length > 1)
-
-    logger.info(`Found ${clusters.length} clusters.`)
-
-    // Create and upsert transitions for each cluster.
-    for (const cluster of clusters) {
-      const ids = cluster.ids as any as number[]
-
-      const { transitions } = (await step.run(
-        `Generate transitions for cluster ${cluster.condition}`,
-        async () => generateTransitions(ids)
-      )) as any as { transitions: Transition[] }
-
-      console.log(
-        `Created ${transitions.length} transitions for cluster ${cluster.condition}.`
-      )
-
-      await step.run(
-        `Add transitions for cluster ${cluster.condition} to database`,
-        async () => upsertTransitions(transitions, id)
-      )
-    }
-
-    // Clear out old transitions.
-    const { old, added } = (await step.run(
-      `Remove old transitions from database`,
-      async () => cleanupTransitions(id)
-    )) as any as { old: number; added: number }
-
-    return {
-      message: `Success. Removed ${old} transitions. Added ${added} transitions.`,
-    }
-  }
-)
-
 export const hypothesize = inngest.createFunction(
   { name: "Create Hypothetical Edges", concurrency: 1 },
   { cron: "0 */12 * * *" },
@@ -663,20 +572,50 @@ export const hypothesize = inngest.createFunction(
       }
     }
 
-    //
-    // Create links for each case.
-    //
-    for (const caseData of cases) {
-      logger.info(`Creating links for case ${caseData.id}`)
+    logger.info(`Running hypothetical links generation`)
 
-      await step.sendEvent({
-        name: "hypothesize.case",
-        data: { caseId: caseData.id, runId },
-      })
+    //
+    // Get clusters of canonical cards.
+    //
+    const clusters = (
+      await step.run("Cluster all canonical cards", async () =>
+        clusterCanonicalCards()
+      )
+    ).clusters.filter((c) => c.ids.length > 1)
+
+    logger.info(`Found ${clusters.length} clusters.`)
+
+    //
+    // Create and upsert transitions for each cluster.
+    //
+    for (const cluster of clusters) {
+      const ids = cluster.ids as any as number[]
+
+      const { transitions } = (await step.run(
+        `Generate transitions for cluster ${cluster.condition}`,
+        async () => generateTransitions(ids)
+      )) as any as { transitions: Transition[] }
+
+      console.log(
+        `Created ${transitions.length} transitions for cluster ${cluster.condition}.`
+      )
+
+      await step.run(
+        `Add transitions for cluster ${cluster.condition} to database`,
+        async () => upsertTransitions(transitions, runId)
+      )
     }
 
+    //
+    // Clear out old transitions.
+    //
+    const { old, added } = (await step.run(
+      `Remove old transitions from database`,
+      async () => cleanupTransitions(runId)
+    )) as any as { old: number; added: number }
+
     return {
-      message: `Started hypothesizing for ${cases.length} cases.`,
+      message: `Success. Removed ${old} transitions. Added ${added} transitions.`,
     }
   }
 )

@@ -29,7 +29,7 @@ export async function loader({ request, params }: LoaderArgs) {
   const embedding = new EmbeddingService(openai, db)
   const service = new LinkingService(db, embedding)
 
-  const draw = await service.getDraw(userId, caseId, 3)
+  const draw = await service.getDraw(userId, 3)
 
   return json({ draw })
 }
