@@ -16,7 +16,7 @@ export default function StaticChatMessage({
 }: Props) {
   const [currentText, setCurrentText] = useState("")
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     console.log(
       `Static chat message called. isFinished: ${isFinished}. Current text: ${currentText}. Text: ${text}`
     )
@@ -48,6 +48,10 @@ export default function StaticChatMessage({
     // Start adding words
     addNextWord()
   }, [])
+
+  if (typeof window === "undefined") {
+    return null // or return a loading placeholder or whatever you want
+  }
 
   return (
     <div className="w-full max-w-2xl flex items-stretch">
