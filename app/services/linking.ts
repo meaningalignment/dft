@@ -16,6 +16,7 @@ const openai = new OpenAIApi(configuration)
 type EdgeHypothesisData = {
   to: CanonicalValuesCard
   from: CanonicalValuesCard
+  condition: string
   story: string
   runId: string
 }
@@ -127,6 +128,7 @@ export default class LinkingService {
         from: h.from,
         story: h.story,
         runId: h.runId,
+        condition: h.condition,
       } as EdgeHypothesisData
     })
   }
@@ -626,7 +628,7 @@ export const hypothesize = inngest.createFunction(
       )
 
       const condition = await step.run(
-        `Format cluster '${cluster.condition}'`,
+        `Format condition '${cluster.condition}'`,
         async () => formatCondition(cluster.condition)
       )
 

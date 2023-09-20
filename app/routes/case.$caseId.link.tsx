@@ -20,7 +20,7 @@ import { Textarea } from "~/components/ui/textarea"
 
 type Relationship = "upgrade" | "no_upgrade" | "not_sure"
 
-export async function loader({ request, params }: LoaderArgs) {
+export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
 
   const config = new Configuration({ apiKey: process.env.OPENAI_API_KEY })
@@ -147,7 +147,7 @@ export default function LinkScreen() {
         }`}</h1>
         <div className="w-full max-w-2xl">
           <h1 className="text-md font-bold mb-2 pl-12 md:pl-0">
-            When discussing controversial topics
+            {draw[index].condition}
           </h1>
           <StaticChatMessage
             onFinished={() => {
@@ -179,8 +179,10 @@ export default function LinkScreen() {
           )}
         >
           When{" "}
-          <span className="font-bold">discussing controversial topics</span>,
-          this person used to focus on{" "}
+          <span className="font-bold">
+            {draw[index].condition.split(" ").slice(1).join(" ")}
+          </span>
+          , this person used to focus on{" "}
           <span className="font-bold">{draw[index].from.title}</span>.<br />
           <br />
           Now they realize{" "}
