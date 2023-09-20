@@ -5,13 +5,14 @@ import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
 import { ChatMessage } from "~/components/chat-message"
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, lazy, useEffect, useState } from "react"
 import { CanonicalValuesCard } from "@prisma/client"
 import SelectionService from "~/services/selection"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "~/services/embedding"
 import { Check, Loader2 } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
+
 import { cn } from "~/utils"
 
 const minRequiredVotes = 2
@@ -157,6 +158,7 @@ export default function SelectScreen() {
       <Header />
       <div className="grid flex-grow place-items-center space-y-8 py-12 mx-8">
         <StaticChatMessage
+          key={Math.random().toString()}
           onFinished={() => {
             setShowCards(true)
           }}

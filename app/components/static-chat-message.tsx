@@ -47,11 +47,7 @@ export default function StaticChatMessage({
 
     // Start adding words
     addNextWord()
-  }, [])
-
-  if (typeof window === "undefined") {
-    return null // or return a loading placeholder or whatever you want
-  }
+  }, [text, isFinished])
 
   return (
     <div className="w-full max-w-2xl flex items-stretch">
