@@ -118,6 +118,7 @@ model Edge {
   fromId       Int
   toId         Int
   story        String              @default("OLD")
+  condition    String              @default("OLD")
   runId        String              @default("OLD")
   relationship String              @default("upgrade")
   comment      String?
@@ -134,6 +135,7 @@ model EdgeHypothesis {
   fromId    Int
   toId      Int
   story     String?
+  condition String?
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
   runId     String               @default("OLD")

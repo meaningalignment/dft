@@ -22,7 +22,6 @@ type Relationship = "upgrade" | "no_upgrade" | "not_sure"
 
 export async function loader({ request, params }: LoaderArgs) {
   const userId = await auth.getUserId(request)
-  const caseId = params.caseId!
 
   const config = new Configuration({ apiKey: process.env.OPENAI_API_KEY })
   const openai = new OpenAIApi(config)
@@ -56,6 +55,7 @@ export async function action({ request }: LoaderArgs) {
       toId: edge.to.id,
       fromId: edge.from.id,
       story: edge.story,
+      condition: edge.condition,
       runId: edge.runId,
       relationship,
       comment,
@@ -63,6 +63,7 @@ export async function action({ request }: LoaderArgs) {
     update: {
       story: edge.story,
       runId: edge.runId,
+      condition: edge.condition,
       relationship,
       comment,
     },
@@ -77,7 +78,7 @@ export default function LinkScreen() {
   const { caseId } = useParams()
 
   const [index, setIndex] = useState<number>(0)
-  const [showCards, setShowCards] = useState(false)
+  const [showCards, setShowCards] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [relationship, setRelationship] = useState<Relationship | null>(null)
   const [comment, setComment] = useState<string | null>(null)
@@ -140,18 +141,33 @@ export default function LinkScreen() {
   return (
     <div className="flex flex-col h-screen w-screen">
       <Header />
-      <div className="grid place-items-center space-y-4 py-12 px-8">
+      <div className="grid place-items-center space-y-8 py-12 px-8">
         <h1 className="text-neutral-500 mb-2">{`User Story ${index + 1}/${
           draw.length
         }`}</h1>
-        <StaticChatMessage
-          onFinished={() => {
-            setShowCards(true)
-          }}
-          isFinished={showCards}
-          text={'"' + draw[index].story + '"'}
-          role="user"
-        />
+        <div>
+          <h1 className="text-md font-bold mb-2">
+            When discussing controversial topics
+          </h1>
+          <StaticChatMessage
+            onFinished={() => {
+              setShowCards(true)
+            }}
+            isFinished={showCards}
+            text={'"' + draw[index].story + '"'}
+            role="user"
+          />
+        </div>
+        <div className="max-w-sm text-xs p-4 border border-2 border-border rounded-xl">
+          When{" "}
+          <span className="font-bold">discussing controversial topics</span>,
+          this person used to focus on{" "}
+          <span className="font-bold">{draw[index].from.title}</span>.<br />
+          <br />
+          Now they realize{" "}
+          <span className="font-bold">{draw[index].to.title}</span> covers
+          everything they need, so they only focus on that.
+        </div>
         <div
           className={cn(
             `grid grid-cols-1 md:grid-cols-3 mx-auto gap-4 items-center justify-items-center md:grid-cols-[max-content,min-content,max-content] mb-4`,
@@ -181,9 +197,7 @@ export default function LinkScreen() {
             `delay-${150}`
           )}
         >
-          <h1 className="font-bold mr-auto">
-            Did this person make a value upgrade?
-          </h1>
+          <h1 className="font-bold mr-auto">Did this person become wiser?</h1>
           <RadioGroup
             key={relationship}
             className="w-full"

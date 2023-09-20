@@ -101,7 +101,7 @@ export default function SelectScreen() {
   const { caseId } = useParams()
 
   const [isLoading, setIsLoading] = useState(false)
-  const [showCards, setShowCards] = useState(false)
+  const [showCards, setShowCards] = useState(true)
   const [selected, setSelected] = useState<number[]>([])
 
   const { values, drawId } = useLoaderData<typeof loader>()
@@ -175,6 +175,7 @@ export default function SelectScreen() {
                 `delay-${index * 75}` // Make sure to add to `safelist` in tailwind.config.js if changed.
               )}
             >
+              <div>Old Value</div>
               {selected.includes(value.id) ? (
                 <SelectedValuesCard value={value as any} />
               ) : (

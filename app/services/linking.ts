@@ -266,9 +266,33 @@ export async function generateTransitions(cardIds: number[]): Promise<{
   }
 }
 
+async function formatCondition(condition: string): Promise<string> {
+  const prompt = `You will be given a condition string like these: 
+When the user is feeling sad
+When the user is distressed
+When the user is having doubts
+
+Return a condition string formatted as follows:
+When feeling sad
+When being distressed
+When having doubts`
+
+  const res = await openai.createChatCompletion({
+    model: "gpt-3.5-turbo",
+    temperature: 0.3,
+    messages: [
+      { role: "system", content: prompt },
+      { role: "user", content: condition },
+    ],
+  })
+  const data = await res.json()
+  return data.choices[0].message.content
+}
+
 async function upsertTransitions(
   transitions: Transition[],
-  runId: string
+  runId: string,
+  condition: string
 ): Promise<void> {
   await Promise.all(
     transitions.map((t) =>
@@ -284,6 +308,7 @@ async function upsertTransitions(
           to: { connect: { id: t.b_id } },
           story: t.story,
           runId,
+          condition,
         },
         update: {},
       })
@@ -559,18 +584,18 @@ export const hypothesize = inngest.createFunction(
     // Don't run the expensive prompt if the latest card is older than last time
     // this cron job ran.
     //
-    const latestCanonicalCard = await db.canonicalValuesCard.findFirst({
-      orderBy: { createdAt: "desc" },
-    })
+    // const latestCanonicalCard = await db.canonicalValuesCard.findFirst({
+    //   orderBy: { createdAt: "desc" },
+    // })
 
-    if (
-      latestCanonicalCard &&
-      latestCanonicalCard.createdAt < new Date(Date.now() - 12 * 60 * 60 * 1000)
-    ) {
-      return {
-        message: "Latest card is more than 12 hours old, skipping.",
-      }
-    }
+    // if (
+    //   latestCanonicalCard &&
+    //   latestCanonicalCard.createdAt < new Date(Date.now() - 12 * 60 * 60 * 1000)
+    // ) {
+    //   return {
+    //     message: "Latest card is more than 12 hours old, skipping.",
+    //   }
+    // }
 
     logger.info(`Running hypothetical links generation`)
 
@@ -600,9 +625,14 @@ export const hypothesize = inngest.createFunction(
         `Created ${transitions.length} transitions for cluster ${cluster.condition}.`
       )
 
+      const condition = await step.run(
+        `Format cluster '${cluster.condition}'`,
+        async () => formatCondition(cluster.condition)
+      )
+
       await step.run(
         `Add transitions for cluster ${cluster.condition} to database`,
-        async () => upsertTransitions(transitions, runId)
+        async () => upsertTransitions(transitions, runId, condition)
       )
     }
 
