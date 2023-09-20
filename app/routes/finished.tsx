@@ -2,9 +2,6 @@ import { LoaderArgs, json } from "@remix-run/node"
 import Header from "~/components/header"
 import { useLoaderData } from "@remix-run/react"
 import { auth, db } from "~/config.server"
-import { CanonicalValuesCard } from "@prisma/client"
-import { useEffect, useRef } from "react"
-import ValuesCard from "~/components/values-card"
 import Carousel from "~/components/carousel"
 
 export async function loader({ request }: LoaderArgs) {

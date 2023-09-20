@@ -22,7 +22,6 @@ type Relationship = "upgrade" | "no_upgrade" | "not_sure"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
-
   const config = new Configuration({ apiKey: process.env.OPENAI_API_KEY })
   const openai = new OpenAIApi(config)
   const embedding = new EmbeddingService(openai, db)
