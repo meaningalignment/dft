@@ -33,7 +33,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "cookie": "^0.5.0",
-    "cowpunk-auth": "^0.0.7",
+    "cowpunk-auth": "^0.0.6",
     "inngest": "^2.5.0",
     "isbot": "^3.6.8",
     "lucide-react": "^0.263.1",

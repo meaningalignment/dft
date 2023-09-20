@@ -3323,10 +3323,10 @@ core-util-is@~1.0.0:
   resolved "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.3.tgz"
   integrity sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==
 
-cowpunk-auth@^0.0.7:
-  version "0.0.7"
-  resolved "https://registry.npmjs.org/cowpunk-auth/-/cowpunk-auth-0.0.7.tgz"
-  integrity sha512-3QwlUTNNSwW4vGggxBj/+tQnISHYa/UA0BW+KyZVTiEHfnNqs/dgzQ907rCt5ZhmfrBBA2FpSyvtpnaToLdq7Q==
+cowpunk-auth@^0.0.6:
+  version "0.0.6"
+  resolved "https://registry.npmjs.org/cowpunk-auth/-/cowpunk-auth-0.0.6.tgz"
+  integrity sha512-kdszKJaSFepuBoYHRkugu8EmYA8gHNTeUIgUsUaEvGSDNPOiVQZEwmrhUsvyY/gxRlwUp16+U+BcIQVrM1jzHw==
   dependencies:
     mailgun.js "^9.1.2"
     validator "^13.9.0"

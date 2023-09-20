@@ -26,10 +26,6 @@ export default function LoginScreen() {
 
   const redirect = searchParams.get("redirect") as string
 
-  const prolificId = searchParams.get("PROLIFIC_PID") as string
-  const studyId = searchParams.get("STUDY_ID") as string
-  const sessionId = searchParams.get("SESSION_ID") as string
-
   useEffect(() => {
     if (actionData?.error) {
       setShowError(true)
@@ -55,9 +51,6 @@ export default function LoginScreen() {
         <div className="grid gap-6">
           <Form method="post" onSubmit={() => setIsLoading(true)}>
             <input type="hidden" name="redirect" value={redirect || ""} />
-            <input type="hidden" name="prolificId" value={prolificId || ""} />
-            <input type="hidden" name="studyId" value={studyId || ""} />
-            <input type="hidden" name="sessionId" value={sessionId || ""} />
             <input type="hidden" name="autoregister" value="YES" />
             <div className="grid gap-2">
               <div className="grid gap-1">
@@ -96,7 +89,7 @@ export default function LoginScreen() {
         <div
           className={`mt-6 w-full text-center transition-opacity duration-300 ease-in-out ${
             showError ? "opacity-100" : "opacity-0"
-          }`}
+            }`}
         >
           <div className="text-red-500">{actionData?.error ?? "error"}</div>
         </div>
