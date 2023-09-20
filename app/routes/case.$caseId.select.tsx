@@ -118,6 +118,10 @@ export default function SelectScreen() {
 
   const { values, drawId } = useLoaderData<typeof loader>()
 
+  if (typeof window === "undefined") {
+    return null
+  }
+
   // If there are no values in the draw, continue to next step.
   useEffect(() => {
     if (values.length === 0) {
@@ -164,14 +168,10 @@ export default function SelectScreen() {
   }
 
   return (
-    <div className="flex flex-col h-screen w-screen" key={drawId}>
+    <div className="flex flex-col h-screen w-screen">
       <Header />
-      <div
-        className="grid flex-grow place-items-center space-y-8 py-12 mx-8"
-        key={drawId}
-      >
+      <div className="grid flex-grow place-items-center space-y-8 py-12 mx-8">
         <StaticChatMessage
-          key={drawId}
           onFinished={() => {
             setShowCards(true)
           }}
