@@ -157,7 +157,6 @@ export default function SelectScreen() {
       <Header />
       <div className="grid flex-grow place-items-center space-y-8 py-12 mx-8">
         <StaticChatMessage
-          key={Math.random()}
           onFinished={() => {
             setShowCards(true)
           }}

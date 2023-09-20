@@ -1,17 +1,19 @@
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { ChatMessage } from "./chat-message"
+
+type Props = {
+  text: string
+  isFinished: boolean
+  onFinished: () => void
+  role?: "assistant" | "user"
+}
 
 export default function StaticChatMessage({
   text,
   isFinished,
   onFinished,
   role,
-}: {
-  text: string
-  isFinished: boolean
-  onFinished: () => void
-  role?: "assistant" | "user"
-}) {
+}: Props) {
   const [currentText, setCurrentText] = useState("")
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export default function StaticChatMessage({
 
     // Start adding words
     addNextWord()
-  }, [text])
+  }, [])
 
   return (
     <div className="w-full max-w-2xl flex items-stretch">
