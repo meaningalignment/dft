@@ -150,7 +150,12 @@ export default class SelectionService {
     userId: number,
     candidates: CanonicalValuesCard[]
   ): Promise<CanonicalValuesCard[]> {
+    console.log(`Trimming candidates with embedding for user ${userId}.`)
+
     const userEmbedding = await this.embedding.getUserEmbedding(userId)
+
+    console.log("Got average embedding for user.")
+
     return await this.embedding.findValuesSimilarTo(
       userEmbedding,
       candidates,
@@ -161,6 +166,8 @@ export default class SelectionService {
   async trimCandidatesWithPrompt(
     candidates: CanonicalValuesCard[]
   ): Promise<CanonicalValuesCard[]> {
+    console.log(`Trimming candidates with prompt`)
+
     const userValue = (await this.db.valuesCard.findFirst()) as ValuesCard
     const userValueString = JSON.stringify({
       id: userValue.id,
@@ -203,6 +210,8 @@ export default class SelectionService {
    * Generate a draw for the user with id `userId`.
    */
   async getDraw(userId: number, caseId: string): Promise<Draw> {
+    console.log(`Getting draw for user ${userId} in case ${caseId}.`)
+
     // Get canidates.
     const candidates = await Promise.all([
       this.fetchNewestValues(userId, caseId, 12),
@@ -213,6 +222,8 @@ export default class SelectionService {
     const candidatesUnique = candidates.filter(
       (c, i) => candidates.findIndex((c2) => c2.id === c.id) === i
     )
+
+    console.log(`Found ${candidatesUnique.length} candidates.`)
 
     // Trim unique candidates.
     let values: CanonicalValuesCard[] = []

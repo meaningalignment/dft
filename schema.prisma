@@ -46,7 +46,7 @@ model ValuesCard {
   canonicalCardId      Int?
   chatId               String                       @unique
   chat                 Chat                         @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  canonicalCard        CanonicalValuesCard?         @relation(fields: [canonicalCardId], references: [id])
+  canonicalCard        CanonicalValuesCard?         @relation(fields: [canonicalCardId], references: [id], onDelete: SetNull)
   embedding            Unsupported("vector(1536)")?
 }
 
@@ -64,7 +64,6 @@ model CanonicalValuesCard {
   edgesTo              Edge[]                       @relation("ToValueRelation")
   Vote                 Vote[]
   Impression           Impression[]
-  Chat                 Chat[]
   edgeHypothesisFrom   EdgeHypothesis[]             @relation("FromHypothesizedValueRelation")
   edgeHypothesisTo     EdgeHypothesis[]             @relation("ToHypothesizedValueRelation")
 
@@ -72,26 +71,24 @@ model CanonicalValuesCard {
 }
 
 model Chat {
-  id                         String               @id
+  id                         String      @id
   userId                     Int
   transcript                 Json
-  createdAt                  DateTime             @default(now())
-  updatedAt                  DateTime             @updatedAt
+  createdAt                  DateTime    @default(now())
+  updatedAt                  DateTime    @updatedAt
   provisionalCard            Json? // A values card being formed in the background.
   provisionalCanonicalCardId Int? // A canonical values card that is linked in the background.
-  canonicalValuesCardId      Int?
-  articulatorPromptVersion   String               @default("OLD")
-  articulatorPromptHash      String               @default("OLD")
-  articulatorModel           String               @default("gpt-4-0613")
-  gitCommitHash              String               @default("OLD")
+  articulatorPromptVersion   String      @default("OLD")
+  articulatorPromptHash      String      @default("OLD")
+  articulatorModel           String      @default("gpt-4-0613")
+  gitCommitHash              String      @default("OLD")
   evaluation                 Json?
   copiedFromId               String? // In order to filter out copied chats from analytics and other queries.
-  caseId                     String               @default("abortion")
-  provisionalCanonicalCard   CanonicalValuesCard? @relation(fields: [canonicalValuesCardId], references: [id])
+  caseId                     String      @default("abortion")
   ValuesCard                 ValuesCard?
-  user                       User                 @relation(fields: [userId], references: [id])
-  copiedFrom                 Chat?                @relation("ChatToCopiedFrom", fields: [copiedFromId], references: [id], onDelete: Cascade)
-  copies                     Chat[]               @relation("ChatToCopiedFrom")
+  user                       User        @relation(fields: [userId], references: [id])
+  copiedFrom                 Chat?       @relation("ChatToCopiedFrom", fields: [copiedFromId], references: [id], onDelete: Cascade)
+  copies                     Chat[]      @relation("ChatToCopiedFrom")
 }
 
 model Vote {
@@ -121,6 +118,7 @@ model Edge {
   fromId       Int
   toId         Int
   story        String              @default("OLD")
+  condition    String              @default("OLD")
   runId        String              @default("OLD")
   relationship String              @default("upgrade")
   comment      String?
@@ -137,6 +135,7 @@ model EdgeHypothesis {
   fromId    Int
   toId      Int
   story     String?
+  condition String?
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
   runId     String               @default("OLD")

@@ -54,6 +54,7 @@ export async function action({ request }: LoaderArgs) {
       toId: edge.to.id,
       fromId: edge.from.id,
       story: edge.story,
+      condition: edge.condition,
       runId: edge.runId,
       relationship,
       comment,
@@ -61,6 +62,7 @@ export async function action({ request }: LoaderArgs) {
     update: {
       story: edge.story,
       runId: edge.runId,
+      condition: edge.condition,
       relationship,
       comment,
     },
@@ -138,29 +140,53 @@ export default function LinkScreen() {
   return (
     <div className="flex flex-col h-screen w-screen">
       <Header />
-      <div className="grid place-items-center space-y-4 py-12 px-8">
+      <div className="grid flex-grow place-items-center space-y-8 py-12 px-8">
         <h1 className="text-neutral-500 mb-2">{`User Story ${index + 1}/${
           draw.length
         }`}</h1>
-        <StaticChatMessage
-          onFinished={() => {
-            setShowCards(true)
-          }}
-          isFinished={showCards}
-          text={'"' + draw[index].story + '"'}
-          role="user"
-        />
+        <div className="w-full max-w-2xl">
+          <h1 className="text-md font-bold mb-2 pl-12 md:pl-0">
+            {draw[index].condition}
+          </h1>
+          <StaticChatMessage
+            onFinished={() => {
+              setShowCards(true)
+            }}
+            isFinished={showCards}
+            text={'"' + draw[index].story + '"'}
+            role="user"
+          />
+        </div>
         <div
           className={cn(
-            `grid grid-cols-1 md:grid-cols-3 mx-auto gap-4 items-center justify-items-center md:grid-cols-[max-content,min-content,max-content] mb-4`,
+            `grid grid-cols-1 lg:grid-cols-3 mx-auto gap-4 items-center justify-items-center lg:grid-cols-[max-content,min-content,max-content] pt-4`,
             "transition-opacity ease-in duration-500",
             showCards ? "opacity-100" : "opacity-0",
             `delay-${75}`
           )}
         >
           <ValuesCard card={draw[index].from as any} />
-          <IconArrowRight className="h-8 w-8 mx-auto rotate-90 md:rotate-0" />
+          <IconArrowRight className="h-8 w-8 mx-auto rotate-90 lg:rotate-0" />
           <ValuesCard card={draw[index].to as any} />
+        </div>
+        <div
+          className={cn(
+            "max-w-2xl pt-8",
+            `transition-opacity ease-in duration-500`,
+            showCards ? "opacity-100" : "opacity-0",
+            `delay-${100}`
+          )}
+        >
+          When{" "}
+          <span className="font-bold">
+            {draw[index].condition.split(" ").slice(1).join(" ")}
+          </span>
+          , this person used to focus on{" "}
+          <span className="font-bold">{draw[index].from.title}</span>.<br />
+          <br />
+          Now they realize{" "}
+          <span className="font-bold">{draw[index].to.title}</span> covers
+          everything they need, so they only focus on that.
         </div>
         <div
           className={cn(
@@ -179,9 +205,7 @@ export default function LinkScreen() {
             `delay-${150}`
           )}
         >
-          <h1 className="font-bold mr-auto">
-            Did this person make a value upgrade?
-          </h1>
+          <h1 className="font-bold mr-auto">Did this person become wiser?</h1>
           <RadioGroup
             key={relationship}
             className="w-full"

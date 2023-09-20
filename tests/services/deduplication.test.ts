@@ -3,7 +3,6 @@ import { readValue } from "../utils"
 import { db } from "~/config.server"
 import DeduplicationService from "~/services/deduplication"
 import EmbeddingService from "~/services/embedding"
-import { defaultCase } from "~/lib/case"
 
 let openai: OpenAIApi
 let service: DeduplicationService
@@ -22,12 +21,7 @@ beforeAll(() => {
 test("Test user distance map", async () => {
   const value = readValue("holistic_decision_making.json")
 
-  const result = await service.similaritySearch(
-    value.embedding,
-    defaultCase,
-    3,
-    1.0
-  )
+  const result = await service.similaritySearch(value.embedding, 3, 1.0)
 
   expect(result).toBeDefined()
   expect(result.length).toBe(3)
