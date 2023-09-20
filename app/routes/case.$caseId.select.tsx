@@ -5,7 +5,7 @@ import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
 import { ChatMessage } from "~/components/chat-message"
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { CanonicalValuesCard } from "@prisma/client"
 import SelectionService from "~/services/selection"
 import { Configuration, OpenAIApi } from "openai-edge"
@@ -156,13 +156,15 @@ export default function SelectScreen() {
     <div className="flex flex-col h-screen w-screen">
       <Header />
       <div className="grid flex-grow place-items-center space-y-8 py-12 mx-8">
-        <StaticChatMessage
-          onFinished={() => {
-            setShowCards(true)
-          }}
-          isFinished={showCards}
-          text={`Here are some examples of how others have answered. Your next task is to determine which of these values you think are wisest to consider for ChatGPT talking to the user.\n\nSelect 2 or more responses by clicking on them.`}
-        />
+        <Suspense>
+          <StaticChatMessage
+            onFinished={() => {
+              setShowCards(true)
+            }}
+            isFinished={showCards}
+            text={`Here are some examples of how others have answered. Your next task is to determine which of these values you think are wisest to consider for ChatGPT talking to the user.\n\nSelect 2 or more responses by clicking on them.`}
+          />
+        </Suspense>
         <div className="grid lg:grid-cols-2 xl:grid-cols-3 mx-auto gap-4">
           {values.map((value, index) => (
             <div
