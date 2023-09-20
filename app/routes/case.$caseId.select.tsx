@@ -11,7 +11,9 @@ import SelectionService from "~/services/selection"
 import { Configuration, OpenAIApi } from "openai-edge"
 import EmbeddingService from "~/services/embedding"
 import { Check, Loader2 } from "lucide-react"
-import StaticChatMessage from "~/components/static-chat-message"
+import StaticChatMessage, {
+  StaticChatMessageProps,
+} from "~/components/static-chat-message"
 
 import { cn } from "~/utils"
 
@@ -98,6 +100,14 @@ function SelectedValuesCard({ value }: { value: CanonicalValuesCard }) {
   )
 }
 
+function ChatMessageWrapper(props: StaticChatMessageProps) {
+  return (
+    <Suspense>
+      <StaticChatMessage {...props} />
+    </Suspense>
+  )
+}
+
 export default function SelectScreen() {
   const navigate = useNavigate()
   const { caseId } = useParams()
@@ -157,7 +167,7 @@ export default function SelectScreen() {
     <div className="flex flex-col h-screen w-screen">
       <Header />
       <div className="grid flex-grow place-items-center space-y-8 py-12 mx-8">
-        <StaticChatMessage
+        <ChatMessageWrapper
           key={Math.random().toString()}
           onFinished={() => {
             setShowCards(true)

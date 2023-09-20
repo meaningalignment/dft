@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useLayoutEffect, useState } from "react"
 import { ChatMessage } from "./chat-message"
 
-type Props = {
+export type StaticChatMessageProps = {
   text: string
   isFinished: boolean
   onFinished: () => void
@@ -13,7 +13,7 @@ export default function StaticChatMessage({
   isFinished,
   onFinished,
   role,
-}: Props) {
+}: StaticChatMessageProps) {
   const [currentText, setCurrentText] = useState("")
 
   useEffect(() => {
