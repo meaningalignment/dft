@@ -1,6 +1,7 @@
 import { LoaderArgs, json } from "@remix-run/node"
 import { NavLink, Outlet, useLoaderData } from "@remix-run/react"
 import { db } from "~/config.server"
+import { cn } from "~/utils"
 
 export async function loader() {
   const edges = await db.edge.findMany({
@@ -23,6 +24,27 @@ export async function loader() {
   })
 
   return json({ edges })
+}
+
+function StatusBadge({ status }: { status: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+        status === "upgrade"
+          ? "bg-green-100 text-green-800"
+          : status === "not_sure"
+          ? "bg-yellow-100 text-yellow-800"
+          : "bg-red-100 text-red-800"
+      )}
+    >
+      {status === "upgrade"
+        ? "Upgrade"
+        : status === "not_sure"
+        ? "Not sure"
+        : "No Upgrade"}
+    </span>
+  )
 }
 
 export default function AdminChats() {
@@ -51,7 +73,7 @@ export default function AdminChats() {
                 <div>{edge.user.name}</div>
                 <div>{edge.user.email}</div>
                 <div className="text-xs text-neutral-500">{edge.createdAt}</div>
-                <div>{edge.relationship}</div>
+                <StatusBadge status={edge.relationship} />
               </li>
             </NavLink>
           ))}
