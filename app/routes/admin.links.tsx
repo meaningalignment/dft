@@ -52,7 +52,7 @@ export default function AdminChats() {
   return (
     <div className="grid grid-cols-5">
       <div className="col-span-1 border-r h-screen overflow-y-auto">
-        <h1 className="text-2xl font-bold mb-4 px-4 py-2">Chats</h1>
+        <h1 className="text-2xl font-bold mb-4 px-4 py-2">Links</h1>
         <ul>
           {data.edges.map((edge) => (
             <NavLink
