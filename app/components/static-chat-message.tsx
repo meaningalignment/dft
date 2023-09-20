@@ -15,6 +15,10 @@ export default function StaticChatMessage({
   const [currentText, setCurrentText] = useState("")
 
   useEffect(() => {
+    console.log(
+      `Static chat message called. isFinished: ${isFinished}. Current text: ${currentText}. Text: ${text}`
+    )
+
     if (isFinished) {
       setCurrentText(text)
       return

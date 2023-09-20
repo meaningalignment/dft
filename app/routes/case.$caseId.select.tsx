@@ -29,6 +29,7 @@ export async function loader({ request, params }: LoaderArgs) {
 
   // Get the draw for this user.
   const { id, values } = await routing.getDraw(userId, caseId)
+  console.log(`Got draw ${id} for user ${userId}`)
 
   return json({ values, drawId: id })
 }
@@ -105,6 +106,8 @@ export default function SelectScreen() {
   const [selected, setSelected] = useState<number[]>([])
 
   const { values, drawId } = useLoaderData<typeof loader>()
+
+  console.log("values", values)
 
   // If there are no values in the draw, continue to next step.
   useEffect(() => {
