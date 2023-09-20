@@ -107,8 +107,6 @@ export default function SelectScreen() {
 
   const { values, drawId } = useLoaderData<typeof loader>()
 
-  console.log("values", values)
-
   // If there are no values in the draw, continue to next step.
   useEffect(() => {
     if (values.length === 0) {
@@ -159,6 +157,7 @@ export default function SelectScreen() {
       <Header />
       <div className="grid flex-grow place-items-center space-y-8 py-12 mx-8">
         <StaticChatMessage
+          key={Math.random()}
           onFinished={() => {
             setShowCards(true)
           }}
