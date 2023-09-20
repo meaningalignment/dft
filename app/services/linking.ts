@@ -269,7 +269,7 @@ export async function generateTransitions(cardIds: number[]): Promise<{
 }
 
 async function formatCondition(condition: string): Promise<string> {
-  const prompt = `You will be given a condition string like these: 
+  const prompt = `You will be given a condition string like these:
 When the user is feeling sad
 When the user is distressed
 When the user is having doubts
@@ -505,7 +505,7 @@ const transitionsFunction = {
             },
             story: {
               description:
-                "Tell a plausible, personal story in first person voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to question the older value, and finally finding the new value resolves the emotions. It should also mention the situation in which you think the new value is broadly applicable.",
+                "Tell a plausible, personal story. The story should be in first-person, \"I\" voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to discover a problem with the older value, and how you discovered the new value, and an explanation of how the new values what was what you were really about the whole time. The story should also mention in what situations you think the new value is broadly applicable. The story should avoid making long lists of criteria and instead focus on the essence of the values and their difference.",
               type: "string",
             },
             mapping: {
@@ -554,19 +554,19 @@ const transitionsPrompt = `You'll receive a bunch of values. Find pairs of value
 
 All pairs found should meet certain criteria:
 
-First, many people would consider this a change to be a deepening of wisdom.
+First, many people would consider this change to be a deepening of wisdom.
 
 Second, the new value obviates the need for the previous one, since all of the important parts of the value are included in the new, more comprehensive value. When you're deciding what to do, it is enough to only consider the new value.
 
-Second, the values should be closely related in the following way: the new value should be a deeper cut at what the person cared about with the old value. Or, the new value should clarify what the person cared about with the old value. Or, the new value should be a more skillful way of paying attention to what the person cared about with the old value.
+Third, the values should be closely related in one of the following ways: (a) the new value should be a deeper cut at what the person cared about with the old value. Or, (b) the new value should clarify what the person cared about with the old value. Or, (c) the new value should be a more skillful way of paying attention to what the person cared about with the old value.
 
-Third, map all the old value's evaluation criteria to the new one's. Each criterion from the old value should match one (or several) in the new one. Do this by using three strategies:
+Fourth, map all the old value's evaluation criteria to the new one's. Each criterion from the old value should match one (or several) in the new one. Do this by using three strategies:
 
 - Strategy #1. **The previous criterion focused only on part of the problem**. In this case, the new criterion focuses on the whole problem, once it is rightly in view, or the new criterion strikes a balance between the old concerns and an inherent compensatory factor. You should be able to say why just pursuing the old criterion would be unsustainable or unwise.
 - Strategy #2. **The previous criterion had an impure motive**. In this case, the old criterion must be a mix of something that is actually part of the value, and something that is not, such as a desire for social status or to avoid shame or to be seen as a good person, or some deep conceptual mistake. The new criterion is what remains when the impurity is removed.
 - Strategy #3. **The new criterion is just more skillful to pay attention to, and accomplishes the same thing**. For example, a transition from "skate towards the puck" to "skate to where the puck is going" is a transition from a less skillful way of paying attention to the same thing to a more skillful thing to pay attention to.
 
-Finally, with each transition, you should be able to make up a plausible, personal story in first person voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to question the older value, and finally finding the new value resolves the emotions. The story should also mention the situation in which you think the new value is broadly applicable.
+Finally, with each transition, you should be able to make up a plausible, personal story. The story should be in first-person, "I" voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to discover a problem with the older value, and how you discovered the new value, and an explanation of how the new values what was what you were really about the whole time. The story should also mention in what situations you think the new value is broadly applicable. The story should avoid making long lists of criteria and instead focus on the essence of the values and their difference.
 
 Here are examples of such shifts:
 
