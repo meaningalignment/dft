@@ -164,11 +164,14 @@ export default function SelectScreen() {
   }
 
   return (
-    <div className="flex flex-col h-screen w-screen">
+    <div className="flex flex-col h-screen w-screen" key={drawId}>
       <Header />
-      <div className="grid flex-grow place-items-center space-y-8 py-12 mx-8">
-        <ChatMessageWrapper
-          key={Math.random().toString()}
+      <div
+        className="grid flex-grow place-items-center space-y-8 py-12 mx-8"
+        key={drawId}
+      >
+        <StaticChatMessage
+          key={drawId}
           onFinished={() => {
             setShowCards(true)
           }}
