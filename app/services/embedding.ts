@@ -102,6 +102,10 @@ export default class EmbeddingService {
         >`SELECT embedding::text FROM "ValuesCard" vc INNER JOIN "Chat" c  ON vc."chatId" = c."id" WHERE c."userId" = ${userId} AND vc."embedding" IS NOT NULL`
       ).map((r) => JSON.parse(r.embedding).map((v: any) => parseFloat(v)))
 
+      console.log(
+        `Got embedding vector for user ${userId}. Calculating average.`
+      )
+
       return calculateAverageEmbedding(userEmbeddings)
     } catch (e) {
       console.error(e)
