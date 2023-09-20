@@ -78,7 +78,7 @@ export default function LinkScreen() {
   const { caseId } = useParams()
 
   const [index, setIndex] = useState<number>(0)
-  const [showCards, setShowCards] = useState(true)
+  const [showCards, setShowCards] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [relationship, setRelationship] = useState<Relationship | null>(null)
   const [comment, setComment] = useState<string | null>(null)
@@ -141,12 +141,12 @@ export default function LinkScreen() {
   return (
     <div className="flex flex-col h-screen w-screen">
       <Header />
-      <div className="grid place-items-center space-y-8 py-12 px-8">
+      <div className="grid flex-grow place-items-center space-y-8 py-12 px-8">
         <h1 className="text-neutral-500 mb-2">{`User Story ${index + 1}/${
           draw.length
         }`}</h1>
-        <div>
-          <h1 className="text-md font-bold mb-2">
+        <div className="w-full max-w-2xl">
+          <h1 className="text-md font-bold mb-2 pl-12 md:pl-0">
             When discussing controversial topics
           </h1>
           <StaticChatMessage
@@ -158,7 +158,26 @@ export default function LinkScreen() {
             role="user"
           />
         </div>
-        <div className="max-w-sm text-xs p-4 border border-2 border-border rounded-xl">
+        <div
+          className={cn(
+            `grid grid-cols-1 lg:grid-cols-3 mx-auto gap-4 items-center justify-items-center lg:grid-cols-[max-content,min-content,max-content] pt-4`,
+            "transition-opacity ease-in duration-500",
+            showCards ? "opacity-100" : "opacity-0",
+            `delay-${75}`
+          )}
+        >
+          <ValuesCard card={draw[index].from as any} />
+          <IconArrowRight className="h-8 w-8 mx-auto rotate-90 lg:rotate-0" />
+          <ValuesCard card={draw[index].to as any} />
+        </div>
+        <div
+          className={cn(
+            "max-w-2xl pt-8",
+            `transition-opacity ease-in duration-500`,
+            showCards ? "opacity-100" : "opacity-0",
+            `delay-${100}`
+          )}
+        >
           When{" "}
           <span className="font-bold">discussing controversial topics</span>,
           this person used to focus on{" "}
@@ -167,18 +186,6 @@ export default function LinkScreen() {
           Now they realize{" "}
           <span className="font-bold">{draw[index].to.title}</span> covers
           everything they need, so they only focus on that.
-        </div>
-        <div
-          className={cn(
-            `grid grid-cols-1 md:grid-cols-3 mx-auto gap-4 items-center justify-items-center md:grid-cols-[max-content,min-content,max-content] mb-4`,
-            "transition-opacity ease-in duration-500",
-            showCards ? "opacity-100" : "opacity-0",
-            `delay-${75}`
-          )}
-        >
-          <ValuesCard card={draw[index].from as any} />
-          <IconArrowRight className="h-8 w-8 mx-auto rotate-90 md:rotate-0" />
-          <ValuesCard card={draw[index].to as any} />
         </div>
         <div
           className={cn(
