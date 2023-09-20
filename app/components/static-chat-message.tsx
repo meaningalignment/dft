@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useLayoutEffect, useState } from "react"
 import { ChatMessage } from "./chat-message"
 
 type Props = {
@@ -16,7 +16,7 @@ export default function StaticChatMessage({
 }: Props) {
   const [currentText, setCurrentText] = useState("")
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     console.log(
       `Static chat message called. isFinished: ${isFinished}. Current text: ${currentText}. Text: ${text}`
     )
