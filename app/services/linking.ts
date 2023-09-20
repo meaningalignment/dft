@@ -586,18 +586,18 @@ export const hypothesize = inngest.createFunction(
     // Don't run the expensive prompt if the latest card is older than last time
     // this cron job ran.
     //
-    // const latestCanonicalCard = await db.canonicalValuesCard.findFirst({
-    //   orderBy: { createdAt: "desc" },
-    // })
+    const latestCanonicalCard = await db.canonicalValuesCard.findFirst({
+      orderBy: { createdAt: "desc" },
+    })
 
-    // if (
-    //   latestCanonicalCard &&
-    //   latestCanonicalCard.createdAt < new Date(Date.now() - 12 * 60 * 60 * 1000)
-    // ) {
-    //   return {
-    //     message: "Latest card is more than 12 hours old, skipping.",
-    //   }
-    // }
+    if (
+      latestCanonicalCard &&
+      latestCanonicalCard.createdAt < new Date(Date.now() - 12 * 60 * 60 * 1000)
+    ) {
+      return {
+        message: "Latest card is more than 12 hours old, skipping.",
+      }
+    }
 
     logger.info(`Running hypothetical links generation`)
 
