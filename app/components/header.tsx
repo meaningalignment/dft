@@ -47,18 +47,19 @@ function UserMenu({ user }: { user: User }) {
   )
 }
 
-export default function Header({ chatId, articulatorConfig }: { chatId?: string, articulatorConfig?: string }) {
+export default function Header({
+  articulatorConfig,
+}: {
+  articulatorConfig?: string
+}) {
   const user = useCurrentUser()
 
   return (
     <header className="sticky top-0 z-50 flex items-center justify-between w-full h-16 px-4 border-b shrink-0 bg-gradient-to-b from-background/10 via-background/50 to-background/80 backdrop-blur-xl">
-      {chatId && <p className="text-xs text-gray-400">{chatId}</p>}
       <div className="flex-grow" />
-      {
-        articulatorConfig && articulatorConfig !== 'default' && (
-          <p className="text-xs text-gray-400">{articulatorConfig}</p>
-        )
-      }
+      {articulatorConfig && articulatorConfig !== "default" && (
+        <p className="text-xs text-gray-400">{articulatorConfig}</p>
+      )}
       <div className="flex items-center justify-end">
         {user && <UserMenu user={user} />}
       </div>

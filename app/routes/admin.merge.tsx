@@ -104,7 +104,6 @@ export async function action({ request }: ActionArgs) {
         edgeHypothesisFrom: { none: {} },
         Impression: { none: {} },
         Vote: { none: {} },
-        Chat: { none: {} },
       },
     })
   }

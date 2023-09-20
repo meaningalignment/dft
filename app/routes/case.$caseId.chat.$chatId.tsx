@@ -46,7 +46,7 @@ export default function ChatScreen() {
   return (
     <ChatContext.Provider value={{ chatId, caseId }}>
       <div className="flex flex-col h-screen w-screen">
-        <Header chatId={chatId} articulatorConfig={articulatorConfig} />
+        <Header articulatorConfig={articulatorConfig} />
 
         <Chat
           hasSubmitted={hasSubmitted}
