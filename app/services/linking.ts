@@ -505,7 +505,7 @@ const transitionsFunction = {
             },
             story: {
               description:
-                "Tell a plausible, personal story. The story should be in first-person, \"I\" voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to discover a problem with the older value, and how you discovered the new value, and an explanation of how the new values what was what you were really about the whole time. The story should also mention in what situations you think the new value is broadly applicable. The story should avoid making long lists of criteria and instead focus on the essence of the values and their difference.",
+                'Tell a plausible, personal story. The story should be in first-person, "I" voice. Make up a specific, evocative experience. The experience should include a situation you were in, a series of specific emotions that came up, leading you to discover a problem with the older value, and how you discovered the new value, and an explanation of how the new values what was what you were really about the whole time. The story should also mention in what situations you think the new value is broadly applicable. The story should avoid making long lists of criteria and instead focus on the essence of the values and their difference.',
               type: "string",
             },
             mapping: {
@@ -586,13 +586,18 @@ export const hypothesize = inngest.createFunction(
     // Don't run the expensive prompt if the latest card is older than last time
     // this cron job ran.
     //
-    const latestCanonicalCard = await db.canonicalValuesCard.findFirst({
-      orderBy: { createdAt: "desc" },
-    })
+    const latestCanonicalCard = (await step.run(
+      "Get latest canonical card",
+      async () =>
+        db.canonicalValuesCard.findFirst({
+          orderBy: { createdAt: "desc" },
+        })
+    )) as any as CanonicalValuesCard | null
 
     if (
-      latestCanonicalCard &&
-      latestCanonicalCard.createdAt < new Date(Date.now() - 12 * 60 * 60 * 1000)
+      latestCanonicalCard?.createdAt &&
+      new Date(latestCanonicalCard.createdAt) <
+        new Date(Date.now() - 12 * 60 * 60 * 1000)
     ) {
       return {
         message: "Latest card is more than 12 hours old, skipping.",
