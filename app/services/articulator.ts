@@ -1,9 +1,4 @@
-import {
-  CanonicalValuesCard,
-  Chat,
-  PrismaClient,
-  ValuesCard,
-} from "@prisma/client"
+import { Chat, PrismaClient, ValuesCard } from "@prisma/client"
 import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge/types/api"
 import {
   ArticulatorConfig,
@@ -16,6 +11,7 @@ import { OpenAIStream } from "~/lib/openai-stream"
 import { capitalize, isDisplayableMessage, toDataModel } from "~/utils"
 import EmbeddingService from "./embedding"
 import DeduplicationService from "./deduplication"
+import va from "@vercel/analytics"
 
 // import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
 
@@ -336,6 +332,7 @@ export class ArticulatorService {
     const message = summarize(this.config, "show_values_card", {
       title: newCard!.title,
     })
+
     return { message, articulatedCard: newCard, submittedCard: null }
   }
 

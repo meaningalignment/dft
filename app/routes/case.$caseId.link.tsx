@@ -17,6 +17,7 @@ import { cn } from "~/utils"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { Label } from "~/components/ui/label"
 import { Textarea } from "~/components/ui/textarea"
+import va from "@vercel/analytics"
 
 type Relationship = "upgrade" | "no_upgrade" | "not_sure"
 
@@ -92,6 +93,8 @@ export default function LinkScreen() {
   }, [draw])
 
   const onContinue = async () => {
+    va.track(`Submitted Edge ${index + 1}`)
+
     setIsLoading(true)
 
     const body = {
@@ -118,6 +121,7 @@ export default function LinkScreen() {
 
     // If we're at the end of the draw, navigate to the finish screen.
     if (index === draw.length - 1) {
+      va.track("Finished")
       return navigate("/finished")
     }
 

@@ -10,6 +10,7 @@ import { ValuesCardData } from "~/lib/consts"
 import { useRevalidator } from "@remix-run/react"
 import { useCurrentUser } from "~/root"
 import { ChatContext } from "~/context/case"
+import va from "@vercel/analytics"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   initialMessages?: Message[]
@@ -62,7 +63,7 @@ export function Chat({
 
   const onCardArticulation = (card: ValuesCardData) => {
     console.log("Card articulated:", card)
-
+    va.track("Articulated Card")
     setValueCards((prev) => [
       ...prev,
       {
@@ -75,7 +76,7 @@ export function Chat({
 
   const onCardSubmission = (card: ValuesCardData) => {
     console.log("Card submitted:", card)
-
+    va.track("Submitted Card")
     setIsFinished(true)
   }
 
