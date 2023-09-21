@@ -26,9 +26,6 @@ export default function LoginScreen() {
   const actionData = useActionData()
 
   const redirect = searchParams.get("redirect") as string
-  const prolificId = searchParams.get("PROLIFIC_PID")
-  const studyId = searchParams.get("STUDY_ID")
-  const sessionId = searchParams.get("SESSION_ID")
 
   useEffect(() => {
     if (actionData?.error) {
@@ -55,9 +52,6 @@ export default function LoginScreen() {
         <div className="grid gap-6">
           <Form method="post" onSubmit={() => setIsLoading(true)}>
             <input type="hidden" name="redirect" value={redirect || ""} />
-            <input type="hidden" name="prolificId" value={prolificId || ""} />
-            <input type="hidden" name="studyId" value={studyId || ""} />
-            <input type="hidden" name="sessionId" value={sessionId || ""} />
             <input type="hidden" name="autoregister" value="YES" />
             <div className="grid gap-2">
               <div className="grid gap-1">
