@@ -234,7 +234,7 @@ const config: ArticulatorConfig = {
     },
   },
   summarizers: {
-    show_values_card: `<A card ({{title}}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`,
+    show_values_card: `<A card ({{title}}) was articulated and shown to the user. The preview of the card is already shown in the UI, do not summarize it again for them. The user can now choose to submit the card.>`,
     show_values_card_critique: `<A card was articulated, but it is not yet meeting the guidelines. The following critique was receieved: "{{critique}}". Continue the dialogue with the user until you are able to solve for the critique.>`,
     submit_values_card: `<the values card ({{title}}) was submitted. The user has now submitted 1 value in total. Proceed to thank the user for submitting their value.>`,
   },

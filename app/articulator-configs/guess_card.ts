@@ -75,6 +75,7 @@ Some general guidelines:
 - Don't overwhelm the user by asking multiple questions at the same time.
 - If the user seems to have multiple sources of meaning, ask them to pick one to focus on, and tell them they can do the rest in a second conversation.
 - Only call 'show_values_card' when you are confident you have found a source of meaning, and you know several things that the user thinks ChatGPT should pay attention to in the situation, which fit together in a coherent way.
+- Only call 'submit_card' once you have shown a card to the user that they are satisfied with.
 
 Here are some examples of the cards you will be helping the user articulate:
 
@@ -211,7 +212,7 @@ const config: ArticulatorConfig = {
         {
           name: "show_values_card",
           description:
-            "Called when the assistant has received sufficient information from the user to articulate one of the user's sources of meaning, but has not yet articulated a values card or the articulated values card is not yet satisfactory to the user. Should only be called when you are confident you have found a source of meaning, and you know several things that the user pays attention to in the situation, which fit together in a coherent way.",
+            "Called when the assistant has received sufficient information from the user to articulate one of the user's sources of meaning, but has not yet shown a values card or the shown values card is not yet satisfactory to the user. Should only be called when you are confident you have guessed a source of meaning, and you know several things that the user pays attention to in the situation, which fit together in a coherent way.",
           parameters: {
             type: "object",
             properties: {},
@@ -220,7 +221,7 @@ const config: ArticulatorConfig = {
         {
           name: "submit_values_card",
           description:
-            "Called when a values card has been articulated to the user, and the user is satisfied with the articulation.",
+            "Called when a values card has been shown to the user using 'show_values_card, and the user is satisfied with the shown card.",
           parameters: {
             type: "object",
             properties: {},
@@ -272,7 +273,7 @@ const config: ArticulatorConfig = {
     },
   },
   summarizers: {
-    show_values_card: `<A card ({{title}}) was articulated and shown to the user. The preview of the card is shown in the UI, no need to repeat it here. The user can now choose to submit the card.>`,
+    show_values_card: `<A card ({{title}}) was articulated and shown to the user. The preview of the card is already shown in the UI, do not summarize it again for them. The user can now choose to submit the card.>`,
     show_values_card_critique: `<A card was articulated, but it is not yet meeting the guidelines. The following critique was receieved: "{{critique}}". Continue the dialogue with the user until you are able to solve for the critique.>`,
     submit_values_card: `<the values card ({{title}}) was submitted. The user has now submitted 1 value in total. Proceed to thank the user for submitting their value.>`,
   },
