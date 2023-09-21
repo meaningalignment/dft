@@ -3,6 +3,7 @@ import Header from "~/components/header"
 import { useLoaderData } from "@remix-run/react"
 import { auth, db } from "~/config.server"
 import Carousel from "~/components/carousel"
+import { useCurrentUser } from "~/root"
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
@@ -61,6 +62,8 @@ export async function loader({ request }: LoaderArgs) {
 }
 
 export default function FinishedScreen() {
+  const user = useCurrentUser()
+
   const {
     userValuesCount,
     totalValuesCount,
@@ -89,6 +92,13 @@ export default function FinishedScreen() {
             have been submitted, and <strong>{totalVotes} values</strong> have
             earned endorsements from other participants.
           </p>
+          {user?.prolificId && (
+            <div className="my-8 p-8 border-2 border-border rounded-xl">
+              <h1 className="text-2xl my-8">
+                Your prolific completion code is <strong>C16VIHGQ</strong>
+              </h1>
+            </div>
+          )}
           <p className="text-sm text-neutral-500 my-8">
             Once the Moral Graph is complete, you'll receive a follow-up email
             showcasing the results.
