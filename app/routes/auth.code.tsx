@@ -11,6 +11,7 @@ import { Button } from "~/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { IconCheck } from "~/components/ui/icons"
 import { ActionArgs, json } from "@remix-run/node"
+import va from "@vercel/analytics"
 
 export async function action(args: ActionArgs) {
   try {
@@ -100,7 +101,11 @@ export default function CodeScreen() {
             pattern="\d{6}"
             name="code"
           />
-          <Button disabled={!isValidCode || isLoading} type="submit">
+          <Button
+            disabled={!isValidCode || isLoading}
+            type="submit"
+            onClick={() => va.track("Submitted Code")}
+          >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Submit
           </Button>

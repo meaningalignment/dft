@@ -9,6 +9,7 @@ import { useEnterSubmit } from "~/hooks/use-enter-submit"
 import { useCurrentUserValues } from "~/root"
 import { ChatContext } from "~/context/case"
 import { Loader2 } from "lucide-react"
+import va from "@vercel/analytics"
 
 export interface PromptProps
   extends Pick<UseChatHelpers, "input" | "setInput"> {
@@ -49,6 +50,8 @@ function FinishedView() {
 
   const onContinue = () => {
     setIsLoading(true)
+    va.track("Finished Chat")
+
     // Hard reset to prevent state reuse issues.
     window.location.href = `/case/${caseId}/select`
   }

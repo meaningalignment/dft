@@ -6,6 +6,7 @@ import Carousel from "~/components/carousel"
 import { db } from "~/config.server"
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
+import va from "@vercel/analytics"
 
 export async function loader() {
   const carouselValues = await db.canonicalValuesCard.findMany({
@@ -56,7 +57,13 @@ export default function StartPage() {
             models. This process will take around 15 minutes.
           </p>
           <Link to="/case/select">
-            <Button disabled={isLoading} onClick={() => setIsLoading(true)}>
+            <Button
+              disabled={isLoading}
+              onClick={() => {
+                setIsLoading(true)
+                va.track("Started Flow")
+              }}
+            >
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Let's Go
             </Button>

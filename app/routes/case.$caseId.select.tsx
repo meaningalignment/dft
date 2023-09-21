@@ -12,6 +12,7 @@ import EmbeddingService from "~/services/embedding"
 import { Check, Loader2 } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
+import va from "@vercel/analytics"
 
 const minRequiredVotes = 2
 
@@ -122,6 +123,8 @@ export default function SelectScreen() {
 
   const onSubmit = async () => {
     setIsLoading(true)
+
+    va.track("Selected Values")
 
     const body = { values, selected, drawId }
 
