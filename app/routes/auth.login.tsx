@@ -7,6 +7,7 @@ import { Input } from "~/components/ui/input"
 import { Label } from "~/components/ui/label"
 import { Loader2 } from "lucide-react"
 import { ExternalLink } from "~/components/external-link"
+import va from "@vercel/analytics"
 
 export async function action(args: ActionArgs) {
   try {
@@ -71,7 +72,11 @@ export default function LoginScreen() {
                 />
               </div>
 
-              <Button disabled={isLoading} type="submit">
+              <Button
+                disabled={isLoading}
+                type="submit"
+                onClick={() => va.track("Sign In Clicked")}
+              >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign In with Email
               </Button>
@@ -89,7 +94,7 @@ export default function LoginScreen() {
         <div
           className={`mt-6 w-full text-center transition-opacity duration-300 ease-in-out ${
             showError ? "opacity-100" : "opacity-0"
-            }`}
+          }`}
         >
           <div className="text-red-500">{actionData?.error ?? "error"}</div>
         </div>
