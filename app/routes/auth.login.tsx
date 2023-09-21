@@ -26,10 +26,9 @@ export default function LoginScreen() {
   const actionData = useActionData()
 
   const redirect = searchParams.get("redirect") as string
-
-  const prolificId = searchParams.get("PROLIFIC_PID") as string
-  const studyId = searchParams.get("STUDY_ID") as string
-  const sessionId = searchParams.get("SESSION_ID") as string
+  const prolificId = searchParams.get("PROLIFIC_PID")
+  const studyId = searchParams.get("STUDY_ID")
+  const sessionId = searchParams.get("SESSION_ID")
 
   useEffect(() => {
     if (actionData?.error) {
