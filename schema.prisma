@@ -19,6 +19,7 @@ model User {
   updatedAt  DateTime     @updatedAt
   role       String[]     @default(["USER"])
   isAdmin    Boolean      @default(false)
+  signupType String       @default("EMAIL") // EMAIL or PROLIFIC
   prolificId String?
   studyId    String?
   sessionId  String?
