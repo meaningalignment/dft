@@ -48,24 +48,22 @@ export async function action({ request, params }: ActionArgs) {
 
   // Add impressions in the database for each seen value.
   promises.push(
-    db.impression.createMany(
-      values.map((v: CanonicalValuesCard) => {
+    db.impression.createMany({
+      data: values.map((v: CanonicalValuesCard) => {
         return {
-          data: {
-            valuesCardId: v.id,
-            userId,
-            drawId,
-            caseId,
-          },
+          valuesCardId: v.id,
+          userId,
+          drawId,
+          caseId,
         }
-      })
-    )
+      }),
+    })
   )
 
   // Add votes in the database for each selected value.
   promises.push(
-    db.vote.createMany(
-      selected.map((id: number) => {
+    db.vote.createMany({
+      data: selected.map((id: number) => {
         const value = values.find((v: CanonicalValuesCard) => v.id === id)
 
         if (!value) {
@@ -73,15 +71,13 @@ export async function action({ request, params }: ActionArgs) {
         }
 
         return {
-          data: {
-            userId,
-            drawId,
-            caseId,
-            valuesCardId: value.id,
-          },
+          valuesCardId: value.id,
+          userId,
+          drawId,
+          caseId,
         }
-      })
-    )
+      }),
+    })
   )
 
   await Promise.all(promises)
