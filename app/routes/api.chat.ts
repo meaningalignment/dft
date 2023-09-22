@@ -8,7 +8,6 @@ import DeduplicationService from "~/services/deduplication"
 import EmbeddingService from "~/services/embedding"
 
 export const runtime = "edge"
-export const config = { maxDuration: 300 }
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,

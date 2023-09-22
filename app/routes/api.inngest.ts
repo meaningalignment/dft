@@ -5,8 +5,6 @@ import { inngest } from "~/config.server"
 import { hypothesize } from "~/services/linking"
 import { evaluateDialogues } from "~/services/dialogue-evaluator"
 
-export const config = { maxDuration: 300 }
-
 const handler = serve(inngest, [
   deduplicate,
   embed,
