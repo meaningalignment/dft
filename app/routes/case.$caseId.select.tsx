@@ -33,8 +33,10 @@ export async function loader({ request, params }: LoaderArgs) {
   return json({ values, drawId: id })
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request, params }: ActionArgs) {
   const userId = await auth.getUserId(request)
+  const caseId = params.caseId!
+
   const body = await request.json()
   const { values, selected, drawId } = body
 
@@ -45,40 +47,44 @@ export async function action({ request }: ActionArgs) {
   let promises = []
 
   // Add impressions in the database for each seen value.
-  for (const card of values) {
-    promises.push(
-      db.impression.create({
-        data: {
-          valuesCardId: card.id,
-          userId,
-          drawId,
-        },
+  promises.push(
+    db.impression.createMany(
+      values.map((v: CanonicalValuesCard) => {
+        return {
+          data: {
+            valuesCardId: v.id,
+            userId,
+            drawId,
+            caseId,
+          },
+        }
       })
     )
-  }
+  )
 
   // Add votes in the database for each selected value.
-  for (const id of selected) {
-    const value = values.find((v: CanonicalValuesCard) => v.id === id)
-    const valuesCardId = value.id
+  promises.push(
+    db.vote.createMany(
+      selected.map((id: number) => {
+        const value = values.find((v: CanonicalValuesCard) => v.id === id)
 
-    if (!value) {
-      throw new Error("Vote not found in hand.")
-    }
+        if (!value) {
+          throw new Error("Vote for value not found in draw.")
+        }
 
-    const promise = db.vote.create({
-      data: {
-        userId,
-        drawId,
-        valuesCardId,
-      },
-    })
-
-    promises.push(promise)
-  }
+        return {
+          data: {
+            userId,
+            drawId,
+            caseId,
+            valuesCardId: value.id,
+          },
+        }
+      })
+    )
+  )
 
   await Promise.all(promises)
-
   return json({})
 }
 
