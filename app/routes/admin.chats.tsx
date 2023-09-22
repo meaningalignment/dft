@@ -1,6 +1,7 @@
 import { LoaderArgs, json } from "@remix-run/node"
 import { NavLink, Outlet, useLoaderData } from "@remix-run/react"
 import { db } from "~/config.server"
+import { cn } from "~/utils"
 
 export async function loader({ params }: LoaderArgs) {
   const chats = await db.chat.findMany({
@@ -20,10 +21,28 @@ export async function loader({ params }: LoaderArgs) {
           email: true,
         },
       },
+      ValuesCard: {
+        select: { id: true },
+      },
     },
   })
 
   return json({ chats })
+}
+
+function StatusBadge({ hasValuesCard }: { hasValuesCard: boolean }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+        hasValuesCard
+          ? "bg-green-100 text-green-800"
+          : "bg-yellow-100 text-yellow-800"
+      )}
+    >
+      {hasValuesCard ? "Submitted Card" : "No Card"}
+    </span>
+  )
 }
 
 export default function AdminChats() {
@@ -68,6 +87,8 @@ export default function AdminChats() {
                     Copied from {chat.copiedFromId}
                   </div>
                 )}
+
+                <StatusBadge hasValuesCard={chat.ValuesCard !== null} />
               </li>
             </NavLink>
           ))}
