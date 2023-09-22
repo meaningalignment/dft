@@ -1,5 +1,5 @@
 import { Configuration, OpenAIApi } from "openai-edge"
-import { ActionArgs, ActionFunction } from "@remix-run/node"
+import { ActionFunctionArgs, ActionFunction } from "@remix-run/node"
 import { ValuesCardData } from "~/lib/consts"
 import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
 import { auth, db } from "~/config.server"
@@ -36,7 +36,7 @@ async function createHeaders(
 
 export const action: ActionFunction = async ({
   request,
-}: ActionArgs): Promise<Response> => {
+}: ActionFunctionArgs): Promise<Response> => {
   // const articulatorConfig = request.headers.get("X-Articulator-Config")
   const userId = await auth.getUserId(request)
   const json = await request.json()
