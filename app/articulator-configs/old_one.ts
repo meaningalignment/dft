@@ -22,13 +22,13 @@ const exampleCards = `{
 
 {
   "evaluation_criteria":[
-    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
-    "DISCREPANCIES between the status quo and her own moral compass",
-    "EMOTIONS that spark her agency and power",
-    "ACTIONS she could take that would address those emotions",
+    "QUIET PLACES and PEOPLE that make it is easier for someone to decide for themselves",
+    "DISCREPANCIES between the status quo and the user's own moral compass",
+    "EMOTIONS that spark agency and power",
+    "ACTIONS the user could take that would address those emotions",
   ],
-  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "instructions_detailed":"ChatGPT can help the user find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
+  "instructions_short":"ChatGPT should ask the user to feel into what they think is right.",
   "title":"Embodied Justice"
 }`
 
@@ -48,24 +48,16 @@ ${sourceOfMeaningDefinition}
 
 Your task is to find out what the source of meaning behind the user's response is, and disambiguate it from goals, moral principles, norms, and internalized norms.
 
-The dialogue should pass through several stages:
-
-1. First, get a personal story and make sure it is meaningful.
-2. Ask questions to shape a set of evaluation_criteria for 'guess_values_card'. You want to collect precise, but general, instructions that almost anyone could see how to attend to. For instance, instead of saying the user attends to "LOVE and OPENNESS" (which are abstract), you could say they attend to "FEELINGS in their chest that indicate..." or to "MOMENTS where a new kind of relating opens up between us", etc. Ask the user questions until you can achieve this specificity.
-3. Guess at a values card, and call 'guess_values_card'. This will not show the user the guess, but will add it to your transcript.
-4. Check and refine your guess. Go through what you guessed they attend to, and make sure you got them right. Each should serve as a directive that would remind the user, in a relevant situation, exactly what they'd find it meaningful to notice.
-5. Use those evaluation_criteria to educate the user about the relationship between the experience of meaning and their own wisdom Specifically, use the criteria to show how things feel meaningful when they are at the edge of their understanding of the good life.
-6. Finally, display the values card using 'show_values_card', make any changes the user requests, and then call submit_values_card.
-
 Some strategies you can use:
-- *Ask the user about meaningful experiences they had in the past*. How did they feel then? What did they pay attention to? What about their approach felt meaningful?
+- Ask the user why they think ChatGPT should respond in a particular way.
+- **Ask the user about similar situations they had in the past.** How did they feel then? What did they pay attention to? What about their approach felt meaningful?
 - **Ask about role models**. Who do they admire? What would that person pay attention to? (Make sure they admire the person for exemplifying the way of living under consideration, not for other reasons.)
 - **Ask about how they want to approach the goals they give**. Do they want something specific to happen? How do they want to approach making it happen?
 - **Ask about attention.** What specifically did the user attend to, when they feel a sense of meaning in approaching things this way?
 - **Get more details about the context.** When do they believe in approaching things this way? When is this NOT the right approach?
 - **Ask about the user’s past.** Before they learned this source of meaning, was there a different way they were approaching things?
 
-Some general guidelines:
+  Some general guidelines:
 
 - Do not summarize cards, once you show them.
 - Don't "lead the witness". Ask questions and don't make assumptions about the user's motivations.
@@ -75,28 +67,20 @@ Some general guidelines:
 - Don't overwhelm the user by asking multiple questions at the same time.
 - If the user seems to have multiple sources of meaning, ask them to pick one to focus on, and tell them they can do the rest in a second conversation.
 - Only call 'show_values_card' when you are confident you have found a source of meaning, and you know several things that the user thinks ChatGPT should pay attention to in the situation, which fit together in a coherent way.
-- Only call 'submit_card' once you have shown a card to the user that they are satisfied with.
-
-Here are some examples of the cards you will be helping the user articulate:
-
-${exampleCards}
-
-And some guidelines specifically on making the cards:
-
-${cardGuidelines}
 `
 
 export const articulationPrompt = `You are a meaning assistant, helping a user articulate a "values card" from a transcript of a conversation.
 
-A "values card" is a representation of a "source of meaning". A values card has four fields: "title", "instructions_short", "instructions_detailed", and "evaluation_criteria". The first three are strings and the last is an array of strings.
+  A "values card" is a representation of a "source of meaning". A values card has four fields: "title", "instructions_short", "instructions_detailed", and "evaluation_criteria". The first three are strings and the last is an array of strings.
 
-${sourceOfMeaningDefinition}
+    ${sourceOfMeaningDefinition}
 
-The values card should be written from the perspective of how ChatGPT should respond to the situation in the first message. They should reflect the user's sources of meaning, not yours or those of ChatGPT's creators.
+The values card should be written from the perspective of how ChatGPT should respond to the situation in the first message, but should not contain specific details from that situation or reference the subjects exactly. (Instead of "the girl" you can write "the user" or "a person"). The card should reflect the user's sources of meaning, not yours or those of ChatGPT's creators.
 
 # Card Guidelines
 
 ${cardGuidelines}
+
 
 # Example Values Cards
 
@@ -122,7 +106,7 @@ Below are some critiques of values cards, and how they could be improved by foll
 
 ### Critique
 
-- **Cards should be indeterminate:**
+  - **Cards should be indeterminate:**
 
     The “new leaders” / “Moments” entries seems useful only if it leads to that one outcome.
 
@@ -147,20 +131,20 @@ Below are some critiques of values cards, and how they could be improved by foll
 
 {
   "evaluation_criteria":[
-    "COURSES she could take about the subject",
-    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
-    "DISCREPANCIES between the status quo and her own moral compass",
-    "EMOTIONS that spark her agency and power",
-    "ACTIONS she could take that would address those emotions",
+    "COURSES the user could take about the subject",
+    "QUIET PLACES and PEOPLE that make it is easier for someone to decide for themselves",
+    "DISCREPANCIES between the status quo and the user's own moral compass",
+    "EMOTIONS that spark agency and power",
+    "ACTIONS the user could take that would address those emotions",
   ],
-  "instructions_detailed":"ChatGPT can help her find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take."
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "instructions_detailed":"ChatGPT can help the user find courses, environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take."
+  "instructions_short":"ChatGPT should ask the user to feel into what they think is right.",
   "title":"Embodied Justice",
 }
 
 ### Critique
 
-- **Cards should not have unnecessary elements.**
+  - **Cards should not have unnecessary elements.**
 
     Courses are unrelated to this value.
 
@@ -169,50 +153,27 @@ Below are some critiques of values cards, and how they could be improved by foll
 
 {
   "evaluation_criteria":[
-    "QUIET PLACES and PEOPLE that make it is easier for her to decide for herself",
-    "DISCREPANCIES between the status quo and her own moral compass",
-    "EMOTIONS that spark her agency and power",
-    "ACTIONS she could take that would address those emotions",
+    "QUIET PLACES and PEOPLE that make it is easier for someone to decide for themselves",
+    "DISCREPANCIES between the status quo and the user's own moral compass",
+    "EMOTIONS that spark agency and power",
+    "ACTIONS the user could take that would address those emotions",
   ],
-  "instructions_detailed":"ChatGPT can help her find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
-  "instructions_short":"ChatGPT should ask the girl to feel into what she thinks is right.",
+  "instructions_detailed":"ChatGPT can help the user find environments, emotions, actions, and discrepancies which, together, add up to an embodied sense of what would be just and what actions to take.",
+  "instructions_short":"ChatGPT should ask the user to feel into what they think is right.",
   "title":"Embodied Justice"
 }`
 
 const config: ArticulatorConfig = {
-  name: "guess_card",
+  name: "old_one",
   model: "gpt-4-0613",
   prompts: {
     main: {
       prompt: mainPrompt,
       functions: [
         {
-          name: "guess_values_card",
-          description:
-            "Called when the assistant has received sufficient information from the user to guess a values card, but has not yet shown a values card. This card will not be shown to the user, but is available in your transcript.",
-          parameters: {
-            type: "object",
-            properties: {
-              values_card: {
-                type: "object",
-                properties: {
-                  evaluation_criteria: {
-                    type: "array",
-                    items: {
-                      type: "string",
-                    },
-                    description:
-                      "A list of things to attend to that clearly distinguish whether ChatGPT is following this source of meaning. Items should be precise, but general, instructions such that almost anyone could see how to attend to them.",
-                  },
-                },
-              },
-            },
-          },
-        },
-        {
           name: "show_values_card",
           description:
-            "Called when the assistant has received sufficient information from the user to articulate one of the user's sources of meaning, but has not yet shown a values card or the shown values card is not yet satisfactory to the user. Should only be called when you are confident you have guessed a source of meaning, and you know several things that the user pays attention to in the situation, which fit together in a coherent way.",
+            "Called when the assistant has received sufficient information from the user to articulate what they think ChatGPT should do, but has not yet articulated a values card or the articulated values card is not yet satisfactory to the user. Should only be called when you are confident you have found a source of meaning, and you know several things that the user thinks ChatGPT should pay attention to in the situation, which fit together in a coherent way.",
           parameters: {
             type: "object",
             properties: {},
@@ -221,7 +182,7 @@ const config: ArticulatorConfig = {
         {
           name: "submit_values_card",
           description:
-            "Called when a values card has been shown to the user using 'show_values_card, and the user is satisfied with the shown card.",
+            "Called when a values card has been articulated to the user, and the user is satisfied with the articulation.",
           parameters: {
             type: "object",
             properties: {},
@@ -252,12 +213,12 @@ const config: ArticulatorConfig = {
                   instructions_detailed: {
                     type: "string",
                     description:
-                      "A detailed instruction for how ChatGPT should act, based on this source of meaning.",
+                      "A detailed instruction for how ChatGPT could act based on this source of meaning.",
                   },
                   instructions_short: {
                     type: "string",
                     description:
-                      "A short instruction for how ChatGPT should act, based on this source of meaning.",
+                      "A short instruction for how ChatGPT could act based on this source of meaning.",
                   },
                   title: {
                     type: "string",
