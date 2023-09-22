@@ -38,7 +38,7 @@ async function createHeaders(
 export const action: ActionFunction = async ({
   request,
 }: ActionArgs): Promise<Response> => {
-  const articulatorConfig = request.headers.get("X-Articulator-Config")
+  // const articulatorConfig = request.headers.get("X-Articulator-Config")
   const userId = await auth.getUserId(request)
   const json = await request.json()
 
@@ -46,7 +46,7 @@ export const action: ActionFunction = async ({
 
   // Create stream for next chat message.
   const articulator = new ArticulatorService(
-    articulatorConfig || "default",
+    "default",
     deduplication,
     embeddings,
     openai,
