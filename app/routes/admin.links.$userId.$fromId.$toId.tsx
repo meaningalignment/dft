@@ -21,11 +21,17 @@ export async function loader({ params }: LoaderArgs) {
     include: { from: true, to: true },
   })) as Edge & { from: CanonicalValuesCard; to: CanonicalValuesCard }
 
-  return json({ edge })
+  const [yesCount, noCount, notSureCount] = await Promise.all([
+    db.edge.count({ where: { fromId, toId, relationship: "upgrade" } }),
+    db.edge.count({ where: { fromId, toId, relationship: "no_upgrade" } }),
+    db.edge.count({ where: { fromId, toId, relationship: "not_sure" } }),
+  ])
+
+  return json({ edge, stats: { yesCount, noCount, notSureCount } })
 }
 
 export default function AdminLink() {
-  const { edge } = useLoaderData<typeof loader>()
+  const { edge, stats } = useLoaderData<typeof loader>()
 
   return (
     <div className="grid place-items-center space-y-4 py-12 px-8">
@@ -65,15 +71,17 @@ export default function AdminLink() {
           <div className="flex flex-col space-y-2  w-full space-between mt-4">
             <div className="flex items-center space-x-2">
               <RadioGroupItem value={"upgrade"} id="yes" />
-              <Label htmlFor="yes">Yes</Label>
+              <Label htmlFor="yes">Yes ({stats.yesCount} votes in total)</Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="no_upgrade" id="no" />
-              <Label htmlFor="no">No</Label>
+              <Label htmlFor="no">No ({stats.noCount} votes in total)</Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="not_sure" id="not_sure" />
-              <Label htmlFor="not_sure">Not Sure</Label>
+              <Label htmlFor="not_sure">
+                Not Sure ({stats.notSureCount} votes in total)
+              </Label>
             </div>
           </div>
         </RadioGroup>
