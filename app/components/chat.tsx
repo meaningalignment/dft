@@ -164,27 +164,26 @@ export function Chat({
       }
     },
     onFinish: async (message) => {
-      console.log("Chat finished:", message)
-      console.log("messages:", messages)
-
-      // Save messages in the database.
-      await fetch(`/api/messages/${chatId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          chatId,
-          messages: [
-            ...messages,
-            {
-              role: "user",
-              content: input,
-            },
-            message,
-          ],
-        }),
-      })
+      // console.log("Chat finished:", message)
+      // console.log("messages:", messages)
+      // // Save messages in the database.
+      // await fetch(`/api/messages/${chatId}`, {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify({
+      //     chatId,
+      //     messages: [
+      //       ...messages,
+      //       {
+      //         role: "user",
+      //         content: input,
+      //       },
+      //       message,
+      //     ],
+      //   }),
+      // })
     },
   })
 
