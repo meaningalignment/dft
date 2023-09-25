@@ -4,17 +4,11 @@ import {
   OpenAIApi,
 } from "openai-edge"
 import { ActionFunctionArgs, ActionFunction } from "@remix-run/node"
-import { ValuesCardData } from "~/lib/consts"
 import { auth, db } from "~/config.server"
 import { ArticulatorService } from "~/services/articulator"
 import DeduplicationService from "~/services/deduplication"
 import EmbeddingService from "~/services/embedding"
-import {
-  Message,
-  OpenAIStream,
-  OpenAIStreamCallbacks,
-  StreamingTextResponse,
-} from "ai"
+import { OpenAIStream, OpenAIStreamCallbacks, StreamingTextResponse } from "ai"
 
 export const runtime = "edge"
 
@@ -26,21 +20,8 @@ const openai = new OpenAIApi(configuration)
 const embeddings = new EmbeddingService(openai, db)
 const deduplication = new DeduplicationService(embeddings, openai, db)
 
-async function createHeaders(
-  articulatedCard?: ValuesCardData | null,
-  submittedCard?: ValuesCardData | null
-): Promise<{ [key: string]: string }> {
-  const headers: { [key: string]: string } = {}
-
-  if (articulatedCard) {
-    headers["X-Articulated-Card"] = JSON.stringify(articulatedCard)
-  }
-
-  if (submittedCard) {
-    headers["X-Submitted-Card"] = JSON.stringify(submittedCard)
-  }
-
-  return headers
+function isFunctionCall(completion: string) {
+  return completion.replace(/[^a-zA-Z0-9_]/g, "").startsWith("function_call")
 }
 
 export const action: ActionFunction = async ({
@@ -51,43 +32,61 @@ export const action: ActionFunction = async ({
   const json = await request.json()
 
   // Unpack the post body.
-  const { messages, chatId, caseId, function_call } = json
+  const { messages: clientMessages, chatId, caseId, function_call } = json
 
   // Create the Articulator service.
   const articulator = new ArticulatorService(
-    "default",
+    articulatorConfig ?? "default",
     deduplication,
     embeddings,
     openai,
     db
   )
 
+  //
   // Add the user's message to the chat.
-  await articulator.appendMessage(chatId, caseId, userId, {
-    content: messages[messages.length - 1],
-    role: "user",
-  })
+  //
+  let messages: ChatCompletionRequestMessage[]
 
-  // Get the chat response.
-  const response = await articulator.chat(messages, function_call)
+  if ((await db.chat.count({ where: { id: chatId } })) === 0) {
+    const chat = await articulator.createChat(
+      chatId,
+      caseId,
+      userId,
+      clientMessages
+    )
+    messages = chat.transcript as any as ChatCompletionRequestMessage[]
+  } else {
+    messages = await articulator.addServerSideMessage(
+      chatId,
+      clientMessages[clientMessages.length - 1]
+    )
+  }
 
+  //
   // Configure streaming callbacks.
+  //
   const callbacks: OpenAIStreamCallbacks = {
-    experimental_onFunctionCall: async (payload, append) => {
-      return articulator.func(payload, append, chatId, messages)
+    experimental_onFunctionCall: async (payload) => {
+      return articulator.func(payload, chatId, messages)
     },
     onCompletion: async (completion) => {
-      await articulator.appendMessage(chatId, caseId, userId, {
+      if (isFunctionCall(completion)) {
+        // Function call completions are handled by the onFunctionCall callback.
+        return
+      }
+
+      // Save the message to database.
+      await articulator.addServerSideMessage(chatId, {
         content: completion,
         role: "assistant",
       })
     },
   }
 
-  // Create the streaming response.
-  const stream = OpenAIStream(response, callbacks)
+  // Get the chat response.
+  const response = await articulator.chat(messages, function_call)
 
-  // Return the streaming response.
-  const init = { headers: await createHeaders() }
-  return new StreamingTextResponse(stream, init)
+  // Return a streaming response.
+  return new StreamingTextResponse(OpenAIStream(response, callbacks))
 }

@@ -2,6 +2,7 @@ import { CanonicalValuesCard, ValuesCard } from "@prisma/client"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { ValuesCardData } from "./lib/consts"
+import { ChatCompletionRequestMessage } from "openai-edge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -115,4 +116,16 @@ export function isDisplayableMessage(message: {
   return (
     message.content && (message.role === "user" || message.role === "assistant")
   )
+}
+
+export function normalizeMessage(
+  message: ChatCompletionRequestMessage
+): ChatCompletionRequestMessage {
+  const { role, content, name, function_call } = message
+
+  if (function_call && !function_call.arguments) {
+    function_call.arguments = "{}"
+  }
+
+  return { role, content, name, function_call }
 }

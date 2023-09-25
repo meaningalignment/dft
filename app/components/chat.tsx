@@ -89,6 +89,7 @@ export function Chat({
       {
         function_call: {
           name: "submit_values_card",
+          arguments: "{}",
         },
       }
     )
