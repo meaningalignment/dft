@@ -4,60 +4,44 @@ import { ValuesCardData, model } from "~/lib/consts"
 import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
 import { toDataModel, toDataModelWithId } from "~/utils"
 import { db, inngest } from "~/config.server"
-import { cases } from "~/lib/case"
 
 //
 // Prompts.
 //
 
-const sourceOfMeaningDefinition = `### Source of Meaning
-A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. Something that you pay attention to in a choice. They are more specific than words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity, specified as a path of attention.`
+const clusterPrompt = `You will receive a list of values cards. Group them into clusters, where each cluster is about a value that is shared between the cards.
 
-const valuesCardDefinition = `### Values Card
-A "values card" is a representation of a "source of meaning". A values card has five fields: "id", "title", "instructions_short", "instructions_detailed", and "evaluation_criteria".`
+First, generate a short motivation for why the cards in the cluster are all about the same value.
 
-const deduplicationInstructions = `### Deduplication Instructions
-To determine if two or more values cards are about the same source of meaning, we can look at the "evaluation_criteria" field. The evaluation criteria specity a path of attention that the person with this card follow in relevant contexts. If two cards have the same evaluation criteria, even if worded very differently, or if one card has a subset of another card's evaluation criteria where the rest of the set "fit together" with the subset into a coherent value, they are still the same source of meaning.
-The "title", "instructions_short" and "instructions_detailed" can be different even if two cards point towards the same source of meaning.`
+Then, return a list of integers, where each integer is the id of a values card in the cluster.
 
-const clusterPrompt = `You are a 'values card' deduplicator. You are given a list of 'sources of meaning', formatted as 'values cards'. Your job is to take this list and output a list of values cards clusters, where each cluster is about the same source of meaning.
+Ignore values cards that should not be clustered with any other cards.
 
-${sourceOfMeaningDefinition}
+# Guidelines
+In order to determine if two or more values cards are about the same value, use the following criteria:
+- Are the evaluation criterias of the cards essentially the same?
+- If not, do the cards share at least one evaluation criteria, whilst the other criterias fit together to form a coherent whole?
+- Are there *no* evaluation criterias that are entirely different between the cards?
+- Are the cards formulated using roughly the same level of granularity and detail?
+- Would a user that articulated one of the cards feel like the other cards in the cluster captured what they cared about *fully*?
 
-${valuesCardDefinition}
+If the cards pass all of these criteria, and *only* if they pass all of these criteria, can they be considered to be about the same value.`
 
-${deduplicationInstructions}
+const dedupePrompt = `You are given a values cards and a list of other canonical values cards. Determine if the value in the input values card is already represented by one of the canonical values. If so, return the id of the canonical values card that represents the source of meaning.
 
-### Output
-Your output should be a nested list of integers, where each nested list is a cluster of values cards ids that all point towards the same source of meaning.
-If a values card is about a unique source of meaning, it should be included in the list as a list with only one element (the id of the values card).
-Every card in the output should be included in one and only one cluster.`
+# Guidelines
+In order to determine if two or more values cards are about the same value, use the following criteria:
+- Are the evaluation criterias of the cards essentially the same?
+- If not, do the cards share at least one evaluation criteria, whilst the other criterias fit together to form a coherent whole?
+- Are there *no* evaluation criterias that are entirely different between the cards?
+- Are the cards formulated using roughly the same level of granularity and detail?
+- Would a user that articulated one of the cards feel like the other cards in the cluster captured what they cared about *fully*?
 
-const dedupePrompt = `You are a 'values card' deduplicator. You are given an input source of meaning, formatted as a 'values card', and a list of other, canonical values cards. Your task is to determine if the source of meaning in the input values card is already represented by one of the canonical values. If so, you should output the id of the canonical values card that represents the source of meaning. If not, you should output null.
+If the cards pass all of these criteria, and *only* if they pass all of these criteria, can they be considered to be about the same value.`
 
-${sourceOfMeaningDefinition}
-
-${valuesCardDefinition}
-
-${deduplicationInstructions}
-
-### Output
-Your output should be the id of the canonical values card that represents the source of meaning of the provided non-canonical values card, or null if no such card exists.`
-
-const bestValuesCardPrompt = `You are a "values card" assistant. You will be provided with a list of "values card" representing the same "source of meaning". Your task is to return the "id" of the "values card" that is best formulated according to the guidelines and critique examples below.
-
-A "values card" is a representation of a "source of meaning". A values card has five fields: "id", "title", "instructions_short", "instructions_detailed", and "evaluation_criteria". The first one is an integer, the following three are strings and the last is an array of strings.
-
-A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. Something that you pay attention to in a choice. They are more specific than words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity, specified as a path of attention.
-
-A source of meaning is distinct from similar concepts:
-- A source of meaning is not a goal. A goal is something you want to achieve, like "become a doctor" or "get married". A source of meaning is a way of living, like "be a good friend" or "be a good listener".
-- A source of meaning is not a moral principle. A source of meaning is not a rule that you think everyone should follow. It is a way of living that is important to the user, but not necessarily to others.
-- A source of meaning is not a norm or a social expectation. A source of meaning is not something you do because you feel like you have to, or because you feel like you should. It is something the user does because it is intrinsically important to them.
-- A source of meaning is not an internalized norm – a norm the user has adopted outside of the original social context. It is a way of living that produces a sense of meaning for you, not a way of living that you think is "right" or "correct".
+const bestValuesCardPrompt = `You will be provided with a list of "values card", all representing the same value. Your task is to return the "id" of the "values card" that is best formulated according to the guidelines below.
 
 # Card Guidelines
-
 1. **Cards should be indeterminate.** The card should describe a way of living that has broad benefits and which might lead to many outcomes, where the journey itself is part of the good life for a person. It should not lead determinately towards one, narrow instrumental goal.
 2. **Cards should not be about meeting others’ expectations.** They should be the kind of thing that is meaningful to someone.
 3. **Cards should be positively stated**. The stuff in the “how” section should be things ChatGPT SHOULD attend to.
@@ -65,67 +49,79 @@ A source of meaning is distinct from similar concepts:
 5. **Cards should be as general as possible.** Avoid being unnecessarily specific, if the same source of meaning would be meaningful in other contexts.
 6. **Cards should not have unnecessary elements.** All elements of the source of meaning should be required, and work together, in the context.
 7. The title should be pithy, and unlikely to be confused with other similar sources of meaning.
-8. The values card should be written from the perspective of how ChatGPT should respond to the situation in the first message. They should reflect the user's sources of meaning, not yours or those of ChatGPT's creators.
-
-# Output
-
-You should return the "id" of the "values card" that is best formulated according to the guidelines and critique examples above.`
+8. The values card should be written from the perspective of how ChatGPT should respond to the situation in the first message. They should reflect the user's sources of meaning, not yours or those of ChatGPT's creators.`
 
 //
 // Functions.
 //
 
-const submitBestValuesCard: ChatCompletionFunctions = {
-  name: "submit_best_values_card",
-  description: "Submit the best formatted values card.",
+const bestCardFunction: ChatCompletionFunctions = {
+  name: "best_card",
+  description:
+    "Return the best formulated values card from a list of values cards.",
   parameters: {
     type: "object",
     properties: {
-      values_card_id: {
+      best_values_card_id: {
         type: "integer",
-        description: "The id of the values card that is best formatted.",
+        description:
+          "The id of the values card that is best formulated according to the guidelines.",
       },
     },
-    required: ["values_card_id"],
+    required: ["best_values_card_id"],
   },
 }
 
-const submitMatchingCanonicalCard: ChatCompletionFunctions = {
-  name: "submit_matching_canonical_values_card",
+const dedupeFunction: ChatCompletionFunctions = {
+  name: "dedupe",
   description:
-    "Submit a canonical values card that is about the same source of meaning as the provided non-canonical values card. If no such card exists, submit null.",
+    "Return the id of the canonical values card that is a duplicate value ",
   parameters: {
     type: "object",
     properties: {
       canonical_card_id: {
         type: "number",
         description:
-          "The id of the canonical values card that is about the same source of meaning as the provided non-canonical values card. Should be null if no such card exists",
+          "The id of the canonical values card that is about the same source of meaning as the provided non-canonical values card. Should only be included if such a card exists.",
       },
     },
   },
 }
 
-const submitClusters: ChatCompletionFunctions = {
-  name: "submit_clusters",
+const clusterFunction: ChatCompletionFunctions = {
+  name: "cluster",
   description:
-    "Submit a list of values card clusters, where each cluster is about a unique source of meaning.",
+    "Return a list of clusters, where each cluster is a list of values card ids that all are about the same value.",
   parameters: {
     type: "object",
     properties: {
       clusters: {
         type: "array",
         description:
-          "A list of clusters, where each cluster is a list of values card ids.",
+          "A list of clusters, where each cluster is a list of values card ids that are about the same value.",
         items: {
-          type: "array",
-          items: {
-            type: "number",
-            description: "A values card id.",
+          type: "object",
+          description: "A cluster of values card ids.",
+          properties: {
+            motivation: {
+              type: "string",
+              description:
+                "A short motivation text for *why* the cards in the cluster are all about the same value. Should not be longer than a short sentence or two.",
+            },
+            values_cards_ids: {
+              type: "array",
+              description:
+                "A list of values card ids that all share the same value.",
+              items: {
+                type: "integer",
+                description: "A values card id.",
+              },
+            },
           },
         },
       },
     },
+    required: ["clusters"],
   },
 }
 
@@ -179,8 +175,9 @@ export default class DeduplicationService {
         { role: "system", content: clusterPrompt },
         { role: "user", content: message },
       ],
-      function_call: { name: submitClusters.name },
-      functions: [submitClusters],
+      function_call: { name: clusterFunction.name },
+      functions: [clusterFunction],
+      temperature: 0.0,
     })
     const data = await response.json()
 
@@ -188,10 +185,26 @@ export default class DeduplicationService {
       data.choices[0].message.function_call.arguments
     ).clusters
 
-    // Return a list of clustered values cards.
-    return clusters.map((cluster: number[]) =>
-      cluster.map((id: number) => cards.find((c) => c.id === id) as ValuesCard)
+    const uniqueIds = clusters.flatMap((c: any) => c.values_cards_ids)
+
+    for (const cluster of clusters) {
+      console.log(
+        `Clustered ${cluster.values_cards_ids}. Motivation: ${cluster.motivation}`
+      )
+    }
+
+    const clusterValues = clusters.map(
+      (cluster: { values_cards_ids: number[] }) =>
+        cluster.values_cards_ids.map(
+          (id: number) => cards.find((c) => c.id === id) as ValuesCard
+        )
     )
+
+    const uniqueValues = cards
+      .filter((c) => !uniqueIds.includes(c.id))
+      .map((c) => [c])
+
+    return [...clusterValues, ...uniqueValues]
   }
 
   /**
@@ -212,13 +225,14 @@ export default class DeduplicationService {
         { role: "system", content: bestValuesCardPrompt },
         { role: "user", content: message },
       ],
-      functions: [submitBestValuesCard],
-      function_call: { name: submitBestValuesCard.name },
+      functions: [bestCardFunction],
+      function_call: { name: bestCardFunction.name },
+      temperature: 0.0,
     })
     const data = await response.json()
     const id: number = JSON.parse(
       data.choices[0].message.function_call.arguments
-    ).values_card_id
+    ).best_values_card_id
 
     const card = cards.find((c) => c.id === id) as CanonicalValuesCard
 
@@ -278,8 +292,9 @@ export default class DeduplicationService {
         { role: "system", content: dedupePrompt },
         { role: "user", content: message },
       ],
-      functions: [submitMatchingCanonicalCard],
-      function_call: { name: submitMatchingCanonicalCard.name },
+      functions: [dedupeFunction],
+      function_call: { name: dedupeFunction.name },
+      temperature: 0.0,
     })
     const data = await response.json()
     const matchingId: number | null | undefined = JSON.parse(
@@ -290,7 +305,7 @@ export default class DeduplicationService {
     return canonical.find((c) => c.id === matchingId) ?? null
   }
 
-  async fetchNonCanonicalizedValues(limit: number = 200) {
+  async fetchNonCanonicalizedValues(limit: number = 50) {
     return (await db.valuesCard.findMany({
       where: { canonicalCardId: null },
       take: limit,
@@ -347,9 +362,8 @@ export const deduplicate = inngest.createFunction(
     }
 
     // Cluster the non-canonicalized cards with a prompt.
-    const clusters = (await step.run(
-      `Cluster cards using prompt for `,
-      async () => service.cluster(cards)
+    const clusters = (await step.run(`Cluster cards using prompt`, async () =>
+      service.cluster(cards)
     )) as any as ValuesCard[][]
 
     logger.info(`Found ${clusters.length} clusters.`)
