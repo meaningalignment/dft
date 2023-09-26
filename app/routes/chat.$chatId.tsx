@@ -1,8 +1,8 @@
-import { LoaderFunctionArgs, redirect } from "@remix-run/node"
+import { LoaderArgs, redirect } from "@remix-run/node"
 import { db } from "~/config.server"
 import { defaultCase } from "~/lib/case"
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params }: LoaderArgs) {
   const chatId = params.chatId!
 
   const chat = await db.chat.findFirst({

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from "react"
+import React, { useContext, useEffect, useState } from "react"
 import { useChat, type Message } from "ai/react"
 import { cn, isDisplayableMessage } from "../utils"
 import { ChatList } from "./chat-list"
@@ -62,11 +62,20 @@ export function Chat({
   }, [initialMessages])
 
   const onCardArticulation = (card: ValuesCardData) => {
+    console.log("Card articulated:", card)
     va.track("Articulated Card")
-    setValueCards((prev) => [...prev, { position: messages.length - 1, card }])
+    setValueCards((prev) => [
+      ...prev,
+      {
+        // The last user & assistant pair has not been appended yet.
+        position: messages.length + 1,
+        card,
+      },
+    ])
   }
 
   const onCardSubmission = (card: ValuesCardData) => {
+    console.log("Card submitted:", card)
     va.track("Submitted Card")
     setIsFinished(true)
   }
@@ -80,7 +89,6 @@ export function Chat({
       {
         function_call: {
           name: "submit_values_card",
-          arguments: "{}",
         },
       }
     )
@@ -100,7 +108,6 @@ export function Chat({
   }
 
   const {
-    data,
     messages,
     append,
     reload,
@@ -118,6 +125,22 @@ export function Chat({
     },
     body: { chatId, caseId },
     initialMessages,
+    onResponse: async (response) => {
+      const articulatedCard = response.headers.get("X-Articulated-Card")
+      if (articulatedCard) {
+        onCardArticulation(JSON.parse(articulatedCard) as ValuesCardData)
+      }
+
+      const submittedCard = response.headers.get("X-Submitted-Card")
+      if (submittedCard) {
+        onCardSubmission(JSON.parse(submittedCard) as ValuesCardData)
+      }
+
+      if (response.status === 401) {
+        console.error(response.status)
+        toast.error("Failed to update chat. Please try again.")
+      }
+    },
     onError: async (error) => {
       console.error(error)
       toast.error("Failed to update chat. Please try again.")
@@ -140,33 +163,30 @@ export function Chat({
         }
       }
     },
+    onFinish: async (message) => {
+      console.log("Chat finished:", message)
+      console.log("messages:", messages)
+
+      // Save messages in the database.
+      await fetch(`/api/messages/${chatId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chatId,
+          messages: [
+            ...messages,
+            {
+              role: "user",
+              content: input,
+            },
+            message,
+          ],
+        }),
+      })
+    },
   })
-
-  const prevData = useRef<string | null>(null)
-
-  useEffect(() => {
-    // Check that we have received new data.
-    if (
-      !data ||
-      data.length === 0 ||
-      JSON.stringify(prevData.current) === JSON.stringify(data)
-    ) {
-      return
-    }
-
-    // The data stream is an array of data objects.
-    // We want to always handle the last one.
-    const lastData = data[data.length - 1]
-
-    if (lastData.submittedCard) {
-      onCardSubmission(lastData.submittedCard)
-    } else if (lastData.articulatedCard) {
-      onCardArticulation(lastData.articulatedCard)
-    }
-
-    // Save the data for the next render, to prevent it from being handled again.
-    prevData.current = data
-  }, [data])
 
   return (
     <>

@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, LoaderFunction, json } from "@remix-run/node"
+import { LoaderArgs, LoaderFunction, json } from "@remix-run/node"
 import { Message } from "ai"
 import { db } from "~/config.server"
 
@@ -15,7 +15,7 @@ function getDisplayName(functionName?: string) {
 
 export const loader: LoaderFunction = async ({
   params,
-}: LoaderFunctionArgs): Promise<Response> => {
+}: LoaderArgs): Promise<Response> => {
   const chatId = params.chatId
   const chat = await db.chat.findUnique({ where: { id: chatId } })
 

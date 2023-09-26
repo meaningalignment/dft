@@ -10,10 +10,10 @@ import { Input } from "~/components/ui/input"
 import { Button } from "~/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { IconCheck } from "~/components/ui/icons"
-import { ActionFunctionArgs, json } from "@remix-run/node"
+import { ActionArgs, json } from "@remix-run/node"
 import va from "@vercel/analytics"
 
-export async function action(args: ActionFunctionArgs) {
+export async function action(args: ActionArgs) {
   try {
     return await auth.codeSubmitAction(args)
   } catch (error: any) {
@@ -21,7 +21,7 @@ export async function action(args: ActionFunctionArgs) {
   }
 }
 
-export async function loader(args: ActionFunctionArgs) {
+export async function loader(args: ActionArgs) {
   return await auth.codeLoader(args)
 }
 
