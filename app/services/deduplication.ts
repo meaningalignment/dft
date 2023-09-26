@@ -4,34 +4,29 @@ import { ValuesCardData, model } from "~/lib/consts"
 import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
 import { toDataModel, toDataModelWithId } from "~/utils"
 import { db, inngest } from "~/config.server"
-import { cases } from "~/lib/case"
 
 //
 // Prompts.
 //
 
-const sourceOfMeaningDefinition = `### Source of Meaning
+const sourceOfMeaningDefinition = `# Source of Meaning
 A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. Something that you pay attention to in a choice. They are more specific than words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity, specified as a path of attention.`
 
-const valuesCardDefinition = `### Values Card
+const valuesCardDefinition = `# Values Card
 A "values card" is a representation of a "source of meaning". A values card has five fields: "id", "title", "instructions_short", "instructions_detailed", and "evaluation_criteria".`
 
-const deduplicationInstructions = `### Deduplication Instructions
-To determine if two or more values cards are about the same source of meaning, we can look at the "evaluation_criteria" field. The evaluation criteria specity a path of attention that the person with this card follow in relevant contexts. If two cards have the same evaluation criteria, even if worded very differently, or if one card has a subset of another card's evaluation criteria where the rest of the set "fit together" with the subset into a coherent value, they are still the same source of meaning.
-The "title", "instructions_short" and "instructions_detailed" can be different even if two cards point towards the same source of meaning.`
+const dedupeGuidelines = `- Use the evaluation criteria to determine if several values cards are about the same value.
+- If the users that articulated two or more values cards would feel fully represented by any of the cards, and the shared evaluation criteria of the cards fits together coherently, they should be grouped together.`
 
-const clusterPrompt = `You are a 'values card' deduplicator. You are given a list of 'sources of meaning', formatted as 'values cards'. Your job is to take this list and output a list of values cards clusters, where each cluster is about the same source of meaning.
+const clusterPrompt = `You will receive a bunch of values cards. Your job is to group them into clusters, where each cluster is about a coherent value.
 
-${sourceOfMeaningDefinition}
+First, generate a short description of each cluster, summarizing the shared value.
 
-${valuesCardDefinition}
+Then, return a list of integers, where each integer is the id of a values card in the cluster.
 
-${deduplicationInstructions}
-
-### Output
-Your output should be a nested list of integers, where each nested list is a cluster of values cards ids that all point towards the same source of meaning.
-If a values card is about a unique source of meaning, it should be included in the list as a list with only one element (the id of the values card).
-Every card in the output should be included in one and only one cluster.`
+# Guidelines
+${dedupeGuidelines}
+- Every values card should be included in the clusters *once* and *only once*. The total amount of cards returned in the nested list should be exactly as long as the input list.`
 
 const dedupePrompt = `You are a 'values card' deduplicator. You are given an input source of meaning, formatted as a 'values card', and a list of other, canonical values cards. Your task is to determine if the source of meaning in the input values card is already represented by one of the canonical values. If so, you should output the id of the canonical values card that represents the source of meaning. If not, you should output null.
 
@@ -39,7 +34,7 @@ ${sourceOfMeaningDefinition}
 
 ${valuesCardDefinition}
 
-${deduplicationInstructions}
+${dedupeGuidelines}
 
 ### Output
 Your output should be the id of the canonical values card that represents the source of meaning of the provided non-canonical values card, or null if no such card exists.`
@@ -106,26 +101,39 @@ const submitMatchingCanonicalCard: ChatCompletionFunctions = {
   },
 }
 
-const submitClusters: ChatCompletionFunctions = {
-  name: "submit_clusters",
+const clusterFunction: ChatCompletionFunctions = {
+  name: "cluster",
   description:
-    "Submit a list of values card clusters, where each cluster is about a unique source of meaning.",
+    "Return a list of clusters, where each cluster is a list of values card ids that all are about the same value.",
   parameters: {
     type: "object",
     properties: {
       clusters: {
         type: "array",
         description:
-          "A list of clusters, where each cluster is a list of values card ids.",
+          "A list of clusters, where each cluster is a list of values card ids that are about the same value.",
         items: {
-          type: "array",
-          items: {
-            type: "number",
-            description: "A values card id.",
+          type: "object",
+          description: "A cluster of values card ids.",
+          properties: {
+            value_description: {
+              type: "string",
+              description: "A short description of the shared value.",
+            },
+            values_cards_ids: {
+              type: "array",
+              description:
+                "A list of values card ids that all share the same value.",
+              items: {
+                type: "integer",
+                description: "A values card id.",
+              },
+            },
           },
         },
       },
     },
+    required: ["clusters"],
   },
 }
 
@@ -182,8 +190,9 @@ export default class DeduplicationService {
         { role: "system", content: clusterPrompt },
         { role: "user", content: message },
       ],
-      function_call: { name: submitClusters.name },
-      functions: [submitClusters],
+      function_call: { name: clusterFunction.name },
+      functions: [clusterFunction],
+      temperature: 0.0,
     })
     const data = await response.json()
 
@@ -192,8 +201,10 @@ export default class DeduplicationService {
     ).clusters
 
     // Return a list of clustered values cards.
-    return clusters.map((cluster: number[]) =>
-      cluster.map((id: number) => cards.find((c) => c.id === id) as ValuesCard)
+    return clusters.map((cluster: { values_cards_ids: number[] }) =>
+      cluster.values_cards_ids.map(
+        (id: number) => cards.find((c) => c.id === id) as ValuesCard
+      )
     )
   }
 
@@ -295,7 +306,7 @@ export default class DeduplicationService {
 
   async fetchNonCanonicalizedValues(limit: number = 200) {
     return (await db.valuesCard.findMany({
-      where: { canonicalCardId: null },
+      // where: { canonicalCardId: null },
       take: limit,
     })) as ValuesCard[]
   }
@@ -321,7 +332,7 @@ export default class DeduplicationService {
 //
 
 export const deduplicate = inngest.createFunction(
-  { name: "Deduplicate", concurrency: 1 }, // Run sequentially to avoid RCs.
+  { name: "Deduplicate", concurrency: 1, retries: 0 }, // Run sequentially to avoid RCs.
   { cron: "0 */3 * * *" },
   async ({ step, logger }) => {
     logger.info(`Running deduplication.`)
@@ -339,7 +350,7 @@ export const deduplicate = inngest.createFunction(
     // Get all non-canonicalized submitted values cards.
     const cards = (await step.run(
       `Get non-canonicalized cards from database`,
-      async () => service.fetchNonCanonicalizedValues()
+      async () => service.fetchNonCanonicalizedValues(50)
     )) as any as ValuesCard[]
 
     if (cards.length === 0) {
@@ -351,9 +362,8 @@ export const deduplicate = inngest.createFunction(
     }
 
     // Cluster the non-canonicalized cards with a prompt.
-    const clusters = (await step.run(
-      `Cluster cards using prompt for `,
-      async () => service.cluster(cards)
+    const clusters = (await step.run(`Cluster cards using prompt`, async () =>
+      service.cluster(cards)
     )) as any as ValuesCard[][]
 
     logger.info(`Found ${clusters.length} clusters.`)
@@ -379,25 +389,27 @@ export const deduplicate = inngest.createFunction(
         async () => service.fetchSimilarCanonicalCard(representative)
       )) as any as CanonicalValuesCard | null
 
-      if (existingCanonicalDuplicate) {
-        await step.run("Link cluster to existing canonical card", async () =>
-          service.linkClusterToCanonicalCard(
-            cluster,
-            existingCanonicalDuplicate
-          )
-        )
-      } else {
-        const newCanonicalDuplicate = (await step.run(
-          "Canonicalize representative",
-          async () => service.createCanonicalCard(representative)
-        )) as any as CanonicalValuesCard
+      console.log(existingCanonicalDuplicate)
 
-        await step.run(
-          "Link cluster to newly created canonical card",
-          async () =>
-            service.linkClusterToCanonicalCard(cluster, newCanonicalDuplicate)
-        )
-      }
+      // if (existingCanonicalDuplicate) {
+      //   await step.run("Link cluster to existing canonical card", async () =>
+      //     service.linkClusterToCanonicalCard(
+      //       cluster,
+      //       existingCanonicalDuplicate
+      //     )
+      //   )
+      // } else {
+      //   const newCanonicalDuplicate = (await step.run(
+      //     "Canonicalize representative",
+      //     async () => service.createCanonicalCard(representative)
+      //   )) as any as CanonicalValuesCard
+
+      //   await step.run(
+      //     "Link cluster to newly created canonical card",
+      //     async () =>
+      //       service.linkClusterToCanonicalCard(cluster, newCanonicalDuplicate)
+      //   )
+      // }
     }
 
     logger.info(`Done. Deduplicated ${cards.length} cards.`)

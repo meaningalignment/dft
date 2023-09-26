@@ -4,7 +4,7 @@ import { defaultSeedQuestion } from "~/lib/case"
 import { capitalize } from "~/utils"
 import fs from "fs"
 import path from "path"
-import { CanonicalValuesCard } from "@prisma/client"
+import { CanonicalValuesCard, ValuesCard } from "@prisma/client"
 
 /**
  * Utility function for evaluating the last message sent by the assistant based on some high-level criteria.
@@ -97,4 +97,10 @@ export function readValue(
   return JSON.parse(rawData) as any as CanonicalValuesCard & {
     embedding: number[]
   }
+}
+
+export function readValues(fileName: string): ValuesCard[] {
+  const filePath = path.resolve(__dirname, `values/${fileName}`)
+  const rawData = fs.readFileSync(filePath, "utf-8")
+  return JSON.parse(rawData) as any as ValuesCard[]
 }
