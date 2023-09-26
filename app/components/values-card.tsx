@@ -10,6 +10,7 @@ import {
 } from "./ui/dialog"
 import { ValuesCard as DataModel, CanonicalValuesCard } from "@prisma/client"
 import React from "react"
+import { valueStyle } from "~/lib/consts"
 
 type Props = {
   card: DataModel | CanonicalValuesCard
@@ -30,8 +31,7 @@ function DetailsDialog({
         <DialogHeader>
           <DialogTitle>Details</DialogTitle>
           <DialogDescription>
-            ChatGPT will be considered successful if, in dialogue with the user,
-            the following kinds of things were surfaced or enabled:
+            {valueStyle.evaluationCriteriaIntroString}
           </DialogDescription>
         </DialogHeader>
         <div className="flex space-y-1 flex-col overflow-auto">

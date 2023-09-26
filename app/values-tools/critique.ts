@@ -1,9 +1,10 @@
 import { definitionOfASourceOfMeaning, valuesCardCriteria } from "./prompt-segments"
 import { gpt4 } from "./gpt"
 import { json } from "@remix-run/node"
-import { db, valueStyle } from "~/config.server"
+import { db } from "~/config.server"
 import { embeddingService } from "./embedding"
 import { CanonicalValuesCard } from "node_modules.nosync/.prisma/client"
+import { valueStyle } from "~/lib/consts"
 
 async function regenerateInstructionsDetailed(evaluationCriteria: string[]) {
   return await gpt4(regenPrompt, evaluationCriteria.join("\n"))

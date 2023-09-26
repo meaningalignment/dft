@@ -1,7 +1,7 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { Configuration, OpenAIApi } from "openai-edge"
-import { db, inngest, openai, valueStyle } from "~/config.server"
-import { ValuesCardData } from "~/lib/consts"
+import { db, inngest, openai } from "~/config.server"
+import { ValuesCardData, valueStyle } from "~/lib/consts"
 import { calculateAverageEmbedding } from "~/utils"
 
 /**

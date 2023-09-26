@@ -1,3 +1,5 @@
+import { dftStyle } from "~/values-tools/value-styles"
+
 export const model = "gpt-4-0613"
 
 /**
@@ -9,3 +11,5 @@ export type ValuesCardData = {
   instructions_detailed: string
   evaluation_criteria?: string[]
 }
+
+export const valueStyle = dftStyle
