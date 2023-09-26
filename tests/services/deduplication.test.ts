@@ -2,7 +2,6 @@ import { Configuration, OpenAIApi } from "openai-edge"
 import { readValue } from "../utils"
 import { db } from "~/config.server"
 import DeduplicationService from "~/services/deduplication"
-import EmbeddingService from "~/values-tools/embedding"
 
 let openai: OpenAIApi
 let service: DeduplicationService
@@ -12,7 +11,6 @@ beforeAll(() => {
     new Configuration({ apiKey: process.env.OPENAI_API_KEY })
   )
   service = new DeduplicationService(
-    new EmbeddingService(openai, db),
     openai,
     db
   )
