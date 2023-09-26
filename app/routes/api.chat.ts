@@ -1,70 +1,95 @@
+import { ChatCompletionRequestMessage } from "openai-edge"
+import { ActionFunctionArgs, ActionFunction } from "@remix-run/node"
 import { auth, db, openai } from "~/config.server"
-import { ActionArgs, ActionFunction } from "@remix-run/node"
-import { ValuesCardData } from "~/lib/consts"
-import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
 import { ArticulatorService } from "~/services/articulator"
 import DeduplicationService from "~/services/deduplication"
+import {
+  OpenAIStream,
+  OpenAIStreamCallbacks,
+  StreamingTextResponse,
+  experimental_StreamData,
+} from "ai"
 
 export const runtime = "edge"
 
 const deduplication = new DeduplicationService(openai, db)
 
-async function createHeaders(
-  articulatedCard?: ValuesCardData | null,
-  submittedCard?: ValuesCardData | null
-): Promise<{ [key: string]: string }> {
-  const headers: { [key: string]: string } = {}
-
-  if (articulatedCard) {
-    headers["X-Articulated-Card"] = JSON.stringify(articulatedCard)
-  }
-
-  if (submittedCard) {
-    headers["X-Submitted-Card"] = JSON.stringify(submittedCard)
-  }
-
-  return headers
+function isFunctionCall(completion: string) {
+  return completion.replace(/[^a-zA-Z0-9_]/g, "").startsWith("function_call")
 }
 
 export const action: ActionFunction = async ({
   request,
-}: ActionArgs): Promise<Response> => {
+}: ActionFunctionArgs): Promise<Response> => {
   const articulatorConfig = request.headers.get("X-Articulator-Config")
   const userId = await auth.getUserId(request)
   const json = await request.json()
 
-  const { messages, chatId, caseId, function_call } = json
+  // Unpack the post body.
+  const { messages: clientMessages, chatId, caseId, function_call } = json
 
-  // Create stream for next chat message.
+  // Create the Articulator service.
   const articulator = new ArticulatorService(
     articulatorConfig ?? "default",
     deduplication,
     openai,
     db
   )
-  const { completionResponse, ...etc } =
-    await articulator.processCompletionWithFunctions({
-      userId,
-      messages,
-      function_call,
+
+  //
+  // Add the user's message to the chat.
+  //
+  let messages: ChatCompletionRequestMessage[]
+
+  if ((await db.chat.count({ where: { id: chatId } })) === 0) {
+    const chat = await articulator.createChat(
       chatId,
       caseId,
-    })
-
-  if (!completionResponse.ok) {
-    const body = await completionResponse.json()
-    throw body.error
-  }
-
-  if (etc.functionCall) {
-    // If a function call is present in the stream, handle it...
-    return new StreamingTextResponse(OpenAIStream(etc.response), {
-      headers: await createHeaders(etc.articulatedCard, etc.submittedCard),
-    })
+      userId,
+      clientMessages
+    )
+    messages = chat.transcript as any as ChatCompletionRequestMessage[]
   } else {
-    // ...otherwise, return the response.
-    return new StreamingTextResponse(OpenAIStream(completionResponse), {
-      headers: await createHeaders(),
-    })
+    messages = await articulator.addServerSideMessage(
+      chatId,
+      clientMessages[clientMessages.length - 1]
+    )
   }
+
+  //
+  // Configure streaming callbacks.
+  //
+
+  // This data stream object is used to stream data
+  // from the functions, like articulated values card and
+  // submission states, to the client.
+  const data = new experimental_StreamData()
+
+  const callbacks: OpenAIStreamCallbacks = {
+    experimental_onFunctionCall: async (payload) => {
+      return articulator.func(payload, chatId, messages, data)
+    },
+    onCompletion: async (completion) => {
+      if (isFunctionCall(completion)) {
+        // Function call completions are handled by the onFunctionCall callback.
+        return
+      }
+
+      // Save the message to database.
+      await articulator.addServerSideMessage(chatId, {
+        content: completion,
+        role: "assistant",
+      })
+    },
+    experimental_streamData: true,
+    onFinal() {
+      data.close()
+    },
+  }
+
+  // Get the chat response.
+  const response = await articulator.chat(messages, function_call)
+
+  // Return a streaming response.
+  return new StreamingTextResponse(OpenAIStream(response, callbacks), {}, data)
 }

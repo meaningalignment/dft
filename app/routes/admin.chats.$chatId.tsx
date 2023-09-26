@@ -1,4 +1,4 @@
-import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node"
 import { Form, Link, useLoaderData, useNavigation } from "@remix-run/react"
 import { Message } from "ai"
 import { Loader2 } from "lucide-react"
@@ -9,7 +9,7 @@ import { Separator } from "~/components/ui/separator"
 import { auth, db } from "~/config.server"
 import { evaluateTranscript } from "~/values-tools/dialogue-evaluator"
 
-export async function loader({ params, request }: LoaderArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
   const chatId = params.chatId!
   const userId = await auth.getUserId(request)
   const chat = await db.chat.findUnique({
@@ -33,7 +33,7 @@ export async function loader({ params, request }: LoaderArgs) {
   })
 }
 
-export async function action({ params }: ActionArgs) {
+export async function action({ params }: ActionFunctionArgs) {
   const chat = await db.chat.findFirst({
     where: {
       id: params.chatId,

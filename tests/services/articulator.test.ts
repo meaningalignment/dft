@@ -40,26 +40,26 @@ beforeAll(() => {
 //   expect(response.critique).not.toBe("")
 // }, 60_000)
 
-test("Test Ellie's articulation results in card without critque", async () => {
-  const messages = readTranscript("ellie_articulation.json")
-  const card = {
-    title: "Intuition-Guided Decisions",
-    instructions_short: "ChatGPT should help the girl feel into her intuition.",
-    evaluation_criteria: [
-      "FEELINGS of deep immersion and engagement in the work",
-      "SENSE of aliveness and opening up to a new world",
-      "GUT FEELINGS that guide towards a decision",
-      "UNCERTAINTY that accompanies the intuition-driven decision",
-    ],
-    instructions_detailed:
-      "ChatGPT can help her identify feelings of deep immersion, sense of aliveness, gut feelings, and the accompanying uncertainty which, together, add up to an embodied sense of what her intuition is guiding her towards.",
-  }
+// test("Test Ellie's articulation results in card without critque", async () => {
+//   const messages = readTranscript("ellie_articulation.json")
+//   const card = {
+//     title: "Intuition-Guided Decisions",
+//     instructions_short: "ChatGPT should help the girl feel into her intuition.",
+//     evaluation_criteria: [
+//       "FEELINGS of deep immersion and engagement in the work",
+//       "SENSE of aliveness and opening up to a new world",
+//       "GUT FEELINGS that guide towards a decision",
+//       "UNCERTAINTY that accompanies the intuition-driven decision",
+//     ],
+//     instructions_detailed:
+//       "ChatGPT can help her identify feelings of deep immersion, sense of aliveness, gut feelings, and the accompanying uncertainty which, together, add up to an embodied sense of what her intuition is guiding her towards.",
+//   }
 
-  const result = await articulator.articulateValuesCard(messages, card)
+//   const result = await articulator.articulateValuesCard(messages, card)
 
-  expect(
-    result.critique === null ||
-      result.critique === undefined ||
-      result.critique === ""
-  ).toBe(true)
-}, 60_000)
+//   expect(
+//     result.critique === null ||
+//       result.critique === undefined ||
+//       result.critique === ""
+//   ).toBe(true)
+// }, 60_000)

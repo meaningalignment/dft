@@ -1,5 +1,5 @@
 import { CanonicalValuesCard, Edge } from "@prisma/client"
-import { LoaderArgs, json } from "@remix-run/node"
+import { LoaderFunctionArgs, json } from "@remix-run/node"
 import { useLoaderData } from "@remix-run/react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { IconArrowRight } from "~/components/ui/icons"
@@ -11,7 +11,7 @@ import ValuesCard from "~/components/values-card"
 import { db } from "~/config.server"
 import { cn } from "~/utils"
 
-export async function loader({ params }: LoaderArgs) {
+export async function loader({ params }: LoaderFunctionArgs) {
   const userId = parseInt(params.userId!)
   const fromId = parseInt(params.fromId!)
   const toId = parseInt(params.toId!)

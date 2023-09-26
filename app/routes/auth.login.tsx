@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { ActionArgs, json } from "@remix-run/node"
+import { ActionFunctionArgs, json } from "@remix-run/node"
 import { Form, useActionData, useSearchParams } from "@remix-run/react"
 import { auth } from "~/config.server"
 import { Button } from "~/components/ui/button"
@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react"
 import { ExternalLink } from "~/components/external-link"
 import va from "@vercel/analytics"
 
-export async function action(args: ActionArgs) {
+export async function action(args: ActionFunctionArgs) {
   try {
     return await auth.loginSubmitAction(args)
   } catch (error: any) {
@@ -23,7 +23,7 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false)
   const [showError, setShowError] = useState(false)
   const [email, setEmail] = useState<string>("")
-  const actionData = useActionData()
+  const actionData = useActionData<typeof action>()
 
   const redirect = searchParams.get("redirect") as string
 
