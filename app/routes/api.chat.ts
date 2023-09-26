@@ -1,13 +1,8 @@
-import {
-  ChatCompletionRequestMessage,
-  Configuration,
-  OpenAIApi,
-} from "openai-edge"
+import { ChatCompletionRequestMessage } from "openai-edge"
 import { ActionFunctionArgs, ActionFunction } from "@remix-run/node"
-import { auth, db } from "~/config.server"
+import { auth, db, openai } from "~/config.server"
 import { ArticulatorService } from "~/services/articulator"
 import DeduplicationService from "~/services/deduplication"
-import EmbeddingService from "~/services/embedding"
 import {
   OpenAIStream,
   OpenAIStreamCallbacks,
@@ -17,13 +12,7 @@ import {
 
 export const runtime = "edge"
 
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-})
-
-const openai = new OpenAIApi(configuration)
-const embeddings = new EmbeddingService(openai, db)
-const deduplication = new DeduplicationService(embeddings, openai, db)
+const deduplication = new DeduplicationService(openai, db)
 
 function isFunctionCall(completion: string) {
   return completion.replace(/[^a-zA-Z0-9_]/g, "").startsWith("function_call")
@@ -43,7 +32,6 @@ export const action: ActionFunction = async ({
   const articulator = new ArticulatorService(
     articulatorConfig ?? "default",
     deduplication,
-    embeddings,
     openai,
     db
   )

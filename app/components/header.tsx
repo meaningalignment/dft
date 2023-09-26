@@ -12,7 +12,7 @@ import { Form } from "@remix-run/react"
 import { useRef } from "react"
 
 function UserMenu({ user }: { user: User }) {
-  const formRef = useRef(null)
+  const formRef = useRef(null) as any
 
   const handleSubmit = () => {
     const ref = formRef.current as any

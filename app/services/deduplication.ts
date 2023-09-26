@@ -1,5 +1,5 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
-import EmbeddingService from "./embedding"
+import { embeddingService as embeddings } from "../values-tools/embedding"
 import { ValuesCardData, model } from "~/lib/consts"
 import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
 import { toDataModel, toDataModelWithId } from "~/utils"
@@ -133,16 +133,13 @@ const submitClusters: ChatCompletionFunctions = {
  * Handles all logic around deduplicating and canonicalizing values cards.
  */
 export default class DeduplicationService {
-  private embeddings: EmbeddingService
   private openai: OpenAIApi
   private db: PrismaClient
 
   constructor(
-    embeddings: EmbeddingService,
     openai: OpenAIApi,
     db: PrismaClient
   ) {
-    this.embeddings = embeddings
     this.openai = openai
     this.db = db
   }
@@ -161,7 +158,7 @@ export default class DeduplicationService {
       },
     })
     // Embed the canonical values card.
-    await this.embeddings.embedCanonicalCard(canonical)
+    await embeddings.embedCanonicalCard(canonical)
     return canonical
   }
 
@@ -235,7 +232,7 @@ export default class DeduplicationService {
   ): Promise<Array<CanonicalValuesCard>> {
     const query = `SELECT DISTINCT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> '${JSON.stringify(
       vector
-    )}'::vector as "_distance" 
+    )}'::vector as "_distance"
     FROM "CanonicalValuesCard" cvc
     ORDER BY "_distance" ASC
     LIMIT ${limit};`
@@ -256,10 +253,10 @@ export default class DeduplicationService {
     limit: number = 3
   ): Promise<CanonicalValuesCard | null> {
     // Embed the candidate.
-    const embeddings = await this.embeddings.embedCandidate(candidate)
+    const card_embeddings = await embeddings.embedCandidate(candidate)
 
     // Fetch `limit` canonical cards for the case based on similarity.
-    const canonical = await this.similaritySearch(embeddings, limit, 0.1)
+    const canonical = await this.similaritySearch(card_embeddings, limit, 0.1)
 
     // If we have no canonical cards, we can't deduplicate.
     if (canonical.length === 0) {
@@ -333,8 +330,7 @@ export const deduplicate = inngest.createFunction(
       apiKey: process.env.OPENAI_API_KEY,
     })
     const openai = new OpenAIApi(configuration)
-    const embeddings = new EmbeddingService(openai, db)
-    const service = new DeduplicationService(embeddings, openai, db)
+    const service = new DeduplicationService(openai, db)
 
     // Get all non-canonicalized submitted values cards.
     const cards = (await step.run(

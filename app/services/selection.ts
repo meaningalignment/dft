@@ -3,7 +3,7 @@ import { db } from "../config.server"
 import { ChatCompletionFunctions, OpenAIApi } from "openai-edge"
 import { model } from "~/lib/consts"
 import { v4 as uuid } from "uuid"
-import EmbeddingService from "./embedding"
+import { embeddingService as embedding } from "../values-tools/embedding"
 
 export type Draw = {
   id: string
@@ -44,16 +44,13 @@ const submitWiseValues: ChatCompletionFunctions = {
 export default class SelectionService {
   private db: PrismaClient
   private openai: OpenAIApi
-  private embedding: EmbeddingService
 
   constructor(
     openai: OpenAIApi,
     db: PrismaClient,
-    embedding: EmbeddingService
   ) {
     this.openai = openai
     this.db = db
-    this.embedding = embedding
   }
 
   async fetchHottestValues(
@@ -152,11 +149,11 @@ export default class SelectionService {
   ): Promise<CanonicalValuesCard[]> {
     console.log(`Trimming candidates with embedding for user ${userId}.`)
 
-    const userEmbedding = await this.embedding.getUserEmbedding(userId)
+    const userEmbedding = await embedding.getUserEmbedding(userId)
 
     console.log("Got average embedding for user.")
 
-    return await this.embedding.findValuesSimilarTo(
+    return await embedding.findValuesSimilarTo(
       userEmbedding,
       candidates,
       6
