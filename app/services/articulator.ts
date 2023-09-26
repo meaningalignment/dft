@@ -7,30 +7,24 @@ import {
   summarize,
 } from "./articulator-config"
 import { ValuesCardData } from "~/lib/consts"
-import { OpenAIStream } from "~/lib/openai-stream"
 import { capitalize, isDisplayableMessage, toDataModel } from "~/utils"
 import EmbeddingService from "./embedding"
 import DeduplicationService from "./deduplication"
-
-// import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
+import { FunctionCallPayload, experimental_StreamData } from "ai"
 
 type ArticulateCardResponse = {
   values_card: ValuesCardData
-  critique?: string | null
-}
-
-type FunctionResult = {
-  message: string | null
-  articulatedCard: ValuesCardData | null
-  submittedCard: ValuesCardData | null
 }
 
 export function normalizeMessage(
   message: ChatCompletionRequestMessage
 ): ChatCompletionRequestMessage {
-  // only role, content, name, function_call
   const { role, content, name, function_call } = message
-  if (function_call && !function_call.arguments) function_call.arguments = "{}"
+
+  if (function_call && !function_call.arguments) {
+    function_call.arguments = "{}"
+  }
+
   return { role, content, name, function_call }
 }
 
@@ -62,191 +56,64 @@ export class ArticulatorService {
     return metadata(this.config)
   }
 
-  // TODO: put it in a transaction
-  private async addServerSideMessage({
-    chatId,
-    messages,
-    message,
-    data,
-  }: {
-    chatId: string
+  async createChat(
+    chatId: string,
+    caseId: string,
+    userId: number,
     messages: ChatCompletionRequestMessage[]
-    message: ChatCompletionRequestMessage
-    data?: {
-      provisionalCard?: ValuesCardData
-      provisionalCanonicalCardId?: number | null
+  ) {
+    const systemMessage = {
+      role: "system",
+      content: this.config.prompts.main.prompt,
     }
-  }) {
-    messages.push(message)
-    const chat = await this.db.chat.findUnique({
-      where: { id: chatId },
+
+    const transcript = [
+      systemMessage,
+      ...messages.map(normalizeMessage),
+    ] as any[]
+
+    return this.db.chat.create({
+      data: {
+        id: chatId,
+        userId,
+        caseId,
+        transcript,
+      },
     })
-    const transcript = (chat?.transcript ??
-      []) as any as ChatCompletionRequestMessage[]
-    transcript.push(message)
+  }
+
+  async addServerSideMessage(
+    chatId: string,
+    message: ChatCompletionRequestMessage,
+    data?: {
+      provisionalCanonicalCardId?: number
+      provisionalCard?: ValuesCardData
+    }
+  ): Promise<any> {
+    const chat = await this.db.chat.findUnique({ where: { id: chatId } })
+
+    if (!chat) {
+      throw new Error(`Chat ${chatId} not found. Could not append message.`)
+    }
+
+    const transcript = [
+      ...(chat!.transcript as any),
+      normalizeMessage(message),
+    ] as any[]
+
     await this.db.chat.update({
       where: { id: chatId },
-      data: {
-        transcript: transcript as any,
-        ...data,
-      },
-    })
-  }
-
-  async processCompletionWithFunctions({
-    userId,
-    messages,
-    function_call,
-    chatId,
-    caseId,
-  }: {
-    userId: number
-    messages: ChatCompletionRequestMessage[]
-    function_call: { name: string } | null
-    chatId: string
-    caseId: string
-  }) {
-    // update the db
-    // TODO: put it in a transaction
-    const chat = await this.db.chat.findUnique({ where: { id: chatId } })
-    if (chat) {
-      const transcript = (chat?.transcript ??
-        []) as any as ChatCompletionRequestMessage[]
-      const lastMessage = messages[messages.length - 1]
-      transcript.push(lastMessage)
-      messages = transcript.map((o) => normalizeMessage(o))
-      await this.db.chat.update({
-        where: { id: chatId },
-        data: {
-          transcript: transcript as any,
-        },
-      })
-    } else {
-      const metadata = this.metadata()
-      // Prepend the system message.
-      messages = [
-        { role: "system", content: this.config.prompts.main.prompt },
-        ...messages,
-      ]
-      await this.db.chat.create({
-        data: {
-          userId,
-          caseId,
-          id: chatId,
-          transcript: messages as any,
-          articulatorModel: metadata.model,
-          articulatorPromptHash: metadata.contentHash,
-          articulatorPromptVersion: metadata.name,
-          gitCommitHash: metadata.gitHash,
-        },
-      })
-    }
-
-    const completionResponse = await this.openai.createChatCompletion({
-      model: this.config.model,
-      messages: messages,
-      temperature: 0.7,
-      stream: true,
-      functions: this.config.prompts.main.functions,
-      function_call: function_call ?? "auto",
+      data: { transcript, ...data },
     })
 
-    if (!completionResponse.ok) return { completionResponse }
-
-    // Get any function call that is present in the stream.
-    const functionCall = await this.getFunctionCall(completionResponse)
-    if (!functionCall) return { completionResponse }
-
-    // If a function call is present in the stream, handle it...
-    await this.addServerSideMessage({
-      chatId,
-      messages,
-      message: {
-        role: "assistant",
-        content: null as any,
-        function_call: {
-          name: functionCall.name,
-          arguments: JSON.stringify(functionCall.arguments),
-        },
-      },
-    })
-    const { response, articulatedCard, submittedCard } = await this.handle(
-      functionCall,
-      messages,
-      chatId,
-      caseId
-    )
-    return {
-      functionCall,
-      response,
-      articulatedCard,
-      submittedCard,
-      completionResponse,
-    }
-  }
-
-  //
-  // Vercel AI openai functions handling is broken in Remix. The `experimental_onFunctionCall` provided by the `ai` package does not work.
-  //
-  // We have to handle them manually, until https://github.com/vercel-labs/ai/issues/199 is fixed.
-  // This is done by listening to the first token and seeing if it is a function call.
-  // If so, wait for the whole response and handle the function call.
-  // Otherwise, return the stream as-is.
-  //
-  async getFunctionCall(
-    res: Response
-  ): Promise<{ name: string; arguments: object } | null> {
-    const stream = OpenAIStream(res.clone()) // .clone() since we don't want to consume the response.
-    const reader = stream.getReader()
-
-    //
-    // In the case of a function call, the first token in the stream
-    // is an unfinished JSON object, with "function_call" as the first key.
-    //
-    // We can use that key to check if the response is a function call.
-    //
-    const { value: first } = await reader.read()
-
-    const isFunctionCall = first
-      ?.replace(/[^a-zA-Z0-9_]/g, "")
-      ?.startsWith("function_call")
-
-    if (!isFunctionCall) {
-      return null
-    }
-
-    //
-    // Function arguments are streamed as tokens, so we need to
-    // read the whole stream, concatenate the tokens, and parse the resulting JSON.
-    //
-    let result = first
-
-    while (true) {
-      const { done, value } = await reader.read()
-
-      if (done) {
-        break
-      }
-
-      result += value
-    }
-
-    //
-    // Return the resulting function call.
-    //
-    const json = JSON.parse(result)["function_call"]
-    console.log(`Function call: ${JSON.stringify(json)}`)
-
-    // The following is needed due to tokens being streamed with escape characters.
-    json["arguments"] = JSON.parse(json["arguments"])
-    console.log(`Function call: ${JSON.stringify(json)}`)
-    return json as { name: string; arguments: object }
+    return transcript
   }
 
   private async handleArticulateCardFunction(
     chatId: string,
-    messages: ChatCompletionRequestMessage[]
-  ): Promise<FunctionResult> {
+    messages: ChatCompletionRequestMessage[],
+    data: experimental_StreamData
+  ): Promise<string> {
     //
     // Fetch the chat with the provisional card from the database.
     //
@@ -265,158 +132,124 @@ export class ArticulatorService {
     let newCard = response.values_card
 
     //
-    // If the card is not yet meeting the guidelines, generate a follow-up question.
-    //
-    if (response.critique) {
-      const message = summarize(this.config, "show_values_card_critique", {
-        critique: response.critique,
-      })
-
-      await this.addServerSideMessage({
-        chatId,
-        messages,
-        message: {
-          role: "function",
-          name: "show_values_card",
-          content: JSON.stringify(newCard),
-        },
-        data: { provisionalCard: newCard! },
-      })
-
-      return {
-        message,
-        articulatedCard: null,
-        submittedCard: null,
-      }
-    }
-
-    //
     // Override the card with a canonical duplicate if one exists.
     //
     // Only do this the first time the articulate function is called,
     // since subsequent calls mean the user is revising the card.
     //
-    let provisionalCanonicalCardId: number | null = null
+    let provisionalCanonicalCardId: number | undefined
 
-    if (
-      !previousCard &&
-      !chat.provisionalCanonicalCardId &&
-      !response.critique
-    ) {
+    if (!previousCard && !chat.provisionalCanonicalCardId) {
       let canonical = await this.deduplication.fetchSimilarCanonicalCard(
         response.values_card
       )
 
       if (canonical) {
-        provisionalCanonicalCardId = canonical.id
         console.log(`Found duplicate ${canonical.id} for chat ${chatId}`)
+
+        // Use the canonical duplicate instead.
+        provisionalCanonicalCardId = canonical.id
         newCard = toDataModel(canonical)
       }
     }
 
-    await this.addServerSideMessage({
+    await this.addServerSideMessage(
       chatId,
-      messages,
-      message: {
+      {
         role: "function",
-        name: "show_values_card",
+        name: "articulate_values_card",
         content: JSON.stringify(newCard),
       },
-      data: {
+      {
         provisionalCard: newCard!,
         provisionalCanonicalCardId,
-      },
-    })
+      }
+    )
 
-    const message = summarize(this.config, "show_values_card", {
+    // Append the new values card to the stream.
+    data.append({ articulatedCard: newCard })
+
+    return summarize(this.config, "show_values_card", {
       title: newCard!.title,
     })
-
-    return { message, articulatedCard: newCard, submittedCard: null }
   }
 
   private async handleSubmitCardFunction(
-    chatId: string
-  ): Promise<FunctionResult> {
+    chatId: string,
+    data: experimental_StreamData
+  ): Promise<string> {
     const chat = (await this.db.chat.findUnique({
       where: { id: chatId },
     })) as Chat
 
     const card = chat.provisionalCard as ValuesCardData
 
-    // Submit the values card.
-    const message = await this.submitValuesCard(
-      card,
-      chatId,
-      chat.provisionalCanonicalCardId
-    )
+    // Append the submitted card to the stream.
+    data.append({ submittedCard: card })
 
-    return { message, submittedCard: card, articulatedCard: null }
+    return this.submitValuesCard(card, chatId, chat.provisionalCanonicalCardId)
   }
 
-  async handle(
-    func: { name: string; arguments: any },
+  async chat(
     messages: any[] = [],
-    chatId: string,
-    caseId: string
-  ): Promise<{
-    response: Response
-    articulatedCard: ValuesCardData | null
-    submittedCard: ValuesCardData | null
-  }> {
-    let functionResult: FunctionResult
+    function_call: { name: string } | null = null
+  ) {
+    const completionResponse = await this.openai.createChatCompletion({
+      model: this.config.model,
+      messages: messages,
+      temperature: 0.7,
+      stream: true,
+      functions: this.config.prompts.main.functions,
+      function_call: function_call ?? "auto",
+    })
 
-    switch (func.name) {
-      case "guess_values_card": {
-        console.log("Guessed!", func.arguments)
-        functionResult = {
-          message: null,
-          articulatedCard: null,
-          submittedCard: null,
-        }
-        break
-      }
-      case "show_values_card": {
-        functionResult = await this.handleArticulateCardFunction(
-          chatId,
-          messages
-        )
-        break
-      }
-      case "submit_values_card": {
-        functionResult = await this.handleSubmitCardFunction(chatId)
-        break
-      }
-      default: {
-        throw new Error("Unknown function call: " + func.name)
-      }
+    return completionResponse
+  }
+
+  async func(
+    payload: FunctionCallPayload,
+    chatId: string,
+    clientMessages: ChatCompletionRequestMessage[],
+    data: experimental_StreamData
+  ) {
+    // Add the function message to the transcript.
+    let messages = await this.addServerSideMessage(chatId, {
+      role: "assistant",
+      content: "",
+      function_call: {
+        name: payload.name,
+        arguments: JSON.stringify(payload.arguments),
+      },
+    })
+
+    //
+    // Call the right function.
+    //
+    let result: string | null = null
+
+    if (payload.name === "show_values_card") {
+      result = await this.handleArticulateCardFunction(
+        chatId,
+        clientMessages,
+        data
+      )
+    } else if (payload.name === "submit_values_card") {
+      result = await this.handleSubmitCardFunction(chatId, data)
+    } else if (payload.name === "guess_values_card") {
+      console.log("Guessed values card", payload.arguments)
     }
 
-    if (functionResult.message) {
-      console.log(`Result from "${func.name}":\n${functionResult.message}`)
-
-      await this.addServerSideMessage({
-        chatId,
-        messages,
-        message: {
-          role: "function",
-          name: func.name,
-          content: functionResult.message,
-        },
+    if (result) {
+      // Add the function result message to the transcript.
+      messages = await this.addServerSideMessage(chatId, {
+        role: "function",
+        name: payload.name,
+        content: result!,
       })
     }
 
-    //
-    // Call the OpenAI API with the function result.
-    //
-    // This wraps the raw function result in a generated message that fits the flow
-    // of the conversation.
-    //
-
-    console.log(`Calling OpenAI API with function result...`)
-    console.log(`Messages:\n${JSON.stringify(messages)}`)
-
-    const response = await this.openai.createChatCompletion({
+    // Ask for another completion and send it to the client.
+    return await this.openai.createChatCompletion({
       model: this.config.model,
       messages,
       temperature: 0.0,
@@ -424,8 +257,6 @@ export class ArticulatorService {
       function_call: "none", // Prevent recursion.
       stream: true,
     })
-
-    return { response, ...functionResult }
   }
 
   async submitValuesCard(
@@ -451,6 +282,7 @@ export class ArticulatorService {
 
     // Embed card.
     await this.embeddings.embedNonCanonicalCard(result)
+
     return summarize(this.config, "submit_values_card", { title: card.title })
   }
 

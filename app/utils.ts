@@ -2,6 +2,7 @@ import { CanonicalValuesCard, ValuesCard } from "@prisma/client"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { ValuesCardData } from "./lib/consts"
+import { ChatCompletionRequestMessage } from "openai-edge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
