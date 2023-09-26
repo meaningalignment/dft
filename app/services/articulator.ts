@@ -10,7 +10,7 @@ import { ValuesCardData } from "~/lib/consts"
 import { capitalize, isDisplayableMessage, toDataModel } from "~/utils"
 import EmbeddingService from "./embedding"
 import DeduplicationService from "./deduplication"
-import { FunctionCallPayload } from "ai"
+import { FunctionCallPayload, experimental_StreamData } from "ai"
 
 type ArticulateCardResponse = {
   values_card: ValuesCardData
@@ -134,7 +134,8 @@ export class ArticulatorService {
 
   private async handleArticulateCardFunction(
     chatId: string,
-    messages: ChatCompletionRequestMessage[]
+    messages: ChatCompletionRequestMessage[],
+    data: experimental_StreamData
   ): Promise<string> {
     //
     // Fetch the chat with the provisional card from the database.
@@ -186,17 +187,26 @@ export class ArticulatorService {
       }
     )
 
+    // Append the new values card to the stream.
+    data.append({ articulatedCard: newCard })
+
     return summarize(this.config, "show_values_card", {
       title: newCard!.title,
     })
   }
 
-  private async handleSubmitCardFunction(chatId: string): Promise<string> {
+  private async handleSubmitCardFunction(
+    chatId: string,
+    data: experimental_StreamData
+  ): Promise<string> {
     const chat = (await this.db.chat.findUnique({
       where: { id: chatId },
     })) as Chat
 
     const card = chat.provisionalCard as ValuesCardData
+
+    // Append the submitted card to the stream.
+    data.append({ submittedCard: card })
 
     return this.submitValuesCard(card, chatId, chat.provisionalCanonicalCardId)
   }
@@ -220,7 +230,8 @@ export class ArticulatorService {
   async func(
     payload: FunctionCallPayload,
     chatId: string,
-    clientMessages: ChatCompletionRequestMessage[]
+    clientMessages: ChatCompletionRequestMessage[],
+    data: experimental_StreamData
   ) {
     // Add the function message to the transcript.
     let messages = await this.addServerSideMessage(chatId, {
@@ -238,9 +249,13 @@ export class ArticulatorService {
     let result: string | null = null
 
     if (payload.name === "show_values_card") {
-      result = await this.handleArticulateCardFunction(chatId, clientMessages)
+      result = await this.handleArticulateCardFunction(
+        chatId,
+        clientMessages,
+        data
+      )
     } else if (payload.name === "submit_values_card") {
-      result = await this.handleSubmitCardFunction(chatId)
+      result = await this.handleSubmitCardFunction(chatId, data)
     } else if (payload.name === "guess_values_card") {
       console.log("Guessed values card", payload.arguments)
     }

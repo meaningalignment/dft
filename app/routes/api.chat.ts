@@ -8,7 +8,12 @@ import { auth, db } from "~/config.server"
 import { ArticulatorService } from "~/services/articulator"
 import DeduplicationService from "~/services/deduplication"
 import EmbeddingService from "~/services/embedding"
-import { OpenAIStream, OpenAIStreamCallbacks, StreamingTextResponse } from "ai"
+import {
+  OpenAIStream,
+  OpenAIStreamCallbacks,
+  StreamingTextResponse,
+  experimental_StreamData,
+} from "ai"
 
 export const runtime = "edge"
 
@@ -66,9 +71,15 @@ export const action: ActionFunction = async ({
   //
   // Configure streaming callbacks.
   //
+
+  // This data stream object is used to stream data
+  // from the functions, like articulated values card and
+  // submission states, to the client.
+  const data = new experimental_StreamData()
+
   const callbacks: OpenAIStreamCallbacks = {
     experimental_onFunctionCall: async (payload) => {
-      return articulator.func(payload, chatId, messages)
+      return articulator.func(payload, chatId, messages, data)
     },
     onCompletion: async (completion) => {
       if (isFunctionCall(completion)) {
@@ -82,11 +93,15 @@ export const action: ActionFunction = async ({
         role: "assistant",
       })
     },
+    experimental_streamData: true,
+    onFinal() {
+      data.close()
+    },
   }
 
   // Get the chat response.
   const response = await articulator.chat(messages, function_call)
 
   // Return a streaming response.
-  return new StreamingTextResponse(OpenAIStream(response, callbacks))
+  return new StreamingTextResponse(OpenAIStream(response, callbacks), {}, data)
 }
