@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import toast from "react-hot-toast"
 import LinkingService from "~/services/linking"
 import { Configuration, OpenAIApi } from "openai-edge"
-import EmbeddingService from "~/services/embedding"
+import { embeddingService as embedding } from "~/services/embedding"
 import { IconArrowRight } from "~/components/ui/icons"
 import { Separator } from "../components/ui/separator"
 import { Loader2 } from "lucide-react"
@@ -23,10 +23,7 @@ type Relationship = "upgrade" | "no_upgrade" | "not_sure"
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await auth.getUserId(request)
-  const config = new Configuration({ apiKey: process.env.OPENAI_API_KEY })
-  const openai = new OpenAIApi(config)
-  const embedding = new EmbeddingService(openai, db)
-  const service = new LinkingService(db, embedding)
+  const service = new LinkingService(db)
 
   const draw = await service.getDraw(userId, 3)
 
@@ -145,9 +142,8 @@ export default function LinkScreen() {
     <div className="flex flex-col h-screen w-screen">
       <Header />
       <div className="grid flex-grow place-items-center space-y-8 py-12 px-8">
-        <h1 className="text-neutral-500 mb-2">{`User Story ${index + 1}/${
-          draw.length
-        }`}</h1>
+        <h1 className="text-neutral-500 mb-2">{`User Story ${index + 1}/${draw.length
+          }`}</h1>
         <div className="w-full max-w-2xl">
           <h1 className="text-md font-bold mb-2 pl-12 md:pl-0">
             {draw[index].condition}
@@ -163,7 +159,7 @@ export default function LinkScreen() {
         </div>
         <div
           className={cn(
-            `grid grid-cols-1 lg:grid-cols-3 mx-auto gap-4 items-center justify-items-center lg:grid-cols-[max-content,min-content,max-content] pt-4`,
+            `grid grid-cols-1 mx-auto gap-4 items-center justify-items-center lg:grid-cols-[max-content,min-content,max-content] pt-4`,
             "transition-opacity ease-in duration-500",
             showCards ? "opacity-100" : "opacity-0",
             `delay-${75}`

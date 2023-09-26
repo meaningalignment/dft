@@ -1,6 +1,6 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { Configuration, OpenAIApi } from "openai-edge"
-import { db, inngest } from "~/config.server"
+import { db, inngest, openai } from "~/config.server"
 import { ValuesCardData } from "~/lib/consts"
 import { calculateAverageEmbedding } from "~/utils"
 
@@ -54,8 +54,8 @@ export default class EmbeddingService {
     // Update in DB.
     await this.db
       .$executeRaw`UPDATE "CanonicalValuesCard" SET embedding = ${JSON.stringify(
-      embedding
-    )}::vector WHERE id = ${card.id};`
+        embedding
+      )}::vector WHERE id = ${card.id};`
   }
 
   async embedNonCanonicalCard(card: ValuesCard): Promise<void> {
@@ -66,8 +66,8 @@ export default class EmbeddingService {
     // Update in DB.
     await this.db
       .$executeRaw`UPDATE "ValuesCard" SET embedding = ${JSON.stringify(
-      embedding
-    )}::vector WHERE id = ${card.id};`
+        embedding
+      )}::vector WHERE id = ${card.id};`
   }
 
   async embedCandidate(card: ValuesCardData): Promise<number[]> {
@@ -120,7 +120,7 @@ export default class EmbeddingService {
   ): Promise<Array<CanonicalValuesCard>> {
     const query = `SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> '${JSON.stringify(
       vector
-    )}'::vector as "_distance" 
+    )}'::vector as "_distance"
     FROM "CanonicalValuesCard" cvc
     WHERE cvc.id IN (${values!.map((c) => c.id).join(",")})
     ORDER BY "_distance" ASC
@@ -184,3 +184,5 @@ export const embed = inngest.createFunction(
     }
   }
 )
+
+export const embeddingService = new EmbeddingService(openai, db)

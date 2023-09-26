@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { CanonicalValuesCard } from "@prisma/client"
 import SelectionService from "~/services/selection"
 import { Configuration, OpenAIApi } from "openai-edge"
-import EmbeddingService from "~/services/embedding"
+import { embeddingService as embedding } from "~/services/embedding"
 import { Check, Loader2 } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
@@ -24,8 +24,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const openai = new OpenAIApi(
     new Configuration({ apiKey: process.env.OPENAI_API_KEY })
   )
-  const embedding = new EmbeddingService(openai, db)
-  const routing = new SelectionService(openai, db, embedding)
+  const routing = new SelectionService(openai, db)
 
   // Get the draw for this user.
   const { id, values } = await routing.getDraw(userId, caseId)
@@ -170,7 +169,7 @@ export default function SelectScreen() {
           {values.map((value, index) => (
             <div
               key={value.id}
-              onClick={() => onSelectValue(value.id)}
+              onClick={() => onSelectValue(value.id!)}
               className={cn(
                 "cursor-pointer transition-opacity ease-in duration-500",
                 showCards
@@ -179,7 +178,7 @@ export default function SelectScreen() {
                 `delay-${index * 75}` // Make sure to add to `safelist` in tailwind.config.js if changed.
               )}
             >
-              {selected.includes(value.id) ? (
+              {selected.includes(value.id!) ? (
                 <SelectedValuesCard value={value as any} />
               ) : (
                 <ValuesCard card={value as any} />
@@ -188,9 +187,8 @@ export default function SelectScreen() {
           ))}
         </div>
         <div
-          className={`flex flex-col justify-center items-center pt-4 transition-opacity ease-in duration-500 delay-525 ${
-            showCards ? "opacity-100" : "opacity-0"
-          }`}
+          className={`flex flex-col justify-center items-center pt-4 transition-opacity ease-in duration-500 delay-525 ${showCards ? "opacity-100" : "opacity-0"
+            }`}
         >
           <Button
             disabled={selected.length < minRequiredVotes || isLoading}
@@ -203,9 +201,8 @@ export default function SelectScreen() {
           <div className="flex flex-col justify-center items-center my-4 h-4">
             {selected.length < minRequiredVotes && (
               <p className="text-stone-300">
-                {`Select ${minRequiredVotes - selected.length} more value${
-                  selected.length === minRequiredVotes - 1 ? "" : "s"
-                } to continue`}
+                {`Select ${minRequiredVotes - selected.length} more value${selected.length === minRequiredVotes - 1 ? "" : "s"
+                  } to continue`}
               </p>
             )}
           </div>

@@ -3,8 +3,7 @@ import { ArticulatorService } from "../../app/services/articulator"
 import { PrismaClient } from "@prisma/client"
 import { mockDeep } from "jest-mock-extended"
 import DeduplicationService from "~/services/deduplication"
-import EmbeddingService from "~/services/embedding"
-import { readTranscript } from "../utils"
+import { embeddingService } from "~/services/embedding"
 
 let articulator: ArticulatorService
 let openai: OpenAIApi
@@ -13,10 +12,10 @@ beforeAll(() => {
   openai = new OpenAIApi(
     new Configuration({ apiKey: process.env.OPENAI_API_KEY })
   )
+  mockDeep(embeddingService)
   articulator = new ArticulatorService(
     "default",
     mockDeep<DeduplicationService>(),
-    mockDeep<EmbeddingService>(),
     openai,
     mockDeep<PrismaClient>()
   )

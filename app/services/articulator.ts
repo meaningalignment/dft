@@ -8,7 +8,7 @@ import {
 } from "./articulator-config"
 import { ValuesCardData } from "~/lib/consts"
 import { capitalize, isDisplayableMessage, toDataModel } from "~/utils"
-import EmbeddingService from "./embedding"
+import { embeddingService as embeddings } from "./embedding"
 import DeduplicationService from "./deduplication"
 import { FunctionCallPayload, experimental_StreamData } from "ai"
 
@@ -33,7 +33,6 @@ export function normalizeMessage(
  */
 export class ArticulatorService {
   private deduplication: DeduplicationService
-  private embeddings: EmbeddingService
   private openai: OpenAIApi
   private db: PrismaClient
   public config: ArticulatorConfig
@@ -41,13 +40,11 @@ export class ArticulatorService {
   constructor(
     configKey: string,
     deduplication: DeduplicationService,
-    embeddings: EmbeddingService,
     openai: OpenAIApi,
     db: PrismaClient
   ) {
     this.config = configs[configKey]
     this.deduplication = deduplication
-    this.embeddings = embeddings
     this.openai = openai
     this.db = db
   }
@@ -281,7 +278,7 @@ export class ArticulatorService {
       .catch((e) => console.error(e))) as ValuesCard
 
     // Embed card.
-    await this.embeddings.embedNonCanonicalCard(result)
+    await embeddings.embedNonCanonicalCard(result)
 
     return summarize(this.config, "submit_values_card", { title: card.title })
   }
