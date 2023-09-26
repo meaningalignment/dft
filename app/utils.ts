@@ -117,15 +117,3 @@ export function isDisplayableMessage(message: {
     message.content && (message.role === "user" || message.role === "assistant")
   )
 }
-
-export function normalizeMessage(
-  message: ChatCompletionRequestMessage
-): ChatCompletionRequestMessage {
-  const { role, content, name, function_call } = message
-
-  if (function_call && !function_call.arguments) {
-    function_call.arguments = "{}"
-  }
-
-  return { role, content, name, function_call }
-}
