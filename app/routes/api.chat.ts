@@ -61,35 +61,34 @@ export const action: ActionFunction = async ({
   // This data stream object is used to stream data
   // from the functions, like articulated values card and
   // submission states, to the client.
-  const data = new experimental_StreamData()
+  // const data = new experimental_StreamData()
 
-  const callbacks: OpenAIStreamCallbacks = {
-    experimental_onFunctionCall: async (payload) => {
-      // return articulator.func(payload, chatId, messages, data)
-    },
-    onCompletion: async (completion) => {
-      if (isFunctionCall(completion)) {
-        // Function call completions are handled by the onFunctionCall callback.
-        return
-      }
+  // const callbacks: OpenAIStreamCallbacks = {
+  //   experimental_onFunctionCall: async (payload) => {
+  //     return articulator.func(payload, chatId, messages, data)
+  //   },
+  //   onCompletion: async (completion) => {
+  //     if (isFunctionCall(completion)) {
+  //       // Function call completions are handled by the onFunctionCall callback.
+  //       return
+  //     }
 
-      // Save the message to database.
-      await articulator.addServerSideMessage(chatId, {
-        content: completion,
-        role: "assistant",
-      })
-    },
-    // experimental_streamData: true,
-    onFinal() {
-      // data.close()
-    },
-  }
+  //     // Save the message to database.
+  //     await articulator.addServerSideMessage(chatId, {
+  //       content: completion,
+  //       role: "assistant",
+  //     })
+  //   },
+  //   experimental_streamData: true,
+  //   onFinal() {
+  //     data.close()
+  //   },
+  // }
 
   // Get the chat response.
   const response = await articulator.chat(messages, function_call)
 
-  const stream = OpenAIStream(response)
-
   // Return a streaming response.
+  const stream = OpenAIStream(response)
   return new StreamingTextResponse(stream)
 }
