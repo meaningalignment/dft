@@ -5,16 +5,11 @@ import { inngest } from "~/config.server"
 import { hypothesize } from "~/services/linking"
 import { evaluateDialogues } from "~/services/dialogue-evaluator"
 
-export const config = {
-  runtime: "edge",
-}
-
-const handler = serve(
-  inngest,
-  [deduplicate, embed, hypothesize, evaluateDialogues],
-  {
-    streaming: "allow",
-  }
-)
+const handler = serve(inngest, [
+  deduplicate,
+  embed,
+  hypothesize,
+  evaluateDialogues,
+])
 
 export { handler as loader, handler as action }
