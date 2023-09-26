@@ -1,9 +1,8 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { Configuration, OpenAIApi } from "openai-edge"
-import { db, inngest, openai } from "~/config.server"
+import { db, inngest, openai, valueStyle } from "~/config.server"
 import { ValuesCardData } from "~/lib/consts"
 import { calculateAverageEmbedding } from "~/utils"
-import { ValueStyle, dftStyle } from "./value-styles"
 
 /**
  * This service is responsible for embedding cards.
@@ -13,12 +12,10 @@ import { ValueStyle, dftStyle } from "./value-styles"
 export default class EmbeddingService {
   private openai: OpenAIApi
   private db: PrismaClient
-  private valueStyle: ValueStyle
 
-  constructor(openai: OpenAIApi, db: PrismaClient, valueStyle?: ValueStyle) {
+  constructor(openai: OpenAIApi, db: PrismaClient) {
     this.openai = openai
     this.db = db
-    this.valueStyle = valueStyle ?? dftStyle
   }
 
   private toEmbeddingString(card: ValuesCard | CanonicalValuesCard) {
@@ -34,7 +31,7 @@ export default class EmbeddingService {
       "\n" +
       card.instructionsDetailed +
       "\n" +
-      `# ${this.valueStyle.evaluationCriteriaIntroString}` +
+      `# ${valueStyle.evaluationCriteriaIntroString}` +
       "\n" +
       card.evaluationCriteria.join("\n")
     )
@@ -132,6 +129,19 @@ export default class EmbeddingService {
     return this.db.$queryRawUnsafe<
       Array<CanonicalValuesCard & { _distance: number }>
     >(query)
+  }
+
+  async getEmbedding(card: CanonicalValuesCard) {
+    const embedding = await db.$queryRaw<Array<{ embedding: any }>>`SELECT embedding::text FROM "CanonicalValuesCard" cvc WHERE cvc."id" = ${card.id}`
+    if (!embedding.length) throw new Error("Card not found")
+    if (embedding[0].embedding === null) throw new Error("Embedding is null")
+    console.log('got embeddding', embedding[0].embedding)
+    return embedding[0].embedding as number[]
+  }
+
+  async getSimilarCards(card: CanonicalValuesCard) {
+    const vector = await this.getEmbedding(card)
+    return await db.$queryRaw<Array<CanonicalValuesCard>>`SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${vector}::vector as "_distance" FROM "CanonicalValuesCard" cvc ORDER BY "_distance" ASC LIMIT 10`
   }
 }
 
