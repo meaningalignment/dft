@@ -3,7 +3,7 @@ import { ArticulatorService } from "../../app/services/articulator"
 import { PrismaClient } from "@prisma/client"
 import { mockDeep } from "jest-mock-extended"
 import DeduplicationService from "~/services/deduplication"
-import { embeddingService } from "~/services/embedding"
+import { embeddingService } from "~/values-tools/embedding"
 
 let articulator: ArticulatorService
 let openai: OpenAIApi

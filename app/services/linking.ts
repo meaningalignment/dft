@@ -6,7 +6,7 @@ import {
 } from "@prisma/client"
 import { db, inngest } from "~/config.server"
 import { Configuration, OpenAIApi } from "openai-edge"
-import { embeddingService as embeddings } from "./embedding"
+import { embeddingService as embeddings } from "../values-tools/embedding"
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,

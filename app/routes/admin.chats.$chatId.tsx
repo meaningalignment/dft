@@ -7,7 +7,7 @@ import { ChatList } from "~/components/chat-list"
 import { Button } from "~/components/ui/button"
 import { Separator } from "~/components/ui/separator"
 import { auth, db } from "~/config.server"
-import { evaluateTranscript } from "~/services/dialogue-evaluator"
+import { evaluateTranscript } from "~/values-tools/dialogue-evaluator"
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const chatId = params.chatId!
@@ -150,7 +150,7 @@ export default function AdminChat() {
         isFinished={true}
         isLoading={false}
         valueCards={[]}
-        onManualSubmit={() => {}}
+        onManualSubmit={() => { }}
       />
     </>
   )

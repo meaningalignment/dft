@@ -8,7 +8,7 @@ import {
 } from "./articulator-config"
 import { ValuesCardData } from "~/lib/consts"
 import { capitalize, isDisplayableMessage, toDataModel } from "~/utils"
-import { embeddingService as embeddings } from "./embedding"
+import { embeddingService as embeddings } from "../values-tools/embedding"
 import DeduplicationService from "./deduplication"
 import { FunctionCallPayload, experimental_StreamData } from "ai"
 

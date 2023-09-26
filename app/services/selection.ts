@@ -3,7 +3,7 @@ import { db } from "../config.server"
 import { ChatCompletionFunctions, OpenAIApi } from "openai-edge"
 import { model } from "~/lib/consts"
 import { v4 as uuid } from "uuid"
-import { embeddingService as embedding } from "./embedding"
+import { embeddingService as embedding } from "../values-tools/embedding"
 
 export type Draw = {
   id: string

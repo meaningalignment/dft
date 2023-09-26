@@ -3,7 +3,6 @@ import { ActionFunctionArgs, ActionFunction } from "@remix-run/node"
 import { auth, db, openai } from "~/config.server"
 import { ArticulatorService } from "~/services/articulator"
 import DeduplicationService from "~/services/deduplication"
-import { embeddingService as embeddings } from "~/services/embedding"
 import {
   OpenAIStream,
   OpenAIStreamCallbacks,

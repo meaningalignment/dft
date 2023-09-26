@@ -1,5 +1,5 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
-import { embeddingService as embeddings } from "./embedding"
+import { embeddingService as embeddings } from "../values-tools/embedding"
 import { ValuesCardData, model } from "~/lib/consts"
 import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
 import { toDataModel, toDataModelWithId } from "~/utils"

@@ -1,9 +1,9 @@
 import { serve } from "inngest/remix"
 import { deduplicate } from "~/services/deduplication"
-import { embed } from "~/services/embedding"
+import { embed } from "~/values-tools/embedding"
 import { inngest } from "~/config.server"
 import { hypothesize } from "~/services/linking"
-import { evaluateDialogues } from "~/services/dialogue-evaluator"
+import { evaluateDialogues } from "~/values-tools/dialogue-evaluator"
 
 const handler = serve(inngest, [
   deduplicate,

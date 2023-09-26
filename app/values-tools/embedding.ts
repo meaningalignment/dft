@@ -3,6 +3,7 @@ import { Configuration, OpenAIApi } from "openai-edge"
 import { db, inngest, openai } from "~/config.server"
 import { ValuesCardData } from "~/lib/consts"
 import { calculateAverageEmbedding } from "~/utils"
+import { ValueStyle, dftStyle } from "./value-styles"
 
 /**
  * This service is responsible for embedding cards.
@@ -12,10 +13,12 @@ import { calculateAverageEmbedding } from "~/utils"
 export default class EmbeddingService {
   private openai: OpenAIApi
   private db: PrismaClient
+  private valueStyle: ValueStyle
 
-  constructor(openai: OpenAIApi, db: PrismaClient) {
+  constructor(openai: OpenAIApi, db: PrismaClient, valueStyle?: ValueStyle) {
     this.openai = openai
     this.db = db
+    this.valueStyle = valueStyle ?? dftStyle
   }
 
   private toEmbeddingString(card: ValuesCard | CanonicalValuesCard) {
@@ -31,7 +34,7 @@ export default class EmbeddingService {
       "\n" +
       card.instructionsDetailed +
       "\n" +
-      "# ChatGPT will be considered successful if, in dialogue with the user, the following kinds of things were surfaced or enabled:" +
+      `# ${this.valueStyle.evaluationCriteriaIntroString}` +
       "\n" +
       card.evaluationCriteria.join("\n")
     )

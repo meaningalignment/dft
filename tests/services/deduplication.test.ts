@@ -2,7 +2,7 @@ import { Configuration, OpenAIApi } from "openai-edge"
 import { readValue } from "../utils"
 import { db } from "~/config.server"
 import DeduplicationService from "~/services/deduplication"
-import EmbeddingService from "~/services/embedding"
+import EmbeddingService from "~/values-tools/embedding"
 
 let openai: OpenAIApi
 let service: DeduplicationService
