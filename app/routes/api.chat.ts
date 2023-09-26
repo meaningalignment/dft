@@ -67,7 +67,7 @@ export const action: ActionFunction = async ({
 
   const callbacks: OpenAIStreamCallbacks = {
     experimental_onFunctionCall: async (payload) => {
-      return articulator.func(payload, chatId, messages, data)
+      // return articulator.func(payload, chatId, messages, data)
     },
     onCompletion: async (completion) => {
       if (isFunctionCall(completion)) {
@@ -81,9 +81,9 @@ export const action: ActionFunction = async ({
         role: "assistant",
       })
     },
-    experimental_streamData: true,
+    // experimental_streamData: true,
     onFinal() {
-      data.close()
+      // data.close()
     },
   }
 

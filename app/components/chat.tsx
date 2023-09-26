@@ -100,7 +100,7 @@ export function Chat({
   }
 
   const {
-    data,
+    // data,
     messages,
     append,
     reload,
@@ -142,31 +142,31 @@ export function Chat({
     },
   })
 
-  const prevData = useRef<string | null>(null)
+  // const prevData = useRef<string | null>(null)
 
-  useEffect(() => {
-    // Check that we have received new data.
-    if (
-      !data ||
-      data.length === 0 ||
-      JSON.stringify(prevData.current) === JSON.stringify(data)
-    ) {
-      return
-    }
+  // useEffect(() => {
+  //   // Check that we have received new data.
+  //   if (
+  //     !data ||
+  //     data.length === 0 ||
+  //     JSON.stringify(prevData.current) === JSON.stringify(data)
+  //   ) {
+  //     return
+  //   }
 
-    // The data stream is an array of data objects.
-    // We want to always handle the last one.
-    const lastData = data[data.length - 1]
+  //   // The data stream is an array of data objects.
+  //   // We want to always handle the last one.
+  //   const lastData = data[data.length - 1]
 
-    if (lastData.submittedCard) {
-      onCardSubmission(lastData.submittedCard)
-    } else if (lastData.articulatedCard) {
-      onCardArticulation(lastData.articulatedCard)
-    }
+  //   if (lastData.submittedCard) {
+  //     onCardSubmission(lastData.submittedCard)
+  //   } else if (lastData.articulatedCard) {
+  //     onCardArticulation(lastData.articulatedCard)
+  //   }
 
-    // Save the data for the next render, to prevent it from being handled again.
-    prevData.current = data
-  }, [data])
+  //   // Save the data for the next render, to prevent it from being handled again.
+  //   prevData.current = data
+  // }, [data])
 
   return (
     <>
