@@ -30,18 +30,18 @@ If the cards pass all of these criteria, and *only* if they pass all of these cr
 const dedupePrompt = `You are given a values cards and a list of other canonical values cards. Determine if the value in the input values card is already represented by one of the canonical values. If so, return the id of the canonical values card that represents the source of meaning.
 
 # Guidelines
-In order to determine if the provided card and one of the canonical cards are about the same value, use the following criteria:
+In order to determine if two or more values cards are about the same value, use the following criteria:
 - Are the evaluation criterias of the cards essentially the same?
-- Do the cards share one or more evaluation criterias that are essentially the same?
-- Are there no evaluation criterias that are entirely different between the cards?
-- Would a user that articulated one of the card feel *fully* represented by the other card?
+- If not, do the cards share at least one evaluation criteria, whilst the other criterias fit together to form a coherent whole?
+- Are there *no* evaluation criterias that are entirely different between the cards?
+- Are the cards formulated using roughly the same level of granularity and detail?
+- Would a user that articulated one of the cards feel like the other cards in the cluster captured what they cared about *fully*?
 
-If the cards pass all of these criterias, they should be considered to be about the same value.`
+If the cards pass all of these criteria, and *only* if they pass all of these criteria, they can be considered to be about the same value.`
 
 const bestValuesCardPrompt = `You will be provided with a list of "values card", all representing the same value. Your task is to return the "id" of the "values card" that is best formulated according to the guidelines below.
 
 # Card Guidelines
-
 1. **Cards should be indeterminate.** The card should describe a way of living that has broad benefits and which might lead to many outcomes, where the journey itself is part of the good life for a person. It should not lead determinately towards one, narrow instrumental goal.
 2. **Cards should not be about meeting others’ expectations.** They should be the kind of thing that is meaningful to someone.
 3. **Cards should be positively stated**. The stuff in the “how” section should be things ChatGPT SHOULD attend to.
@@ -235,7 +235,7 @@ export default class DeduplicationService {
     const data = await response.json()
     const id: number = JSON.parse(
       data.choices[0].message.function_call.arguments
-    ).values_card_id
+    ).best_values_card_id
 
     const card = cards.find((c) => c.id === id) as CanonicalValuesCard
 
@@ -308,9 +308,9 @@ export default class DeduplicationService {
     return canonical.find((c) => c.id === matchingId) ?? null
   }
 
-  async fetchNonCanonicalizedValues(limit: number = 200) {
+  async fetchNonCanonicalizedValues(limit: number = 50) {
     return (await db.valuesCard.findMany({
-      // where: { canonicalCardId: null },
+      where: { canonicalCardId: null },
       take: limit,
     })) as ValuesCard[]
   }
@@ -354,7 +354,7 @@ export const deduplicate = inngest.createFunction(
     // Get all non-canonicalized submitted values cards.
     const cards = (await step.run(
       `Get non-canonicalized cards from database`,
-      async () => service.fetchNonCanonicalizedValues(50)
+      async () => service.fetchNonCanonicalizedValues()
     )) as any as ValuesCard[]
 
     if (cards.length === 0) {
