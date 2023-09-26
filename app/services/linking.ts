@@ -6,7 +6,7 @@ import {
 } from "@prisma/client"
 import { db, inngest } from "~/config.server"
 import { Configuration, OpenAIApi } from "openai-edge"
-import EmbeddingService from "./embedding"
+import { embeddingService as embeddings } from "../values-tools/embedding"
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -23,18 +23,16 @@ type EdgeHypothesisData = {
 
 export default class LinkingService {
   private db: PrismaClient
-  private embedding: EmbeddingService
 
-  constructor(db: PrismaClient, embedding: EmbeddingService) {
+  constructor(db: PrismaClient) {
     this.db = db
-    this.embedding = embedding
   }
 
   async getDistanceFromUserValuesMap(
     userId: number
   ): Promise<Map<number, number>> {
     // Get the user's embedding vector.
-    const vector = await this.embedding.getUserEmbedding(userId)
+    const vector = await embeddings.getUserEmbedding(userId)
 
     // Get the values ordered by their similarity to the vector.
     const result = await this.db.$queryRaw<
@@ -597,7 +595,7 @@ export const hypothesize = inngest.createFunction(
     if (
       latestCanonicalCard?.createdAt &&
       new Date(latestCanonicalCard.createdAt) <
-        new Date(Date.now() - 12 * 60 * 60 * 1000)
+      new Date(Date.now() - 12 * 60 * 60 * 1000)
     ) {
       return {
         message: "Latest card is more than 12 hours old, skipping.",

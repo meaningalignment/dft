@@ -4,7 +4,7 @@ import {
   OpenAIApi,
 } from "openai-edge"
 import { db, inngest } from "~/config.server"
-import { normalizeMessage } from "./articulator"
+import { normalizeMessage } from "../services/articulator"
 import { model } from "~/lib/consts"
 import { Chat, Prisma } from "@prisma/client"
 import crypto from "crypto"

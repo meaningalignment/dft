@@ -2,7 +2,6 @@ import { Configuration, OpenAIApi } from "openai-edge"
 import { readValue, readValues } from "../utils"
 import { db } from "~/config.server"
 import DeduplicationService from "~/services/deduplication"
-import EmbeddingService from "~/services/embedding"
 import { ValuesCard } from "@prisma/client"
 
 let openai: OpenAIApi
@@ -12,11 +11,7 @@ beforeAll(() => {
   openai = new OpenAIApi(
     new Configuration({ apiKey: process.env.OPENAI_API_KEY })
   )
-  service = new DeduplicationService(
-    new EmbeddingService(openai, db),
-    openai,
-    db
-  )
+  service = new DeduplicationService(openai, db)
 })
 
 test("Test user distance map", async () => {

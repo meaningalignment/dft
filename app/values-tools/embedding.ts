@@ -1,6 +1,6 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { Configuration, OpenAIApi } from "openai-edge"
-import { db, inngest } from "~/config.server"
+import { db, inngest, openai, valueStyle } from "~/config.server"
 import { ValuesCardData } from "~/lib/consts"
 import { calculateAverageEmbedding } from "~/utils"
 
@@ -31,7 +31,7 @@ export default class EmbeddingService {
       "\n" +
       card.instructionsDetailed +
       "\n" +
-      "# ChatGPT will be considered successful if, in dialogue with the user, the following kinds of things were surfaced or enabled:" +
+      `# ${valueStyle.evaluationCriteriaIntroString}` +
       "\n" +
       card.evaluationCriteria.join("\n")
     )
@@ -54,8 +54,8 @@ export default class EmbeddingService {
     // Update in DB.
     await this.db
       .$executeRaw`UPDATE "CanonicalValuesCard" SET embedding = ${JSON.stringify(
-      embedding
-    )}::vector WHERE id = ${card.id};`
+        embedding
+      )}::vector WHERE id = ${card.id};`
   }
 
   async embedNonCanonicalCard(card: ValuesCard): Promise<void> {
@@ -66,8 +66,8 @@ export default class EmbeddingService {
     // Update in DB.
     await this.db
       .$executeRaw`UPDATE "ValuesCard" SET embedding = ${JSON.stringify(
-      embedding
-    )}::vector WHERE id = ${card.id};`
+        embedding
+      )}::vector WHERE id = ${card.id};`
   }
 
   async embedCandidate(card: ValuesCardData): Promise<number[]> {
@@ -120,7 +120,7 @@ export default class EmbeddingService {
   ): Promise<Array<CanonicalValuesCard>> {
     const query = `SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> '${JSON.stringify(
       vector
-    )}'::vector as "_distance" 
+    )}'::vector as "_distance"
     FROM "CanonicalValuesCard" cvc
     WHERE cvc.id IN (${values!.map((c) => c.id).join(",")})
     ORDER BY "_distance" ASC
@@ -129,6 +129,19 @@ export default class EmbeddingService {
     return this.db.$queryRawUnsafe<
       Array<CanonicalValuesCard & { _distance: number }>
     >(query)
+  }
+
+  async getEmbedding(card: CanonicalValuesCard) {
+    const embedding = await db.$queryRaw<Array<{ embedding: any }>>`SELECT embedding::text FROM "CanonicalValuesCard" cvc WHERE cvc."id" = ${card.id}`
+    if (!embedding.length) throw new Error("Card not found")
+    if (embedding[0].embedding === null) throw new Error("Embedding is null")
+    console.log('got embeddding', embedding[0].embedding)
+    return embedding[0].embedding as number[]
+  }
+
+  async getSimilarCards(card: CanonicalValuesCard) {
+    const vector = await this.getEmbedding(card)
+    return await db.$queryRaw<Array<CanonicalValuesCard>>`SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${vector}::vector as "_distance" FROM "CanonicalValuesCard" cvc ORDER BY "_distance" ASC LIMIT 10`
   }
 }
 
@@ -184,3 +197,5 @@ export const embed = inngest.createFunction(
     }
   }
 )
+
+export const embeddingService = new EmbeddingService(openai, db)
