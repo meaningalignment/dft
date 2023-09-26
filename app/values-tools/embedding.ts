@@ -141,8 +141,13 @@ export default class EmbeddingService {
 
   async getSimilarCards(card: CanonicalValuesCard) {
     const vector = await this.getEmbedding(card)
-    return await db.$queryRaw<Array<CanonicalValuesCard>>`SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${vector}::vector as "_distance" FROM "CanonicalValuesCard" cvc ORDER BY "_distance" ASC LIMIT 10`
+    const results = await db.$queryRaw<Array<CardPlusDistance>>`SELECT cvc.id, cvc.title, cvc."instructionsShort", cvc."instructionsDetailed", cvc."evaluationCriteria", cvc.embedding <=> ${vector}::vector as "_distance" FROM "CanonicalValuesCard" cvc WHERE cvc.id <> ${card.id} ORDER BY "_distance" ASC LIMIT 10`
+    return results.filter(r => r._distance < 0.11)
   }
+}
+
+interface CardPlusDistance extends CanonicalValuesCard {
+  _distance: number
 }
 
 //

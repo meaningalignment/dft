@@ -2,6 +2,8 @@ import { definitionOfASourceOfMeaning, valuesCardCriteria } from "./prompt-segme
 import { gpt4 } from "./gpt"
 import { json } from "@remix-run/node"
 import { db, valueStyle } from "~/config.server"
+import { embeddingService } from "./embedding"
+import { CanonicalValuesCard } from "node_modules.nosync/.prisma/client"
 
 async function regenerateInstructionsDetailed(evaluationCriteria: string[]) {
   return await gpt4(regenPrompt, evaluationCriteria.join("\n"))
@@ -11,21 +13,26 @@ async function critiqueValuesCard(evaluationCriteria: string[]) {
   return await gpt4(critiquePrompt, evaluationCriteria.join("\n"))
 }
 
+async function generateTitles(evaluationCriteria: string[]) {
+  return await gpt4(titlesPrompt, evaluationCriteria.join("\n"))
+}
+
+
 export async function updateCardFromForm(formData: FormData) {
   const cardId = Number(formData.get("cardId"))
+  const cardType = formData.get("cardType") as string
   const title = formData.get("title") as string
   const instructionsShort = formData.get("instructionsShort") as string
   const instructionsDetailed = formData.get("instructionsDetailed") as string
   const evaluationCriteria = JSON.parse(formData.get("evaluationCriteria") as string || "[]")
-  await db.canonicalValuesCard.update({
-    where: { id: cardId },
-    data: {
-      title,
-      instructionsShort,
-      instructionsDetailed,
-      evaluationCriteria,
-    }
-  })
+  const data = { title, instructionsShort, instructionsDetailed, evaluationCriteria }
+  if (cardType === "canonical") {
+    await db.canonicalValuesCard.update({ where: { id: cardId }, data })
+  } else if (cardType === "personal") {
+    await db.valuesCard.update({ where: { id: cardId }, data })
+  } else {
+    throw new Error("Unknown card type")
+  }
 }
 
 export async function runTaskFromForm(formData: FormData) {
@@ -37,11 +44,49 @@ export async function runTaskFromForm(formData: FormData) {
   } else if (task === 'critiqueEvaluationCriteria') {
     const result = await critiqueValuesCard(evaluationCriteria)
     return json(result)
+  } else if (task === 'generateTitles') {
+    const result = await generateTitles(evaluationCriteria)
+    return json(result)
+  } else if (task === 'reembed') {
+    const card = await db.canonicalValuesCard.findUnique({ where: { id: Number(formData.get("cardId")) } })
+    await embeddingService.embedCanonicalCard(card as any as CanonicalValuesCard)
+    return json({ ok: true })
   } else {
     return json({ error: "Unknown task" }, { status: 400 })
   }
 }
 
+const titlesPrompt = `
+I'll submit a list of attentional policies, meant to fit together to represent a "source of meaning".
+
+First, give your best idea about what kind of meaning a person might experience when they attend to these things.
+
+Then, suggest 10 potential titles for the list. Some can be poetic, others straightforward. No more than five words.
+
+# Definition of a source of meaning
+
+${definitionOfASourceOfMeaning}
+
+# Title Examples
+
+## Example 1
+
+SENSE of groundedness and self-confidence, independent of external validation
+MOMENTS of decision-making that open up new possibilities for interaction
+SHIFTS from disorientation to delight because we are each willing to disorient the other
+NEW WAYS OF INTERACTING that emerge from personal clarity and confidence
+ABILITY to see the other person clearly and truthfully, without the need for reassurance
+CAPACITY to engage more freely and playfully with each other
+FEELINGS of freedom and safety that come from independence and self-assuredness
+
+### Title ideas
+
+- Bold Love
+- Power Couple
+- King & Queen
+- Mr & Mrs Obama
+- Adult Interdependent
+`
 
 const regenPrompt = `
 I'll send a list of things that a person might attend to when following a value of theirs.
