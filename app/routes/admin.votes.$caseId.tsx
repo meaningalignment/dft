@@ -1,9 +1,9 @@
-import { LoaderArgs, json } from "@remix-run/node"
+import { LoaderFunctionArgs, json } from "@remix-run/node"
 import { useLoaderData } from "@remix-run/react"
 import ValuesCard from "~/components/values-card"
 import { db } from "~/config.server"
 
-export async function loader({ params }: LoaderArgs) {
+export async function loader({ params }: LoaderFunctionArgs) {
   const caseId = params.caseId! as string
 
   const values = await db.canonicalValuesCard.findMany({

@@ -1,7 +1,7 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
 import { useLoaderData } from "@remix-run/react"
-import { ActionArgs, json } from "@remix-run/node"
+import { ActionFunctionArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
 import { useState } from "react"
@@ -10,7 +10,7 @@ import { Check, Loader2 } from "lucide-react"
 import { MemoizedReactMarkdown } from "~/components/markdown"
 import { useRevalidator } from "@remix-run/react"
 
-export async function loader({ request }: ActionArgs) {
+export async function loader({ request }: ActionFunctionArgs) {
   if ((await auth.getCurrentUser(request))?.isAdmin !== true) {
     throw new Error("Unauthorized")
   }
@@ -24,7 +24,7 @@ export async function loader({ request }: ActionArgs) {
   return json({ values })
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   if ((await auth.getCurrentUser(request))?.isAdmin !== true) {
     throw new Error("Unauthorized")
   }
