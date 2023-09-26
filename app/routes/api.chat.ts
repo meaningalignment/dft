@@ -10,6 +10,8 @@ import {
   experimental_StreamData,
 } from "ai"
 
+export const config = { runtime: "edge" }
+
 const deduplication = new DeduplicationService(openai, db)
 
 function isFunctionCall(completion: string) {
