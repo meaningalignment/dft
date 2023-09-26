@@ -10,8 +10,6 @@ import {
   experimental_StreamData,
 } from "ai"
 
-export const runtime = "edge"
-
 const deduplication = new DeduplicationService(openai, db)
 
 function isFunctionCall(completion: string) {
@@ -90,6 +88,8 @@ export const action: ActionFunction = async ({
   // Get the chat response.
   const response = await articulator.chat(messages, function_call)
 
+  const stream = OpenAIStream(response)
+
   // Return a streaming response.
-  return new StreamingTextResponse(OpenAIStream(response, callbacks), {}, data)
+  return new StreamingTextResponse(stream)
 }
