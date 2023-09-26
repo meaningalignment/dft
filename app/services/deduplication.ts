@@ -25,7 +25,7 @@ In order to determine if two or more values cards are about the same value, use 
 - Are the cards formulated using roughly the same level of granularity and detail?
 - Would a user that articulated one of the cards feel like the other cards in the cluster captured what they cared about *fully*?
 
-If the cards pass all of these criteria, and *only* if they pass all of these criteria, they can be considered to be about the same value.`
+If the cards pass all of these criteria, and *only* if they pass all of these criteria, can they be considered to be about the same value.`
 
 const dedupePrompt = `You are given a values cards and a list of other canonical values cards. Determine if the value in the input values card is already represented by one of the canonical values. If so, return the id of the canonical values card that represents the source of meaning.
 
@@ -37,7 +37,7 @@ In order to determine if two or more values cards are about the same value, use 
 - Are the cards formulated using roughly the same level of granularity and detail?
 - Would a user that articulated one of the cards feel like the other cards in the cluster captured what they cared about *fully*?
 
-If the cards pass all of these criteria, and *only* if they pass all of these criteria, they can be considered to be about the same value.`
+If the cards pass all of these criteria, and *only* if they pass all of these criteria, can they be considered to be about the same value.`
 
 const bestValuesCardPrompt = `You will be provided with a list of "values card", all representing the same value. Your task is to return the "id" of the "values card" that is best formulated according to the guidelines below.
 
@@ -336,7 +336,7 @@ export default class DeduplicationService {
 //
 
 export const deduplicate = inngest.createFunction(
-  { name: "Deduplicate", concurrency: 1, retries: 0 }, // Run sequentially to avoid RCs.
+  { name: "Deduplicate", concurrency: 1 }, // Run sequentially to avoid RCs.
   { cron: "0 */3 * * *" },
   async ({ step, logger }) => {
     logger.info(`Running deduplication.`)
@@ -392,8 +392,6 @@ export const deduplicate = inngest.createFunction(
         "Fetch canonical duplicate",
         async () => service.fetchSimilarCanonicalCard(representative)
       )) as any as CanonicalValuesCard | null
-
-      console.log(existingCanonicalDuplicate)
 
       if (existingCanonicalDuplicate) {
         await step.run("Link cluster to existing canonical card", async () =>
