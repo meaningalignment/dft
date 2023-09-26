@@ -109,29 +109,6 @@ export class ArticulatorService {
     return transcript
   }
 
-  // private async appendMessages(
-  //   chatId: string,
-  //   messages: ChatCompletionRequestMessage[]
-  // ): Promise<any[]> {
-  //   const chat = await this.db.chat.findUnique({ where: { id: chatId } })
-
-  //   if (!chat) {
-  //     throw new Error(`Chat ${chatId} not found. Could not append messages.`)
-  //   }
-
-  //   const transcript = [
-  //     ...(chat!.transcript as any),
-  //     ...messages.map(normalizeMessage),
-  //   ] as any[]
-
-  //   await this.db.chat.update({
-  //     where: { id: chatId },
-  //     data: { transcript },
-  //   })
-
-  //   return transcript
-  // }
-
   private async handleArticulateCardFunction(
     chatId: string,
     messages: ChatCompletionRequestMessage[],
@@ -168,8 +145,10 @@ export class ArticulatorService {
       )
 
       if (canonical) {
-        provisionalCanonicalCardId = canonical.id
         console.log(`Found duplicate ${canonical.id} for chat ${chatId}`)
+
+        // Use the canonical duplicate instead.
+        provisionalCanonicalCardId = canonical.id
         newCard = toDataModel(canonical)
       }
     }
