@@ -22,8 +22,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 export default function AdminCardsScreen() {
   const { values } = useLoaderData<typeof loader>()
   return (
-    <div className="flex flex-col h-screen w-screen">
-      <Header />
+    <div className="flex flex-col w-screen">
       <div className="grid flex-grow place-items-center space-y-8 py-12 mx-3">
         <div className="flex flex-col justify-center items-center">
           <h1 className="text-3xl text-center"><b>{values.length}</b> Cards</h1>

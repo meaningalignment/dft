@@ -60,27 +60,20 @@ export async function runTaskFromForm(formData: FormData) {
 const titlesPrompt = `
 I'll submit a list of attentional policies, meant to fit together to represent a "source of meaning".
 
-First, what kind of meaning might a person experience, when they attend to these things?
+Answer first: what kind of meaning might a person experience, when they attend to these things?
 
-Then, suggest 10 potential titles for the list. Make colorful titles, like the examples below.
+Then, suggest 10 potential titles for this source of meaning, like the examples below.
 
-# Definition of a source of meaning
+# Here are some examples of attentional policies and titles
 
-${definitionOfASourceOfMeaning}
+1. Title: "Diverse Perspectives"
 
-# Title Examples
+DIVERSITY of perspectives that exist within the population
+INSIGHTS from different individuals who have thought about similar questions
+ANGLES that the person may not have considered
+CLARITY that emerges from understanding diverse viewpoints
 
-1. "Bold Love"
-
-SENSE of groundedness and self-confidence, independent of external validation
-MOMENTS of decision-making that open up new possibilities for interaction
-SHIFTS from disorientation to delight because we are each willing to disorient the other
-NEW WAYS OF INTERACTING that emerge from personal clarity and confidence
-ABILITY to see the other person clearly and truthfully, without the need for reassurance
-CAPACITY to engage more freely and playfully with each other
-FEELINGS of freedom and safety that come from independence and self-assuredness
-
-2. "Golden Retriever"
+2. Title: "Golden Retriever"
 
 WHATEVER I'm excited about this week
 MOMENTS of full commitment and enthusiasm towards new experiences
@@ -89,7 +82,7 @@ ACTIONS I take in the fearless pursuit of my interests
 ACHIEVEMENTS and BREAKTHROUGHS on the way to my dreams
 EXPERIENCES of joy that start from within and bubble outward
 
-3. "Rapid Discernment"
+3. Title: "Rapid Discernment"
 
 AWARENESS of my gut feelings and instincts, such that I can trust them
 MOMENTS where someone tries to impose their perspective or interpretation of events, and I keep them in their place
@@ -99,7 +92,7 @@ MOMENTS of calm and clarity when intuition speaks louder than external noise
 APPRECIATION for the inherent wisdom of my body and intuition
 INSTANCES of successfully navigating complex situations by relying on intuition
 
-4. "Mama Bear"
+4. Title: "Mama Bear"
 
 ACTIONS to take that will get people dancing, open them up, etc
 UNIQUE MOMENTS of social cohesion and expression
@@ -107,6 +100,10 @@ THOUGHTS and IDEAS that can be shared, to grow a relationship and learn from eac
 GENUINE ENTHUSIASM when greeting people, to discover their depths
 CURIOSITIES about the people around me
 POSSIBILITIES for little walks or adventures with someone I'm curious about
+
+# Definition of a source of meaning
+
+${definitionOfASourceOfMeaning}
 `
 
 const regenPrompt = `
