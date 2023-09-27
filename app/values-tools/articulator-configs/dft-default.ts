@@ -1,4 +1,4 @@
-import type { ArticulatorConfig } from "~/services/articulator-config"
+import { ArticulatorConfig } from "../articulator-config"
 
 const sourceOfMeaningDefinition = `A "source of meaning" is a concept similar to a value – it is a way of living that is important to you. Something that you pay attention to in a choice. They are more specific than words like "honesty" or "authenticity". They specify a particular *kind* of honesty and authenticity, specified as a path of attention.
 

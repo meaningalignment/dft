@@ -1,7 +1,5 @@
 import { ChatCompletionFunctions } from 'openai-edge';
 import crypto from 'crypto'
-import { default as oldConfig } from '~/articulator-configs/old_one'
-import { default as defaultConfig } from '~/articulator-configs/default'
 
 export interface ArticulatorConfig {
   name: string;
@@ -24,11 +22,6 @@ interface ArticulatorMetadata {
   model: string
 }
 
-export const configs: { [key: string]: ArticulatorConfig } = {
-  "default": defaultConfig,
-  "old_one": oldConfig
-}
-
 export function summarize(config: ArticulatorConfig, function_name: string, result: Record<string, string>): string {
   const summarizer = config.summarizers[function_name]
   if (!summarizer) throw new Error(`No summarizer for function ${function_name}`)
@@ -37,11 +30,12 @@ export function summarize(config: ArticulatorConfig, function_name: string, resu
 
 export function metadata(config: ArticulatorConfig): ArticulatorMetadata {
   const hash = crypto.createHash('sha256')
-  hash.update(JSON.stringify(config))
+  const { name, ...configWithoutName } = config
+  hash.update(JSON.stringify(configWithoutName))
   return {
     contentHash: hash.digest('hex'),
     gitHash: process.env.VERCEL_GIT_COMMIT_SHA || 'dev',
-    name: config.name,
+    name,
     model: config.model
   }
 }
