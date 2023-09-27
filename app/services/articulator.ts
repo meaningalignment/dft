@@ -2,15 +2,15 @@ import { Chat, PrismaClient, ValuesCard } from "@prisma/client"
 import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge/types/api"
 import {
   ArticulatorConfig,
-  configs,
   metadata,
   summarize,
-} from "./articulator-config"
+} from "../values-tools/articulator-config"
 import { ValuesCardData } from "~/lib/consts"
 import { OpenAIStream } from "~/lib/openai-stream"
 import { capitalize, isDisplayableMessage, toDataModel } from "~/utils"
 import { embeddingService as embeddings } from "../values-tools/embedding"
 import DeduplicationService from "./deduplication"
+import { articulatorConfigs } from "~/config.server"
 
 // import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
 
@@ -49,7 +49,7 @@ export class ArticulatorService {
     openai: OpenAIApi,
     db: PrismaClient
   ) {
-    this.config = configs[configKey]
+    this.config = articulatorConfigs[configKey]
     this.deduplication = deduplication
     this.openai = openai
     this.db = db

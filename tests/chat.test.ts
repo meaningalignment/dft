@@ -1,5 +1,5 @@
 import { Configuration, OpenAIApi } from "openai-edge"
-import config from "~/articulator-configs/default"
+import config from "~/values-tools/articulator-configs/dft-default"
 import { evaluateTranscript, readTranscript } from "./utils"
 
 let openai: OpenAIApi

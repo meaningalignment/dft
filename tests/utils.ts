@@ -1,5 +1,5 @@
 import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge"
-import config from "~/articulator-configs/default"
+import config from "~/values-tools/articulator-configs/dft-default"
 import { defaultSeedQuestion } from "~/lib/case"
 import { capitalize } from "~/utils"
 import fs from "fs"
