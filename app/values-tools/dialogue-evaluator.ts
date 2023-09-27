@@ -3,11 +3,15 @@ import {
   Configuration,
   OpenAIApi,
 } from "openai-edge"
-import { db, inngest } from "~/config.server"
+import { db, dialogueEvaluatorConfig, inngest } from "~/config.server"
 import { normalizeMessage } from "../services/articulator"
 import { model } from "~/lib/consts"
 import { Chat, Prisma } from "@prisma/client"
 import crypto from "crypto"
+
+export interface DialogueEvaluatorConfig {
+  where: Prisma.ChatWhereInput
+}
 
 function evaluatorMetadata() {
   const hash = crypto.createHash("sha256")
@@ -52,21 +56,7 @@ export const evaluateDialogues = inngest.createFunction(
   { cron: "0 * * * *" },
   async ({ logger }) => {
     const newDialogue = await db.chat.findFirst({
-      where: {
-        evaluation: {
-          equals: Prisma.DbNull,
-        },
-        user: {
-          isAdmin: {
-            not: {
-              equals: true,
-            },
-          },
-        },
-        copiedFromId: {
-          equals: null,
-        },
-      },
+      where: dialogueEvaluatorConfig.where,
     })
 
     if (!newDialogue) {

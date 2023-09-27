@@ -3,7 +3,7 @@ import { gpt4 } from "./gpt"
 import { json } from "@remix-run/node"
 import { db } from "~/config.server"
 import { embeddingService } from "./embedding"
-import { CanonicalValuesCard } from "node_modules.nosync/.prisma/client"
+import { CanonicalValuesCard } from "@prisma/client"
 import { valueStyle } from "~/lib/consts"
 
 async function regenerateInstructionsDetailed(evaluationCriteria: string[]) {
@@ -60,9 +60,9 @@ export async function runTaskFromForm(formData: FormData) {
 const titlesPrompt = `
 I'll submit a list of attentional policies, meant to fit together to represent a "source of meaning".
 
-First, give your best idea about what kind of meaning a person might experience when they attend to these things.
+First, what kind of meaning might a person experience, when they attend to these things?
 
-Then, suggest 10 potential titles for the list. Some can be poetic, others straightforward. No more than five words.
+Then, suggest 10 potential titles for the list. Make colorful titles, like the examples below.
 
 # Definition of a source of meaning
 
@@ -70,7 +70,7 @@ ${definitionOfASourceOfMeaning}
 
 # Title Examples
 
-## Example 1
+1. "Bold Love"
 
 SENSE of groundedness and self-confidence, independent of external validation
 MOMENTS of decision-making that open up new possibilities for interaction
@@ -80,13 +80,33 @@ ABILITY to see the other person clearly and truthfully, without the need for rea
 CAPACITY to engage more freely and playfully with each other
 FEELINGS of freedom and safety that come from independence and self-assuredness
 
-### Title ideas
+2. "Golden Retriever"
 
-- Bold Love
-- Power Couple
-- King & Queen
-- Mr & Mrs Obama
-- Adult Interdependent
+WHATEVER I'm excited about this week
+MOMENTS of full commitment and enthusiasm towards new experiences
+INSTANCES where I let go of hesitation, and fully engage in an activity or pursuit
+ACTIONS I take in the fearless pursuit of my interests
+ACHIEVEMENTS and BREAKTHROUGHS on the way to my dreams
+EXPERIENCES of joy that start from within and bubble outward
+
+3. "Rapid Discernment"
+
+AWARENESS of my gut feelings and instincts, such that I can trust them
+MOMENTS where someone tries to impose their perspective or interpretation of events, and I keep them in their place
+COMFORT in taking immediate and decisive action, guided by intuition, without doubt or hesitation
+CONFIDENCE in my own judgment and decision-making abilities
+MOMENTS of calm and clarity when intuition speaks louder than external noise
+APPRECIATION for the inherent wisdom of my body and intuition
+INSTANCES of successfully navigating complex situations by relying on intuition
+
+4. "Mama Bear"
+
+ACTIONS to take that will get people dancing, open them up, etc
+UNIQUE MOMENTS of social cohesion and expression
+THOUGHTS and IDEAS that can be shared, to grow a relationship and learn from each other
+GENUINE ENTHUSIASM when greeting people, to discover their depths
+CURIOSITIES about the people around me
+POSSIBILITIES for little walks or adventures with someone I'm curious about
 `
 
 const regenPrompt = `
@@ -107,7 +127,7 @@ Your response should have five parts:
 * First, say whether they fit together to define a source of meaning.
 * Take any items where you're unsure what they mean, and write a guess about what someone might mean is meaningful to attend to.
 * List any additional things that a person who attends to these items would also probably find it meaningful to attend to, as part of the same source of meaning.
-* Then, use the criteria below to mention any problems with the list.
+* Then, use the criteria below to mention any problems with the list. Be as sensitive as you can.
 * Finally, suggest a list with all problems fixed. Do not remove any items from the list, but you can split one item into two, or change the wording of an item, or add new items.
 
 # Definition of a source of meaning
