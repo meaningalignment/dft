@@ -9,6 +9,7 @@ import {
   StreamingTextResponse,
   experimental_StreamData,
 } from "ai"
+import { ReadableStream } from "stream/web"
 
 const deduplication = new DeduplicationService(openai, db)
 

@@ -1289,7 +1289,7 @@
     tsconfig-paths "^4.0.0"
     ws "^7.4.5"
 
-"@remix-run/express@^2.0.1", "@remix-run/express@2.0.1":
+"@remix-run/express@2.0.1":
   version "2.0.1"
   resolved "https://registry.npmjs.org/@remix-run/express/-/express-2.0.1.tgz"
   integrity sha512-YwqWF+Se6EoKL7uJhA/55BwP6kxIgDo//kHoh8miaMvVUKa1KMLru79kqU74d7PleYf9Qj4i2cXygz1mMl032w==
