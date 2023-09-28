@@ -44,7 +44,7 @@ export default function AdminCaseVotes() {
 
   return (
     <div className="grid place-items-center space-y-4 py-12 px-8">
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mx-auto gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 mx-auto gap-4">
         {values.map((value) => (
           <div className="relative h-full w-full" key={value.id}>
             <div className="absolute bottom-10 right-6 z-20 w-full">
