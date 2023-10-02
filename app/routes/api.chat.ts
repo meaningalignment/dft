@@ -22,78 +22,76 @@ export const action: ActionFunction = async ({
 }: ActionFunctionArgs): Promise<Response> => {
   console.log("Node version is: " + process.version)
 
-  return json({ node: process.version })
+  const articulatorConfig = request.headers.get("X-Articulator-Config")
+  const userId = await auth.getUserId(request)
+  const json = await request.json()
 
-  // const articulatorConfig = request.headers.get("X-Articulator-Config")
-  // const userId = await auth.getUserId(request)
-  // const json = await request.json()
+  // Unpack the post body.
+  const { messages: clientMessages, chatId, caseId, function_call } = json
 
-  // // Unpack the post body.
-  // const { messages: clientMessages, chatId, caseId, function_call } = json
+  // Create the Articulator service.
+  const articulator = new ArticulatorService(
+    articulatorConfig ?? "default",
+    deduplication,
+    openai,
+    db
+  )
 
-  // // Create the Articulator service.
-  // const articulator = new ArticulatorService(
-  //   articulatorConfig ?? "default",
-  //   deduplication,
-  //   openai,
-  //   db
-  // )
+  //
+  // Add the user's message to the chat.
+  //
+  let messages: ChatCompletionRequestMessage[]
 
-  // //
-  // // Add the user's message to the chat.
-  // //
-  // let messages: ChatCompletionRequestMessage[]
+  if ((await db.chat.count({ where: { id: chatId } })) === 0) {
+    const chat = await articulator.createChat(
+      chatId,
+      caseId,
+      userId,
+      clientMessages
+    )
+    messages = chat.transcript as any as ChatCompletionRequestMessage[]
+  } else {
+    messages = await articulator.addServerSideMessage(
+      chatId,
+      clientMessages[clientMessages.length - 1]
+    )
+  }
 
-  // if ((await db.chat.count({ where: { id: chatId } })) === 0) {
-  //   const chat = await articulator.createChat(
-  //     chatId,
-  //     caseId,
-  //     userId,
-  //     clientMessages
-  //   )
-  //   messages = chat.transcript as any as ChatCompletionRequestMessage[]
-  // } else {
-  //   messages = await articulator.addServerSideMessage(
-  //     chatId,
-  //     clientMessages[clientMessages.length - 1]
-  //   )
+  //
+  // Configure streaming callbacks.
+  //
+
+  // This data stream object is used to stream data
+  // from the functions, like articulated values card and
+  // submission states, to the client.
+  // const data = new experimental_StreamData()
+
+  // const callbacks: OpenAIStreamCallbacks = {
+  //   experimental_onFunctionCall: async (payload) => {
+  //     return articulator.func(payload, chatId, messages, data)
+  //   },
+  //   onCompletion: async (completion) => {
+  //     if (isFunctionCall(completion)) {
+  //       // Function call completions are handled by the onFunctionCall callback.
+  //       return
+  //     }
+
+  //     // Save the message to database.
+  //     await articulator.addServerSideMessage(chatId, {
+  //       content: completion,
+  //       role: "assistant",
+  //     })
+  //   },
+  //   experimental_streamData: true,
+  //   onFinal() {
+  //     data.close()
+  //   },
   // }
 
-  // //
-  // // Configure streaming callbacks.
-  // //
+  // Get the chat response.
+  const response = await articulator.chat(messages, function_call)
 
-  // // This data stream object is used to stream data
-  // // from the functions, like articulated values card and
-  // // submission states, to the client.
-  // // const data = new experimental_StreamData()
-
-  // // const callbacks: OpenAIStreamCallbacks = {
-  // //   experimental_onFunctionCall: async (payload) => {
-  // //     return articulator.func(payload, chatId, messages, data)
-  // //   },
-  // //   onCompletion: async (completion) => {
-  // //     if (isFunctionCall(completion)) {
-  // //       // Function call completions are handled by the onFunctionCall callback.
-  // //       return
-  // //     }
-
-  // //     // Save the message to database.
-  // //     await articulator.addServerSideMessage(chatId, {
-  // //       content: completion,
-  // //       role: "assistant",
-  // //     })
-  // //   },
-  // //   experimental_streamData: true,
-  // //   onFinal() {
-  // //     data.close()
-  // //   },
-  // // }
-
-  // // Get the chat response.
-  // const response = await articulator.chat(messages, function_call)
-
-  // // Return a streaming response.
-  // const stream = OpenAIStream(response)
-  // return new StreamingTextResponse(stream)
+  // Return a streaming response.
+  const stream = OpenAIStream(response)
+  return new StreamingTextResponse(stream)
 }
