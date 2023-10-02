@@ -8,6 +8,10 @@ module.exports = {
   serverModuleFormat: "cjs",
   // See https://github.com/remix-run/remix/discussions/2594.
   serverDependenciesToBundle: [
+    /^d3.*/,
+    /^delaunator.*/,
+    /^internmap.*/,
+    /^robust-predicates.*/,
     /^rehype.*/,
     /^remark.*/,
     /^unified.*/,
