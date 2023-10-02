@@ -111,9 +111,9 @@ export default function Graph() {
 
     // Create force simulation
     const simulation = d3.forceSimulation<Node, Link>(nodes)
-      .force('link', d3.forceLink<Link, Node>(links).id((d: Node) => d.id).distance(50))  // Shorter distance
-      .force('charge', d3.forceManyBody().strength(-200))  // Lesser repulsion
-      .force('center', d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2));
+      .force('link', d3.forceLink<Link, Node>(links).id((d: Node) => d.id).distance(50))
+      .force('charge', d3.forceManyBody().strength(-50))  // Weaker repulsion within groups
+      .force('center', d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2).strength(0.05));  // Weaker central pull
 
     // Draw links
     const link = g.append('g')
