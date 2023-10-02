@@ -64,6 +64,7 @@ function InfoBox({ node, x, y }: { node: Node | null, x: number, y: number }) {
     position: 'absolute',
     left: x,
     top: y,
+    pointerEvents: 'none',
   };
   return (
     <div className="info-box" style={style}>
@@ -73,6 +74,7 @@ function InfoBox({ node, x, y }: { node: Node | null, x: number, y: number }) {
 };
 
 export default function Graph() {
+  let hoverTimeout: NodeJS.Timeout | null = null;
   const ref = useRef<SVGSVGElement>(null);
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null);
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
@@ -123,6 +125,16 @@ export default function Graph() {
       .attr('stroke', 'black')
       .attr('marker-end', 'url(#arrowhead)');  // Add arrowheads
 
+    // Draw edge labels
+    const edgeLabels = g.append('g')
+      .selectAll('text')
+      .data(links)
+      .enter().append('text')
+      .attr('font-size', '8px')
+      .attr('fill', '#cccccc')
+      .attr('text-anchor', 'middle')
+      .attr('dy', -5);
+
     // Draw nodes
     const node = g.append('g')
       .selectAll('circle')
@@ -131,10 +143,15 @@ export default function Graph() {
       .attr('r', 10)
       .attr('fill', 'blue')
       .on('mouseover', (event: any, d: Node) => {
+        if (hoverTimeout) clearTimeout(hoverTimeout);
         setHoveredNode(d);
         setPosition({ x: event.clientX, y: event.clientY });
       })
-      .on('mouseout', () => setHoveredNode(null))
+      .on('mouseout', () => {
+        hoverTimeout = setTimeout(() => {
+          setHoveredNode(null);
+        }, 200);  // 200 milliseconds delay
+      })
       .call(d3.drag()  // Make nodes draggable
         .on('start', dragStart)
         .on('drag', dragging)
@@ -154,6 +171,10 @@ export default function Graph() {
         .attr('y1', (d: any) => d.source.y)
         .attr('x2', (d: any) => d.target.x)
         .attr('y2', (d: any) => d.target.y);
+
+      edgeLabels.attr('x', (d: any) => (d.source.x + d.target.x) / 2)
+        .attr('y', (d: any) => (d.source.y + d.target.y) / 2)
+        .text((d: any) => d.avg.toFixed(3));
 
       node.attr('cx', (d: any) => d.x)
         .attr('cy', (d: any) => d.y);
@@ -183,7 +204,7 @@ export default function Graph() {
 
   return (
     <>
-      <svg ref={ref}>
+      <svg ref={ref} style={{ userSelect: "none" }}>
         <g></g>
       </svg>
       <InfoBox node={hoveredNode} x={position.x} y={position.y} />
