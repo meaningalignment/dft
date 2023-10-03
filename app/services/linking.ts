@@ -280,7 +280,6 @@ async function upsertTransitions(
           to: { connect: { id: t.b_id } },
           context: { connect: { id: condition } },
           story: t.story,
-          condition,
           runId,
         },
         update: {},

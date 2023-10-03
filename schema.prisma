@@ -122,8 +122,7 @@ model Edge {
   fromId       Int
   toId         Int
   story        String              @default("OLD")
-  condition    String              @default("OLD") // TODO remove and replace with context
-  contextId    String? // TODO make non-null and replace old with condition
+  contextId    String? // TODO make non-null
   runId        String              @default("OLD")
   relationship String              @default("upgrade")
   comment      String?
@@ -141,8 +140,7 @@ model EdgeHypothesis {
   fromId    Int
   toId      Int
   story     String?
-  condition String?
-  contextId String? // TODO make non-null and replace old with condition
+  contextId String? // TODO make non-null
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
   runId     String               @default("OLD")
