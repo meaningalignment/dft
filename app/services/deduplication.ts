@@ -132,10 +132,7 @@ export default class DeduplicationService {
   private openai: OpenAIApi
   private db: PrismaClient
 
-  constructor(
-    openai: OpenAIApi,
-    db: PrismaClient
-  ) {
+  constructor(openai: OpenAIApi, db: PrismaClient) {
     this.openai = openai
     this.db = db
   }
@@ -264,7 +261,7 @@ export default class DeduplicationService {
    */
   async fetchSimilarCanonicalCard(
     candidate: ValuesCardData,
-    limit: number = 3
+    limit: number = 5
   ): Promise<CanonicalValuesCard | null> {
     // Embed the candidate.
     const card_embeddings = await embeddings.embedCandidate(candidate)

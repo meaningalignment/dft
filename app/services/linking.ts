@@ -16,7 +16,7 @@ const openai = new OpenAIApi(configuration)
 type EdgeHypothesisData = {
   to: CanonicalValuesCard
   from: CanonicalValuesCard
-  condition: string
+  contextId: string
   story: string
   runId: string
 }
@@ -126,13 +126,13 @@ export default class LinkingService {
         from: h.from,
         story: h.story,
         runId: h.runId,
-        condition: h.condition,
+        contextId: h.contextId,
       } as EdgeHypothesisData
     })
   }
 }
 
-async function clusterCanonicalCards() {
+async function clusterCanonicalCards(contexts: string[]) {
   const cardDataAsJson = JSON.stringify(
     await db.canonicalValuesCard.findMany({
       select: {
@@ -149,7 +149,7 @@ async function clusterCanonicalCards() {
     model: "gpt-4-32k-0613",
     temperature: 0.3,
     messages: [
-      { role: "system", content: clusterPrompt },
+      { role: "system", content: clusterPrompt(contexts) },
       { role: "user", content: cardDataAsJson },
     ],
     function_call: { name: "cluster" },
@@ -179,8 +179,8 @@ const clusterFunction = {
             },
             condition: {
               description:
-                "A situation in which the value could be applied. No more than 6 words.",
-              type: "number",
+                "The situation when the values in the cluster applies. Must be one of the predefined conditions.",
+              type: "string",
             },
           },
           required: ["id", "condition"],
@@ -195,7 +195,7 @@ const clusterFunction = {
           properties: {
             condition: {
               description:
-                "The common condition of the values in this cluster.",
+                "The common condition of the values in this cluster. Must be one of the predefined conditions.",
               type: "string",
             },
             ids: {
@@ -219,20 +219,12 @@ interface Cluster {
   ids: number[]
 }
 
-const clusterPrompt = `You'll receive a bunch of values.
+const clusterPrompt = (contexts: string[]) => `You'll receive a bunch of values.
 
-First, make up a condition for when to apply each value. It should be no more than 6 words. Never write conditions about what the user needs, seeks, values, or wants. (See below.)
+First, pick a condition for when to apply each value from the following list:
+${contexts.join("\n")}
 
-Then, cluster the values based on similarity of conditions. Clusters should NEVER have only one value. They should be as large as possible, while still coherent. For instance, "when the user is emotional", and "when the user is fearful" should go in the same cluster.
-
-# Guidelines
-
-- Conditions are not about what the user needs, seeks, values, or wants. What the user is up to is irrelevant. Instead, conditions should be about the situation or state the user is in, or that a dialogue with the user is in. For instance, a value about treating the user tenderly if they're having a rough time should have a condition like 'when the user is struggling', not 'when the user seeks support'.
-- Conditions should be no more than 6 words.
-- All should start 'when the user' or 'when someone'.
-- No clusters with only one value.
-- Make them as broad as possible, while still coherent.
-`
+Then, cluster the values based on similarity of conditions.`
 
 export async function generateTransitions(cardIds: number[]): Promise<{
   transitions: Transition[]
@@ -266,29 +258,6 @@ export async function generateTransitions(cardIds: number[]): Promise<{
   }
 }
 
-async function formatCondition(condition: string): Promise<string> {
-  const prompt = `You will be given a condition string like these:
-When the user is feeling sad
-When the user is distressed
-When the user is having doubts
-
-Return a condition string formatted as follows:
-When feeling sad
-When being distressed
-When having doubts`
-
-  const res = await openai.createChatCompletion({
-    model: "gpt-3.5-turbo",
-    temperature: 0.3,
-    messages: [
-      { role: "system", content: prompt },
-      { role: "user", content: condition },
-    ],
-  })
-  const data = await res.json()
-  return data.choices[0].message.content
-}
-
 async function upsertTransitions(
   transitions: Transition[],
   runId: string,
@@ -306,9 +275,10 @@ async function upsertTransitions(
         create: {
           from: { connect: { id: t.a_id } },
           to: { connect: { id: t.b_id } },
+          context: { connect: { id: condition } },
           story: t.story,
-          runId,
           condition,
+          runId,
         },
         update: {},
       })
@@ -595,7 +565,7 @@ export const hypothesize = inngest.createFunction(
     if (
       latestCanonicalCard?.createdAt &&
       new Date(latestCanonicalCard.createdAt) <
-      new Date(Date.now() - 12 * 60 * 60 * 1000)
+        new Date(Date.now() - 12 * 60 * 60 * 1000)
     ) {
       return {
         message: "Latest card is more than 12 hours old, skipping.",
@@ -604,12 +574,17 @@ export const hypothesize = inngest.createFunction(
 
     logger.info(`Running hypothetical links generation`)
 
+    // Get contexts.
+    const contexts = await step.run("Fetching contexts", async () =>
+      db.context.findMany()
+    )
+
     //
     // Get clusters of canonical cards.
     //
     const clusters = (
       await step.run("Cluster all canonical cards", async () =>
-        clusterCanonicalCards()
+        clusterCanonicalCards(contexts.map((c) => c.id))
       )
     ).clusters.filter((c) => c.ids.length > 1)
 
@@ -630,14 +605,9 @@ export const hypothesize = inngest.createFunction(
         `Created ${transitions.length} transitions for cluster ${cluster.condition}.`
       )
 
-      const condition = await step.run(
-        `Format condition '${cluster.condition}'`,
-        async () => formatCondition(cluster.condition)
-      )
-
       await step.run(
         `Add transitions for cluster ${cluster.condition} to database`,
-        async () => upsertTransitions(transitions, runId, condition)
+        async () => upsertTransitions(transitions, runId, cluster.condition)
       )
     }
 
