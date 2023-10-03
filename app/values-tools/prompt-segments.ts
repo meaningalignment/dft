@@ -9,16 +9,17 @@ A source of meaning is distinct from similar concepts:
 
 export const valuesCardCriteria = `
 1. **Be coherent.** The things to attend to should fit together to form a coherent whole. They should not be contradictory or unrelated. All elements of the source of meaning should be required, and work together, in the context.
-2. **Be clear and specific.** Simply instructing someone to attend to these things should be enough to show them this source of meaning. Avoid instructions that are vague, abstract, or difficult to understand.
-3. **No poetry.** No items should use the word "meaningful" itself (or synonyms like "deep"). Replace it with something that implies what exactly is meaningful about attending to the thing. In general, remove poetic or abstract language.
-4. **Use noun phrases.** List things that can be attended to directly, not broader actions, processes, or virtues. The attentional policies should each be written in the order "<plural form of thing to attend to> that <qualifier>, so as to <reason it's meaningful to attend to it>".
+2. **Use noun phrases.** List things that can be attended to directly, not broader actions, processes, or virtues. The attentional policies should each be written in the order "<plural form of thing to attend to> that <qualifier>, so as to <reason it's meaningful to attend to it>".
+3. **Be clear and specific.** Simply instructing someone to attend to these things should be enough to show them this source of meaning. Avoid instructions that are vague, abstract, or difficult to understand. Be as specific as possible.
+4. **No poetry.** No items should use the word "meaningful" itself (or synonyms like "deep"). Replace it with something that implies what exactly is meaningful about attending to the thing. In general, remove poetic or abstract language.
 5. **Write from the perspective of the actor.** The instructions should be written from the perspective of the person who exhibits the source of meaning, not from the perspective of an outside observer.
 6. **Say what's meaningful.** A person should be able to sense why each item could be meaningful within the context. They should be able to see how attending to the thing could produce a sense of meaning. Otherwise, add information.
-7. **No goals.** Attending to these things should be broadly beneficial, leading to many outcomes. The journey itself should be part of the good life for the person with the source of meaning, rather than being instrumental. They should be things that can be attended to in a choice, not things that are the result of a choice.
+7. **No goals.** Attending to these things should be broadly beneficial, leading to many outcomes. The journey itself should be part of the good life for the person with the source of meaning, rather than being instrumental. They should be things that can be attended to in a choice, not things that are the result of a choice. They should be things where attending to them opens possibilities, rather than things to ensure or check off.
 8. **State things positively.** They should be things a person COULD attend to, not things to avoid attending to.
-9. **Use clear, simple language.** Anyone in the relevant context should be able to see what you mean about what to attend to. Theinstructions should be clear enough that you could use them in a survey to see whether or not someone was attending to those things.
-10. **Be as general as possible.** Avoid being unnecessarily specific. For instance, prefer "strangers" to "customers" if either would work.
+9. **Use clear, simple language.** Anyone in the relevant context should be able to see what you mean about what to attend to. The instructions should be clear enough that you could use them in a survey to see whether or not someone was attending to those things.
+10. **Use general words.** For instance, prefer "strangers" to "customers" if either would work.
 `
+
 export const exampleCards = [{
   "evaluation_criteria": [
     "CHANGES in people when entrusted with the work of self-determination",

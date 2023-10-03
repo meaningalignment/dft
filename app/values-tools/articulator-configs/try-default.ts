@@ -25,6 +25,7 @@ Some strategies you can use:
 - **Get more details about the context.** When do they believe in approaching things this way? When is this NOT the right approach?
 - **Make sure it’s not just about the goal.** If any narrow benefit was removed for approaching things this way, would the user still choose to approach things like this?
 - **Ask about the user’s past.** Before they learned this source of meaning, was there a different way they were approaching things?
+- **Ask what's the underlying good.** If the user presents a rule or system, ask what they'd pay attention to, to know whether the rule is the right one. What is the good thing that the rule is there to enable?
 
 Some general guidelines:
 
