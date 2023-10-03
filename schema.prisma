@@ -129,7 +129,7 @@ model Edge {
   fromId       Int
   toId         Int
   story        String              @default("OLD")
-  contextId    String? // TODO make non-null
+  contextId    String
   runId        String              @default("OLD")
   relationship String              @default("upgrade")
   comment      String?
@@ -138,7 +138,7 @@ model Edge {
   user         User                @relation(fields: [userId], references: [id])
   from         CanonicalValuesCard @relation("FromValueRelation", fields: [fromId], references: [id], onDelete: Cascade)
   to           CanonicalValuesCard @relation("ToValueRelation", fields: [toId], references: [id], onDelete: Cascade)
-  context      Context?            @relation(fields: [contextId], references: [id], onDelete: SetNull)
+  context      Context             @relation(fields: [contextId], references: [id])
 
   @@id([userId, fromId, toId])
 }
@@ -147,13 +147,13 @@ model EdgeHypothesis {
   fromId    Int
   toId      Int
   story     String?
-  contextId String? // TODO make non-null
+  contextId String
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
   runId     String               @default("OLD")
   from      CanonicalValuesCard? @relation("FromHypothesizedValueRelation", fields: [fromId], references: [id], onDelete: Cascade)
   to        CanonicalValuesCard? @relation("ToHypothesizedValueRelation", fields: [toId], references: [id], onDelete: Cascade)
-  context   Context?             @relation(fields: [contextId], references: [id], onDelete: SetNull)
+  context   Context              @relation(fields: [contextId], references: [id])
 
   @@id([fromId, toId])
 }
