@@ -122,7 +122,8 @@ model Edge {
   fromId       Int
   toId         Int
   story        String              @default("OLD")
-  condition    String              @default("OLD")
+  condition    String              @default("OLD") // TODO remove and replace with context
+  contextId    String? // TODO make non-null and replace old with condition
   runId        String              @default("OLD")
   relationship String              @default("upgrade")
   comment      String?
@@ -131,6 +132,7 @@ model Edge {
   user         User                @relation(fields: [userId], references: [id])
   from         CanonicalValuesCard @relation("FromValueRelation", fields: [fromId], references: [id], onDelete: Cascade)
   to           CanonicalValuesCard @relation("ToValueRelation", fields: [toId], references: [id], onDelete: Cascade)
+  context      Context?            @relation(fields: [contextId], references: [id], onDelete: SetNull)
 
   @@id([userId, fromId, toId])
 }
@@ -140,11 +142,38 @@ model EdgeHypothesis {
   toId      Int
   story     String?
   condition String?
+  contextId String? // TODO make non-null and replace old with condition
   createdAt DateTime             @default(now())
   updatedAt DateTime             @updatedAt
   runId     String               @default("OLD")
   from      CanonicalValuesCard? @relation("FromHypothesizedValueRelation", fields: [fromId], references: [id], onDelete: Cascade)
   to        CanonicalValuesCard? @relation("ToHypothesizedValueRelation", fields: [toId], references: [id], onDelete: Cascade)
+  context   Context?             @relation(fields: [contextId], references: [id], onDelete: SetNull)
 
   @@id([fromId, toId])
+}
+
+model Context {
+  id              String            @id
+  ContextsOnCases ContextsOnCases[]
+  Edge            Edge[]
+  EdgeHypothesis  EdgeHypothesis[]
+}
+
+model Case {
+  id              String            @id
+  title           String
+  question        String
+  ContextsOnCases ContextsOnCases[]
+}
+
+model ContextsOnCases {
+  context   Context  @relation(fields: [contextId], references: [id])
+  case      Case     @relation(fields: [caseId], references: [id])
+  contextId String
+  caseId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@id([contextId, caseId])
 }

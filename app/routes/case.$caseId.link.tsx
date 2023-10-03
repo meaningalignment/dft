@@ -50,7 +50,7 @@ export async function action({ request }: LoaderArgs) {
       toId: edge.to.id,
       fromId: edge.from.id,
       story: edge.story,
-      condition: edge.condition,
+      contextId: edge.contextId,
       runId: edge.runId,
       relationship,
       comment,
@@ -58,7 +58,7 @@ export async function action({ request }: LoaderArgs) {
     update: {
       story: edge.story,
       runId: edge.runId,
-      condition: edge.condition,
+      contextId: edge.contextId,
       relationship,
       comment,
     },
@@ -140,11 +140,12 @@ export default function LinkScreen() {
     <div className="flex flex-col h-screen w-screen">
       <Header />
       <div className="grid flex-grow place-items-center space-y-8 py-12 px-8">
-        <h1 className="text-neutral-500 mb-2">{`User Story ${index + 1}/${draw.length
-          }`}</h1>
+        <h1 className="text-neutral-500 mb-2">{`User Story ${index + 1}/${
+          draw.length
+        }`}</h1>
         <div className="w-full max-w-2xl">
           <h1 className="text-md font-bold mb-2 pl-12 md:pl-0">
-            {draw[index].condition}
+            {draw[index].contextId}
           </h1>
           <StaticChatMessage
             onFinished={() => {
@@ -177,7 +178,7 @@ export default function LinkScreen() {
         >
           When{" "}
           <span className="font-bold">
-            {draw[index].condition.split(" ").slice(1).join(" ")}
+            {draw[index].contextId.split(" ").slice(1).join(" ")}
           </span>
           , this person used to focus on{" "}
           <span className="font-bold">{draw[index].from.title}</span>.<br />

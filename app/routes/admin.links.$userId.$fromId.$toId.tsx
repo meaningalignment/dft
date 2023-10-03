@@ -37,7 +37,7 @@ export default function AdminLink() {
     <div className="grid place-items-center space-y-4 py-12 px-8">
       <div className="w-full max-w-2xl">
         <h1 className="text-md font-bold mb-2 pl-12 md:pl-0">
-          {edge.condition}
+          {edge.contextId}
         </h1>
         <StaticChatMessage
           text={'"' + edge.story + '"'}
