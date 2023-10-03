@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client"
 import { mockDeep } from "jest-mock-extended"
 import DeduplicationService from "~/services/deduplication"
 import { embeddingService } from "~/values-tools/embedding"
+import { readTranscript } from "tests/utils"
 
 let articulator: ArticulatorService
 let openai: OpenAIApi
