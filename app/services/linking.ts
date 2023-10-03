@@ -224,7 +224,10 @@ const clusterPrompt = (contexts: string[]) => `You'll receive a bunch of values.
 First, pick a condition for when to apply each value from the following list:
 ${contexts.join("\n")}
 
-Then, cluster the values based on similarity of conditions.`
+Then, cluster the values based on similarity of conditions.
+
+# Guidelines:
+Conditions are not about what the user needs, seeks, values, or wants. What the user is up to is irrelevant. Instead, conditions should be about the situation or state the user is in, or that a dialogue with the user is in.`
 
 export async function generateTransitions(cardIds: number[]): Promise<{
   transitions: Transition[]
