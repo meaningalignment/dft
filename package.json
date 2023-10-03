@@ -6,7 +6,8 @@
     "dev": "remix dev",
     "start": "remix-serve build",
     "test": "jest --runInBand --detectOpenHandles --forceExit",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "db-diff": "prisma migrate diff --from-schema-datasource ./schema.prisma --to-schema-datamodel ./schema.prisma"
   },
   "dependencies": {
     "@mattiasbuelens/web-streams-adapter": "^0.1.0",

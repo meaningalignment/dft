@@ -37,6 +37,12 @@ model EmailCodes {
   extraData          Json?
 }
 
+enum ValueCardQuality {
+  unknown
+  invalid
+  ok
+}
+
 model ValuesCard {
   id                   Int                          @id @default(autoincrement())
   title                String
@@ -50,6 +56,7 @@ model ValuesCard {
   chat                 Chat                         @relation(fields: [chatId], references: [id], onDelete: Cascade)
   canonicalCard        CanonicalValuesCard?         @relation(fields: [canonicalCardId], references: [id], onDelete: SetNull)
   embedding            Unsupported("vector(1536)")?
+  quality              ValueCardQuality             @default(ok)
 }
 
 model CanonicalValuesCard {

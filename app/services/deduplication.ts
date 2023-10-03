@@ -304,7 +304,10 @@ export default class DeduplicationService {
 
   async fetchNonCanonicalizedValues(limit: number = 50) {
     return (await db.valuesCard.findMany({
-      where: { canonicalCardId: null },
+      where: {
+        canonicalCardId: null,
+        quality: 'ok',
+      },
       take: limit,
     })) as ValuesCard[]
   }
