@@ -20,9 +20,11 @@ export const inngest = new Inngest({
   apiKey: process.env.INNGEST_API_KEY,
 })
 
-export const openai = new OpenAIApi(new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
-}))
+export const openai = new OpenAIApi(
+  new Configuration({
+    apiKey: process.env.OPENAI_API_KEY,
+  })
+)
 
 export const dialogueEvaluatorConfig: DialogueEvaluatorConfig = {
   where: {
@@ -39,9 +41,9 @@ export const dialogueEvaluatorConfig: DialogueEvaluatorConfig = {
     copiedFromId: {
       equals: null,
     },
-  }
+  },
 }
 
 export const articulatorConfigs: { [key: string]: ArticulatorConfig } = {
-  "default": dftDefaultConfig,
+  default: dftDefaultConfig,
 }

@@ -33,7 +33,7 @@ const cardGuidelines = `1. **Cards should be indeterminate.** The card should de
 6. **Cards should not have unnecessary elements.** All elements of the source of meaning should be required, and work together, in the context.
 7. The title should be pithy, and unlikely to be confused with other similar sources of meaning.
 8. The evaluation criteria should be clear, specific things to attend to. They should be things where attending to them opens possibilities, rather than things to ensure or check off.
-`
+9. **The card should be applicable to any user, not just the particular user from the transcript**. Therefore, the instructions and evaluation criterias should *not* refer to "the woman", "the parent" or "the girl" from the transcript, but "the user" instead.`
 
 const mainPrompt = `You are a meaning assistant, helping a user understand what their underlying "sources of meaning" are when deliberating about how they think ChatGPT should respond to morally tricky situations.
 
