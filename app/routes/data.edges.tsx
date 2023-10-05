@@ -25,5 +25,5 @@ export default function GraphPage() {
   }, [])
 
   if (!isHydrated) return <p>Please wait...</p>
-  return <Graph nodes={nodes} links={links} />
+  return <p>Hydrated</p>
 }
