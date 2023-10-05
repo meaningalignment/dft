@@ -2,7 +2,7 @@ import { loader as edgesLoader } from "./data.edges[.]json.js"
 import * as d3 from "d3"
 import { useLoaderData } from "@remix-run/react"
 import { useEffect, useRef, useState } from "react"
-import ValuesCard from "~/components/values-card.js"
+import ValuesCard from "~/components/values-card"
 
 export async function loader() {
   return await edgesLoader()
