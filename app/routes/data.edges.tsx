@@ -1,7 +1,7 @@
 
 // import { useLoaderData } from "@remix-run/react";
 import { useEffect, useState } from "react";
-import { buildGraph } from './data.edges[.]json.js'
+// import { buildGraph } from './data.edges[.]json.js'
 import { json } from '@remix-run/node';
 
 export const config = {
@@ -9,8 +9,8 @@ export const config = {
 }
 
 export async function loader() {
-  const { nodes, links } = await buildGraph()
-  return json({ nodes, links })
+  // const { nodes, links } = await buildGraph()
+  return json({ nodes: [], links: [] })
 }
 
 let isHydrating = true;
