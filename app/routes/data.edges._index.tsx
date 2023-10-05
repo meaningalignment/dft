@@ -2,7 +2,7 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { buildGraph } from "./data.edges[.]json.js"
 import { Suspense } from "react";
 import { defer } from "@remix-run/node";
-import { MoralGraph } from "~/components/moral-graph.js";
+import { MoralGraph } from "~/components/moral-graph";
 
 export async function loader() {
   const graph = buildGraph()

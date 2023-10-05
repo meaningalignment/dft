@@ -2,7 +2,7 @@ import { LoaderArgs, defer } from "@remix-run/node"
 import { buildGraph } from "./data.edges[.]json.js"
 import { Suspense } from "react"
 import { Await, useLoaderData } from "@remix-run/react"
-import { MoralGraph } from "~/components/moral-graph.js"
+import { MoralGraph } from "~/components/moral-graph"
 
 export async function loader({ params }: LoaderArgs) {
   const caseId = params.caseId!
