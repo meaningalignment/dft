@@ -2,6 +2,10 @@ import { Edge } from "@prisma/client"
 import { json } from "@remix-run/node"
 import { db } from "~/config.server"
 
+export const config = {
+  maxDuration: 300
+}
+
 function score(edge: Edge) {
   if (edge.relationship === "upgrade") return 1
   if (edge.relationship === "no_upgrade") return -0.2

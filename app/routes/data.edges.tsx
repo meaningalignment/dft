@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import ValuesCard from "~/components/values-card";
 import { loader as edgesLoader } from './data.edges[.]json.js'
 
+export const config = {
+  maxDuration: 300
+}
+
 export async function loader() {
   return await edgesLoader()
 }
