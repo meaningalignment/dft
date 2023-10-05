@@ -1,12 +1,11 @@
+import { loader as edgesLoader } from "./data.edges[.]json.js"
 import * as d3 from "d3"
 import { useLoaderData } from "@remix-run/react"
 import { useEffect, useRef, useState } from "react"
-import ValuesCard from "~/components/values-card"
-import { loader as edgesLoader } from "./data.edges.$caseId[.]json.js"
-import { LoaderArgs } from "@remix-run/node"
+import ValuesCard from "~/components/values-card.js"
 
-export async function loader(args: LoaderArgs) {
-  return await edgesLoader(args)
+export async function loader() {
+  return await edgesLoader()
 }
 
 interface Node {
@@ -33,6 +32,8 @@ function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
     </div>
   )
 }
+
+
 
 export default function Graph() {
   let hoverTimeout: NodeJS.Timeout | null = null
