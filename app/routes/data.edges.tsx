@@ -1,16 +1,17 @@
 import * as d3 from 'd3';
-import { Await, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import ValuesCard from "~/components/values-card";
-import { buildGraph, loader as edgesLoader } from './data.edges[.]json.js'
-import { defer } from '@remix-run/node';
+import { buildGraph } from './data.edges[.]json.js'
+import { json } from '@remix-run/node';
 
 export const config = {
   maxDuration: 300
 }
 
 export async function loader() {
-  return defer({ graph: buildGraph() })
+  const { nodes, links } = await buildGraph()
+  return json({ nodes, links })
 }
 
 interface Node {
@@ -38,16 +39,18 @@ function InfoBox({ node, x, y }: { node: Node | null, x: number, y: number }) {
   );
 };
 
+let isHydrating = true;
 
 export default function GraphPage() {
-  const { graph } = useLoaderData<typeof loader>();
-  return (
-    <Await resolve={graph}>
-      {({ nodes, links }) => (
-        <Graph nodes={nodes} links={links} />
-      )}
-    </Await>
-  )
+  const { nodes, links } = useLoaderData<typeof loader>();
+  const [isHydrated, setIsHydrated] = useState(!isHydrating)
+  useEffect(() => {
+    isHydrating = false;
+    setIsHydrated(true);
+  }, [])
+
+  if (!isHydrated) return <p>Please wait...</p>
+  return <Graph nodes={nodes} links={links} />
 }
 
 
