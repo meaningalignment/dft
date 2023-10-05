@@ -1,9 +1,8 @@
 
-import { useLoaderData } from "@remix-run/react";
+// import { useLoaderData } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { buildGraph } from './data.edges[.]json.js'
 import { json } from '@remix-run/node';
-import { Graph } from "~/components/moral-graph.client"
 
 export const config = {
   maxDuration: 300
@@ -17,7 +16,7 @@ export async function loader() {
 let isHydrating = true;
 
 export default function GraphPage() {
-  const { nodes, links } = useLoaderData<typeof loader>();
+  // const { nodes, links } = useLoaderData<typeof loader>();
   const [isHydrated, setIsHydrated] = useState(!isHydrating)
   useEffect(() => {
     isHydrating = false;
