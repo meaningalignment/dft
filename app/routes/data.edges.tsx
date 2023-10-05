@@ -1,6 +1,6 @@
-import { useLoaderData } from "@remix-run/react";
+import { Await, useLoaderData } from "@remix-run/react";
 import { useEffect, useState } from "react";
-import { json } from '@remix-run/node';
+import { defer, json } from '@remix-run/node';
 import { Edge } from "@prisma/client";
 import { db } from "~/config.server";
 import { Graph } from "~/components/moral-graph.client";
@@ -52,14 +52,14 @@ async function buildGraph() {
 
 
 export async function loader() {
-  const { nodes, links } = await buildGraph()
-  return json({ nodes, links })
+  const graph = buildGraph()
+  return defer({ graph })
 }
 
 let isHydrating = true;
 
 export default function GraphPage() {
-  const { nodes, links } = useLoaderData<typeof loader>();
+  const { graph } = useLoaderData<typeof loader>();
   const [isHydrated, setIsHydrated] = useState(!isHydrating)
   useEffect(() => {
     isHydrating = false;
@@ -67,5 +67,5 @@ export default function GraphPage() {
   }, [])
 
   if (!isHydrated) return <p>Please wait...</p>
-  return <Graph nodes={nodes} links={links} />
+  return <Await resolve={graph}>{({ nodes, links }) => <Graph nodes={nodes} links={links} />}</Await>
 }
