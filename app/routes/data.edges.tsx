@@ -3,7 +3,7 @@ import { useLoaderData } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { buildGraph } from './data.edges[.]json.js'
 import { json } from '@remix-run/node';
-import { Graph } from "~/components/moral-graph";
+import { Graph } from "~/components/moral-graph.client"
 
 export const config = {
   maxDuration: 300
