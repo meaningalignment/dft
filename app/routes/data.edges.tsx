@@ -53,7 +53,7 @@ async function buildGraph() {
 
 export async function loader() {
   const { nodes, links } = await buildGraph()
-  return json({ nodes: [], links: [] })
+  return json({ nodes, links })
 }
 
 let isHydrating = true;
