@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import ValuesCard from "./values-card";
-import d3 from "d3";
+import * as d3 from "d3";
 
 interface Node {
   id: number
