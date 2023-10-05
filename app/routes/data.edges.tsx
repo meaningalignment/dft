@@ -1,15 +1,16 @@
 import * as d3 from 'd3';
-import { useLoaderData } from "@remix-run/react";
+import { Await, useLoaderData } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import ValuesCard from "~/components/values-card";
-import { loader as edgesLoader } from './data.edges[.]json.js'
+import { buildGraph, loader as edgesLoader } from './data.edges[.]json.js'
+import { defer } from '@remix-run/node';
 
 export const config = {
   maxDuration: 300
 }
 
 export async function loader() {
-  return await edgesLoader()
+  return defer({ graph: buildGraph() })
 }
 
 interface Node {
@@ -37,12 +38,24 @@ function InfoBox({ node, x, y }: { node: Node | null, x: number, y: number }) {
   );
 };
 
-export default function Graph() {
+
+export default function GraphPage() {
+  const { graph } = useLoaderData<typeof loader>();
+  return (
+    <Await resolve={graph}>
+      {({ nodes, links }) => (
+        <Graph nodes={nodes} links={links} />
+      )}
+    </Await>
+  )
+}
+
+
+export function Graph({ nodes, links }: { nodes: Node[], links: Link[] }) {
   let hoverTimeout: NodeJS.Timeout | null = null;
   const ref = useRef<SVGSVGElement>(null);
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null);
   const [position, setPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
-  const { nodes, links } = useLoaderData<typeof loader>();
 
   useEffect(() => {
     const svg = d3.select(ref.current)
