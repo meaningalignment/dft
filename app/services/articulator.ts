@@ -432,18 +432,18 @@ export class ArticulatorService {
   ): Promise<string> {
     console.log(`Submitting values card:\n\n${JSON.stringify(card)}`)
 
+    const data = {
+      title: card.title,
+      instructionsShort: card.instructions_short,
+      instructionsDetailed: card.instructions_detailed,
+      evaluationCriteria: card.evaluation_criteria,
+      chatId,
+      canonicalCardId: canonicalCardId ?? null,
+    }
+
     // Save the card in the database.
     const result = (await this.db.valuesCard
-      .create({
-        data: {
-          title: card.title,
-          instructionsShort: card.instructions_short,
-          instructionsDetailed: card.instructions_detailed,
-          evaluationCriteria: card.evaluation_criteria,
-          chatId,
-          canonicalCardId: canonicalCardId ?? null,
-        },
-      })
+      .upsert({ where: { chatId }, update: data, data })
       .catch((e) => console.error(e))) as ValuesCard
 
     // Embed card.
