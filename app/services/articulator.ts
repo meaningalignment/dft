@@ -491,20 +491,28 @@ export class ArticulatorService {
 
     console.log("Calling articulation prompt...")
 
-    const res = await this.openai.createChatCompletion({
-      model: this.config.model,
-      messages: [
-        {
-          role: "system",
-          content: this.config.prompts.show_values_card.prompt,
-        },
-        { role: "user", content: transcript },
-      ],
-      functions: this.config.prompts.show_values_card.functions,
-      function_call: { name: "format_card" },
-      temperature: 0.0,
-      stream: false,
-    })
+    let res: Response
+
+    try {
+      res = await this.openai.createChatCompletion({
+        model: this.config.model,
+        messages: [
+          {
+            role: "system",
+            content: this.config.prompts.show_values_card.prompt,
+          },
+          { role: "user", content: transcript },
+        ],
+        functions: this.config.prompts.show_values_card.functions,
+        function_call: { name: "format_card" },
+        temperature: 0.0,
+        stream: false,
+      })
+    } catch (e) {
+      console.log("Error calling articulation prompt: " + e)
+      console.error(e)
+      throw e
+    }
 
     const data = await res.json()
 
@@ -514,7 +522,7 @@ export class ArticulatorService {
       data.choices[0].message.function_call.arguments
     ) as ArticulateCardResponse
 
-    console.log(`Parsed response from articulation prompt: ${response}`)
+    console.log(`Parsed response from articulation prompt: ${JSON.stringify(response)}`)
 
     return response
   }
