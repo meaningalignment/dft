@@ -5,8 +5,6 @@ import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
 import { ArticulatorService } from "~/services/articulator"
 import DeduplicationService from "~/services/deduplication"
 
-export const runtime = "edge"
-
 const deduplication = new DeduplicationService(openai, db)
 
 async function createHeaders(
@@ -25,6 +23,10 @@ async function createHeaders(
 
   return headers
 }
+
+export const config = {
+    maxDuration: 300
+};
 
 export const action: ActionFunction = async ({
   request,
@@ -67,6 +69,7 @@ export const action: ActionFunction = async ({
     // ...otherwise, return the response.
     return new StreamingTextResponse(OpenAIStream(completionResponse), {
       headers: await createHeaders(),
+      
     })
   }
 }
