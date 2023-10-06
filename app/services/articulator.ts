@@ -244,6 +244,8 @@ export class ArticulatorService {
     chatId: string,
     messages: ChatCompletionRequestMessage[]
   ): Promise<FunctionResult> {
+
+    console.log("Articulating card for chat " + chatId)
     //
     // Fetch the chat with the provisional card from the database.
     //
@@ -255,8 +257,12 @@ export class ArticulatorService {
       ? (chat.provisionalCard as ValuesCardData)
       : null
 
+    console.log(`Previous card for chat ${chatId}: ${JSON.stringify(previousCard)}`)
+
     // Articulate the values card.
     const response = await this.articulateValuesCard(messages, previousCard)
+
+    console.log(`Articulated card for chat ${chatId}: ${JSON.stringify(response)}`)
 
     // The newly articulated card.
     let newCard = response.values_card
@@ -363,6 +369,8 @@ export class ArticulatorService {
   }> {
     let functionResult: FunctionResult
 
+    console.log(`Handling function call ${func.name} for chat ${chatId}`)
+
     switch (func.name) {
       case "guess_values_card": {
         console.log("Guessed!", func.arguments)
@@ -374,6 +382,7 @@ export class ArticulatorService {
         break
       }
       case "show_values_card": {
+        console.log("Calling show_values_card...")
         functionResult = await this.handleArticulateCardFunction(
           chatId,
           messages
@@ -381,6 +390,7 @@ export class ArticulatorService {
         break
       }
       case "submit_values_card": {
+        console.log("Calling submit_values_card...")
         functionResult = await this.handleSubmitCardFunction(chatId)
         break
       }
