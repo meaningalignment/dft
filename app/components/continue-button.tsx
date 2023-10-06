@@ -17,6 +17,7 @@ export default function ContinueButton({
       onClick={() => {
         setIsLoading(true)
         if (event) va.track(event)
+        setTimeout(() => { setIsLoading(false) }, 10000)
       }}
       disabled={isLoading}
     >
