@@ -27,6 +27,13 @@ async function createHeaders(
 export const action: ActionFunction = async ({
   request,
 }: ActionArgs): Promise<Response> => {
+
+  if (typeof EdgeRuntime !== 'string') {
+    console.log("EdgeRuntime is not a string")
+  } else {
+    console.log("EdgeRuntime is a string")
+  }
+
   const articulatorConfig = request.headers.get("X-Articulator-Config")
   const userId = await auth.getUserId(request)
   const json = await request.json()
