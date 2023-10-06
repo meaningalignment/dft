@@ -155,7 +155,7 @@ export function Chat({
         },
       })
       const deletionBody = await deletionResponse.json()
-      console.log("Deleted function calls:", deletionBody)
+      console.log(`Deleted function calls: ${JSON.stringify(deletionBody)}`)
 
       //
       // Get the last message from the database and set it as the input.
