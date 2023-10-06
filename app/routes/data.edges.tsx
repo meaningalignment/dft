@@ -4,10 +4,6 @@ import { Suspense } from "react";
 import { defer } from "@remix-run/node";
 import { MoralGraph } from "~/components/moral-graph";
 
-export const config = {
-  maxDuration: 300,
-}
-
 export async function loader() {
   const graph = buildGraph()
   return defer({ graph })
