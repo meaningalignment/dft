@@ -146,13 +146,25 @@ export function Chat({
       toast.error("Failed to update chat. Please try again.")
 
       //
+      // Delete any lingering function call messages.
+      // 
+      const deletionResponse = await fetch(`/api/chat/${chatId}/function`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+      const deletionBody = await deletionResponse.json()
+      console.log(`Deleted function calls: ${JSON.stringify(deletionBody)}`)
+
+      //
       // Get the last message from the database and set it as the input.
       //
-      const res = await fetch(`/api/messages/${chatId}`)
-      const json = await res.json()
+      const messageResponse = await fetch(`/api/messages/${chatId}`)
+      const messageJson = await messageResponse.json()
 
-      if (json && json.messages) {
-        const messages = json.messages as Message[]
+      if (messageJson && messageJson.messages) {
+        const messages = messageJson.messages as Message[]
         const lastMessage = messages[messages.length - 1]
 
         console.log("messages:", messages)

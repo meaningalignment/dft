@@ -167,6 +167,7 @@ export class ArticulatorService {
         },
       },
     })
+
     const { response, articulatedCard, submittedCard } = await this.handle(
       functionCall,
       messages,
