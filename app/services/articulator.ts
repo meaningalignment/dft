@@ -443,7 +443,7 @@ export class ArticulatorService {
 
     // Save the card in the database.
     const result = (await this.db.valuesCard
-      .upsert({ where: { chatId }, update: data, data })
+      .upsert({ where: { chatId }, update: data, data: data })
       .catch((e) => console.error(e))) as ValuesCard
 
     // Embed card.
