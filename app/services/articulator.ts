@@ -489,6 +489,8 @@ export class ArticulatorService {
       )}`
     }
 
+    console.log("Calling articulation prompt...")
+
     const res = await this.openai.createChatCompletion({
       model: this.config.model,
       messages: [
@@ -505,9 +507,14 @@ export class ArticulatorService {
     })
 
     const data = await res.json()
+
+    console.log("Got response from articulation prompt, parsing...")
+
     const response = JSON.parse(
       data.choices[0].message.function_call.arguments
     ) as ArticulateCardResponse
+
+    console.log(`Parsed response from articulation prompt: ${response}`)
 
     return response
   }
