@@ -263,11 +263,17 @@ export default class DeduplicationService {
     candidate: ValuesCardData,
     limit: number = 5
   ): Promise<CanonicalValuesCard | null> {
+    console.log(`Fetching similar canonical card, candidate: ${JSON.stringify(candidate)}`)
+
     // Embed the candidate.
     const card_embeddings = await embeddings.embedCandidate(candidate)
 
+    console.log("Got card embeddings, fetching canonical card.")
+
     // Fetch `limit` canonical cards for the case based on similarity.
     const canonical = await this.similaritySearch(card_embeddings, limit, 0.1)
+
+    console.log(`Got ${canonical.length} canonical cards`)
 
     // If we have no canonical cards, we can't deduplicate.
     if (canonical.length === 0) {
@@ -283,6 +289,8 @@ export default class DeduplicationService {
       canonical_values_cards: canonical.map((c) => toDataModelWithId(c)),
     })
 
+    console.log("Calling prompt for deduplication.")
+
     const response = await this.openai.createChatCompletion({
       model,
       messages: [
@@ -297,6 +305,8 @@ export default class DeduplicationService {
     const matchingId: number | null | undefined = JSON.parse(
       data.choices[0].message.function_call.arguments
     ).canonical_card_id
+
+    console.log(`Got response from prompt, canonical duplicate: ${matchingId}`)
 
     // Return the matching canonical card, or null if no such card exists.
     return canonical.find((c) => c.id === matchingId) ?? null
