@@ -31,6 +31,14 @@ export const action: ActionFunction = async ({
   let shouldMessageTimeout = true
   let startTime = Date.now()
 
+  console.log(typeof EdgeRuntime)
+
+  if (typeof EdgeRuntime !== 'string') {
+    console.log("EdgeRuntime is not a string")
+  } else {
+    console.log("EdgeRuntime is a string")
+  }
+
   // Set recursive timeout each 1 second until foo is false
   function recursiveTimeout() {
     if (shouldMessageTimeout) {
@@ -40,6 +48,7 @@ export const action: ActionFunction = async ({
       }, 1000)
     }
   }
+  recursiveTimeout()
 
   const articulatorConfig = request.headers.get("X-Articulator-Config")
   const userId = await auth.getUserId(request)
