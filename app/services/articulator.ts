@@ -430,19 +430,23 @@ export class ArticulatorService {
     chatId: string,
     canonicalCardId: number | null
   ): Promise<string> {
-    console.log(`Submitting values card:\n\n${JSON.stringify(card)}`)
+    console.log(`Submitting values card:\n\n${JSON.stringify(card)} for chat ${chatId}`)
+
+    const data = {
+      title: card.title,
+      instructionsShort: card.instructions_short,
+      instructionsDetailed: card.instructions_detailed,
+      evaluationCriteria: card.evaluation_criteria,
+      chatId,
+      canonicalCardId: canonicalCardId ?? null,
+    }
 
     // Save the card in the database.
     const result = (await this.db.valuesCard
-      .create({
-        data: {
-          title: card.title,
-          instructionsShort: card.instructions_short,
-          instructionsDetailed: card.instructions_detailed,
-          evaluationCriteria: card.evaluation_criteria,
-          chatId,
-          canonicalCardId: canonicalCardId ?? null,
-        },
+      .upsert({ 
+        where: { chatId }, 
+        create: { ...data },
+        update: { ...data } 
       })
       .catch((e) => console.error(e))) as ValuesCard
 
