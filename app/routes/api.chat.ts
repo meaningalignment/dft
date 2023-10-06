@@ -24,6 +24,10 @@ async function createHeaders(
   return headers
 }
 
+export const config = {
+  maxDuration: 300
+};
+
 export const action: ActionFunction = async ({
   request,
 }: ActionArgs): Promise<Response> => {
