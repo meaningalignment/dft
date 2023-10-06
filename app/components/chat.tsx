@@ -118,7 +118,7 @@ export function Chat({
     setMessages,
   } = useChat({
     id: chatId,
-    api: "/api/chat-completion",
+    api: "/api/chat",
     headers: {
       "X-Articulator-Config": articulatorConfig,
       "Content-Type": "application/json",

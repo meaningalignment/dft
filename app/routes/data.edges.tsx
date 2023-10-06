@@ -9,10 +9,6 @@ export async function loader() {
   return defer({ graph })
 }
 
-export const config = {
-  maxDuration: 300
-}
-
 export default function DefaultGraphPage() {
   const { graph } = useLoaderData<typeof loader>();
   return <Suspense fallback={<p>Please wait...</p>}>
