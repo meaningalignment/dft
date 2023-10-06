@@ -113,6 +113,6 @@ export function isDisplayableMessage(message: {
   content?: string
 }) {
   return (
-    message.content && (message.role === "user" || message.role === "assistant")
+    message?.content && (message.role === "user" || message.role === "assistant")
   )
 }
