@@ -430,7 +430,7 @@ export class ArticulatorService {
     chatId: string,
     canonicalCardId: number | null
   ): Promise<string> {
-    console.log(`Submitting values card:\n\n${JSON.stringify(card)}`)
+    console.log(`Submitting values card:\n\n${JSON.stringify(card)} for chat ${chatId}`)
 
     const data = {
       title: card.title,
