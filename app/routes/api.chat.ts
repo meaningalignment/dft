@@ -28,10 +28,17 @@ export const action: ActionFunction = async ({
   request,
 }: ActionArgs): Promise<Response> => {
 
-  if (typeof EdgeRuntime !== 'string') {
-    console.log("EdgeRuntime is not a string")
-  } else {
-    console.log("EdgeRuntime is a string")
+  let shouldMessageTimeout = true
+  let startTime = Date.now()
+
+  // Set recursive timeout each 1 second until foo is false
+  function recursiveTimeout() {
+    if (shouldMessageTimeout) {
+      setTimeout(() => {
+        console.log("Time passed: ", Date.now() - startTime, "ms")
+        recursiveTimeout()
+      }, 1000)
+    }
   }
 
   const articulatorConfig = request.headers.get("X-Articulator-Config")
@@ -62,6 +69,8 @@ export const action: ActionFunction = async ({
     const body = await completionResponse.json()
     throw body.error
   }
+
+  shouldMessageTimeout = false
 
   if (etc.functionCall) {
     // If a function call is present in the stream, handle it...
