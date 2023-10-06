@@ -31,23 +31,6 @@ export const config = {
 export const action: ActionFunction = async ({
   request,
 }: ActionArgs): Promise<Response> => {
-
-  let shouldMessageTimeout = true
-  let startTime = Date.now()
-
-  await new Promise((resolve) => setTimeout(resolve, 20000))
-
-  // Set recursive timeout each 1 second until foo is false
-  function recursiveTimeout() {
-    if (shouldMessageTimeout) {
-      setTimeout(() => {
-        console.log("Time passed: ", Date.now() - startTime, "ms")
-        recursiveTimeout()
-      }, 1000)
-    }
-  }
-  recursiveTimeout()
-
   const articulatorConfig = request.headers.get("X-Articulator-Config")
   const userId = await auth.getUserId(request)
   const json = await request.json()
@@ -76,8 +59,6 @@ export const action: ActionFunction = async ({
     const body = await completionResponse.json()
     throw body.error
   }
-
-  shouldMessageTimeout = false
 
   if (etc.functionCall) {
     // If a function call is present in the stream, handle it...
