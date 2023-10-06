@@ -1,0 +1,8 @@
+{
+    "api/*.js": {
+        "maxDuration": 300
+    },
+    "data/*.js": {
+        "maxDuration": 300
+    }
+}

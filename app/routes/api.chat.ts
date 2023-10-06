@@ -7,8 +7,6 @@ import DeduplicationService from "~/services/deduplication"
 
 export const runtime = "edge"
 
-export const maxDuration = 300
-
 const deduplication = new DeduplicationService(openai, db)
 
 async function createHeaders(
