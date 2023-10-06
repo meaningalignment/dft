@@ -5,7 +5,9 @@ import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
 import { ArticulatorService } from "~/services/articulator"
 import DeduplicationService from "~/services/deduplication"
 
-export const runtime = "edge"
+export const config = {
+  maxDuration: 300
+};
 
 const deduplication = new DeduplicationService(openai, db)
 
