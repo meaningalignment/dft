@@ -1,0 +1,10 @@
+{
+    "functions": {
+      "app/routes/*.ts": {
+        "maxDuration": 300
+      },
+      "app/routes/data.*": {
+        "maxDuration": 300
+      }
+    }
+  }
