@@ -7,9 +7,7 @@ import DeduplicationService from "~/services/deduplication"
 
 export const runtime = "edge"
 
-export const config = {
-  maxDuration: 300
-}
+export const maxDuration = 300
 
 const deduplication = new DeduplicationService(openai, db)
 
