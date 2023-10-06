@@ -1,7 +1,6 @@
 import { json } from "@remix-run/node"
 
 export const config = {
-  runtime: 'edge',
   maxDuration: 300
 };
 
