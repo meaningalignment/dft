@@ -35,6 +35,8 @@ export const action: ActionFunction = async ({
 
   const { messages, chatId, caseId, function_call } = json
 
+  console.log(`Chat completion for chat ${chatId}`)
+
   // Create stream for next chat message.
   const articulator = new ArticulatorService(
     articulatorConfig ?? "default",
