@@ -12,4 +12,8 @@ const handler = serve(inngest, [
   evaluateDialogues,
 ])
 
+export const config = {
+  maxDuration: 300
+};
+
 export { handler as loader, handler as action }
