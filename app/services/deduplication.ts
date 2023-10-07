@@ -440,10 +440,13 @@ export const deduplicate = inngest.createFunction(
 //
 
 export const deduplicateOnDemand = inngest.createFunction(
-  { name: "Deduplicate" },
-  { event: "deduplicate" },
+  { name: "Deduplicate on Demand" },
+  { event: "deduplicate.demand" },
   async ({ step, logger }) => {
     logger.info(`Running deduplication.`)
+
+    // Sleep for 20 seconds.
+    await new Promise((resolve) => setTimeout(resolve, 20000))
 
     //
     // Prepare the service.
