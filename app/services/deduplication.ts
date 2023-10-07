@@ -427,3 +427,100 @@ export const deduplicate = inngest.createFunction(
     }
   }
 )
+
+
+
+
+
+//
+// Ingest function for deduplication.
+//
+// Type casting is a bit broken here, hence the `any` casts.
+// Thread with caution.
+//
+
+export const deduplicateOnDemand = inngest.createFunction(
+  { name: "Deduplicate" },
+  { event: "deduplicate" },
+  async ({ step, logger }) => {
+    logger.info(`Running deduplication.`)
+
+    //
+    // Prepare the service.
+    //
+    const configuration = new Configuration({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+    const openai = new OpenAIApi(configuration)
+    const service = new DeduplicationService(openai, db)
+
+    // Get all non-canonicalized submitted values cards.
+    const cards = (await step.run(
+      `Get non-canonicalized cards from database`,
+      async () => service.fetchNonCanonicalizedValues()
+    )) as any as ValuesCard[]
+
+    if (cards.length === 0) {
+      logger.info(`No cards to deduplicate.`)
+
+      return {
+        message: `No cards to deduplicate.`,
+      }
+    }
+
+    // Cluster the non-canonicalized cards with a prompt.
+    const clusters = (await step.run(`Cluster cards using prompt`, async () =>
+      service.cluster(cards)
+    )) as any as ValuesCard[][]
+
+    logger.info(`Found ${clusters.length} clusters.`)
+
+    //
+    // For each deduplicated non-canonical card, find canonical cards that are essentially
+    // the same value and link them.
+    //
+    // If no such cards exist, canonicalize the duplicated non-canonical card and link the cluster
+    // to the new canonical card.
+    //
+    let i = 0
+    for (const cluster of clusters) {
+      logger.info(`Deduplicating cluster ${++i} of ${cluster.length} cards.`)
+
+      const representative = (await step.run(
+        "Get best values card from cluster",
+        async () => service.getBestValuesCard(cluster)
+      )) as any as ValuesCardData
+
+      const existingCanonicalDuplicate = (await step.run(
+        "Fetch canonical duplicate",
+        async () => service.fetchSimilarCanonicalCard(representative)
+      )) as any as CanonicalValuesCard | null
+
+      if (existingCanonicalDuplicate) {
+        await step.run("Link cluster to existing canonical card", async () =>
+          service.linkClusterToCanonicalCard(
+            cluster,
+            existingCanonicalDuplicate
+          )
+        )
+      } else {
+        const newCanonicalDuplicate = (await step.run(
+          "Canonicalize representative",
+          async () => service.createCanonicalCard(representative)
+        )) as any as CanonicalValuesCard
+
+        await step.run(
+          "Link cluster to newly created canonical card",
+          async () =>
+            service.linkClusterToCanonicalCard(cluster, newCanonicalDuplicate)
+        )
+      }
+    }
+
+    logger.info(`Done. Deduplicated ${cards.length} cards.`)
+
+    return {
+      message: `Deduplicated ${cards.length} cards.`,
+    }
+  }
+)
