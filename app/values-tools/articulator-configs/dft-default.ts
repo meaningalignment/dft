@@ -207,7 +207,7 @@ const config: ArticulatorConfig = {
         {
           name: "show_values_card",
           description:
-            "Called when the assistant has received sufficient information from the user to articulate one of the user's sources of meaning, but has not yet shown a values card or the shown values card is not yet satisfactory to the user. Should only be called when you are confident you have guessed a source of meaning, and you know several things that the user pays attention to in the situation, which fit together in a coherent way.",
+            "Called when the assistant has received sufficient information from the user to articulate one of the user's sources of meaning, but has not yet shown a values card or the shown values card is not yet satisfactory to the user. Should only be called when you are confident you have guessed a source of meaning, and you know several things that the user pays attention to in the situation, which fit together in a coherent way. Should only be called as a standalone function invocation, never in the middle of an assistant message.",
           parameters: {
             type: "object",
             properties: {},
