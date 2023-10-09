@@ -139,12 +139,19 @@ export class ArticulatorService {
       })
     }
 
+    // Only include the submit function if a card has already been articulated and shown to the user.
+    // This prevents submit from being called before the user has articulated a card, which causes an error.
+    let functions = this.config.prompts.main.functions
+    if (chat && !chat.provisionalCard) {
+      functions = functions.filter((f) => f.name !== "submit_values_card")
+    }
+
     const completionResponse = await this.openai.createChatCompletion({
       model: this.config.model,
       messages: messages,
       temperature: 0.7,
       stream: true,
-      functions: this.config.prompts.main.functions,
+      functions,
       function_call: function_call ?? "auto",
     })
 
