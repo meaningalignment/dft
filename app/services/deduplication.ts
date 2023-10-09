@@ -344,7 +344,7 @@ export default class DeduplicationService {
 
 export const deduplicate = inngest.createFunction(
   { name: "Deduplicate", concurrency: 1 }, // Run sequentially to avoid RCs.
-  { cron: "0 */3 * * *" },
+  { cron: "0 * * * *" },
   async ({ step, logger }) => {
     logger.info(`Running deduplication.`)
 
