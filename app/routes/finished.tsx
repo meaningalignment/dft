@@ -95,7 +95,7 @@ export default function FinishedScreen() {
           {user?.prolificId && (
             <div className="my-8 p-8 border-2 border-border rounded-xl">
               <h1 className="text-2xl my-8">
-                Your prolific completion code is <strong>C16VIHGQ</strong>
+                Your prolific completion code is <strong>CG2S2REM</strong>
               </h1>
             </div>
           )}
