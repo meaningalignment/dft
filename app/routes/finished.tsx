@@ -95,12 +95,7 @@ export default function FinishedScreen() {
           {user?.prolificId && (
             <div className="my-8 p-8 border-2 border-border rounded-xl">
               <h1 className="text-2xl my-8">
-                <a
-                  href={`https://docs.google.com/forms/d/e/1FAIpQLScVFNHjitH7rjCn43EFH4zH_H0K0WAlfwEi2oM2vetOFPm-0w/viewform?usp=pp_url&entry.1333431336=${user?.prolificId}`}
-                  className="underline hover:opacity-80 active:opacity-60"
-                >
-                  Click here for completion survey & Prolific completion code
-                </a>
+                Your prolific completion code is <strong>C16VIHGQ</strong>
               </h1>
             </div>
           )}
