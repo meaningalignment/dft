@@ -15,6 +15,30 @@ import { valueStyle } from "~/lib/consts"
 type Props = {
   card: DataModel | CanonicalValuesCard
   header?: React.ReactNode
+  inlineDetails?: boolean
+}
+
+function Details({ card }: { card: DataModel | CanonicalValuesCard }) {
+  return (
+    <div className="flex space-y-1 flex-col overflow-auto">
+      {card.evaluationCriteria?.map((criterion, id) => (
+        <li key={id} className="text-sm text-neutral-500">
+          {criterion.split(" ").map((word, index) => (
+            <React.Fragment key={word}>
+              {isAllUppercase(word) ? (
+                <strong className="font-bold text-neutral-600">
+                  {word}
+                </strong>
+              ) : (
+                word
+              )}
+              {index < criterion.split(" ").length - 1 ? " " : null}
+            </React.Fragment>
+          ))}
+        </li>
+      ))}
+    </div>
+  )
 }
 
 function DetailsDialog({
@@ -34,30 +58,13 @@ function DetailsDialog({
             {valueStyle.evaluationCriteriaIntroString}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex space-y-1 flex-col overflow-auto">
-          {card.evaluationCriteria?.map((criterion, id) => (
-            <li key={id} className="text-sm text-neutral-500">
-              {criterion.split(" ").map((word, index) => (
-                <React.Fragment key={word}>
-                  {isAllUppercase(word) ? (
-                    <strong className="font-bold text-neutral-600">
-                      {word}
-                    </strong>
-                  ) : (
-                    word
-                  )}
-                  {index < criterion.split(" ").length - 1 ? " " : null}
-                </React.Fragment>
-              ))}
-            </li>
-          ))}
-        </div>
+        <Details card={card} />
       </DialogContent>
     </Dialog>
   )
 }
 
-export default function ValuesCard({ card, header }: Props) {
+export default function ValuesCard({ card, header, inlineDetails }: Props) {
   return (
     <div
       className={
@@ -71,17 +78,21 @@ export default function ValuesCard({ card, header }: Props) {
       <p className="text-sm text-neutral-500">{card.instructionsDetailed}</p>
       <div className="flex-grow" />
       <div className="w-full flex flex-row mt-4 items-baseline">
-        <DetailsDialog card={card}>
-          <Button
-            variant="link"
-            className="pl-0"
-            onClick={(e) => {
-              e.stopPropagation()
-            }}
-          >
-            Show Details
-          </Button>
-        </DetailsDialog>
+        {inlineDetails ? (<>
+          <Details card={card} />
+        </>) :
+          (<DetailsDialog card={card}>
+            <Button
+              variant="link"
+              className="pl-0"
+              onClick={(e) => {
+                e.stopPropagation()
+              }}
+            >
+              Show Details
+            </Button>
+          </DetailsDialog>)
+        }
         <div className="flex-grow" />
       </div>
     </div>

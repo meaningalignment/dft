@@ -1,41 +1,79 @@
 import { useEffect, useRef, useState } from "react";
 import ValuesCard from "./values-card";
 import * as d3 from "d3";
+import { MoralGraphSummary } from "~/values-tools/moral-graph-summary";
+
+function logisticFunction(n: number, midpoint: number = 6, scale: number = 2): number {
+  return 1 / (1 + Math.exp(-(n - midpoint) / scale));
+}
 
 interface Node {
   id: number
   title: string
+  wisdom?: number
 }
 
 interface Link {
   source: number
   target: number
+  avg: number
+  thickness: number
 }
+
+type MoralGraphEdge = MoralGraphSummary["edges"][0]
 
 function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
   if (!node) return null
   const style = {
     position: "absolute",
-    left: x,
-    top: y,
-    pointerEvents: "none",
+    left: x + 20,
+    top: y + 20,
+    // pointerEvents: "none",
   }
   return (
     <div className="info-box" style={style as any}>
-      <ValuesCard card={node as any} />
+      <ValuesCard card={node as any} inlineDetails />
     </div>
   )
 }
 
-export function MoralGraph({ nodes, links }: { nodes: Node[]; links: Link[] }) {
-  let hoverTimeout: NodeJS.Timeout | null = null
-  const ref = useRef<SVGSVGElement>(null)
+export function MoralGraph({ nodes, edges }: { nodes: Node[]; edges: MoralGraphEdge[] }) {
+  const nodes2 = [...nodes]
+  const links = edges.map((edge) => ({
+    source: edge.sourceValueId,
+    target: edge.wiserValueId,
+    avg: edge.summary.wiserLikelihood,
+    thickness: (1 - edge.summary.entropy / 1.8) * logisticFunction(edge.counts.impressions),
+  })) satisfies Link[]
+  links.forEach((link) => {
+    const target = nodes2.find((node) => node.id === link.target)
+    if (target) {
+      if (!target.wisdom) target.wisdom = link.avg
+      else target.wisdom += link.avg
+    }
+  })
+  console.log(nodes2)
+  return <GraphWithInfoBox nodes2={nodes2} links={links} />
+}
+
+function GraphWithInfoBox({ nodes2, links }: { nodes2: Node[]; links: Link[] }) {
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null)
   const [position, setPosition] = useState<{ x: number; y: number }>({
     x: 0,
     y: 0,
   })
 
+  return (
+    <>
+      <Graph nodes2={nodes2} links={links} setHoveredNode={setHoveredNode} setPosition={setPosition} />
+      <InfoBox node={hoveredNode} x={position.x} y={position.y} />
+    </>
+  )
+}
+
+function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[]; links: Link[], setHoveredNode: (node: Node | null) => void, setPosition: (position: { x: number; y: number }) => void }) {
+  let hoverTimeout: NodeJS.Timeout | null = null
+  const ref = useRef<SVGSVGElement>(null)
   useEffect(() => {
     const svg = d3
       .select(ref.current)
@@ -55,15 +93,14 @@ export function MoralGraph({ nodes, links }: { nodes: Node[]; links: Link[] }) {
       .append("marker")
       .attr("id", "arrowhead")
       .attr("viewBox", "0 -5 10 10")
-      .attr("refX", 27) // Adjust position for bigger arrowhead
+      .attr("refX", 20) // Adjust position for bigger arrowhead
       .attr("refY", 0)
       .attr("orient", "auto")
-      .attr("markerWidth", 8) // Increase size
-      .attr("markerHeight", 8) // Increase size
+      .attr("markerWidth", 4) // Increase size
+      .attr("markerHeight", 4) // Increase size
       .attr("xoverflow", "visible")
       .append("svg:path")
       .attr("d", "M 0,-5 L 10,0 L 0,5")
-      .attr("fill", "#000")
 
     // Add zoom behavior
     const zoom = d3.zoom().on("zoom", (event) => {
@@ -75,7 +112,9 @@ export function MoralGraph({ nodes, links }: { nodes: Node[]; links: Link[] }) {
     // Create force simulation
     const simulation = d3
       // @ts-ignore
-      .forceSimulation<Node, Link>(nodes)
+      .forceSimulation<Node, Link>(nodes2)
+      .alphaDecay(0.01) // Slow down simulation
+      .velocityDecay(0.05) // Slow down simulation
       .force(
         "link",
         // @ts-ignore
@@ -84,16 +123,22 @@ export function MoralGraph({ nodes, links }: { nodes: Node[]; links: Link[] }) {
           .forceLink<Link, Node>(links)
           // @ts-ignore
           .id((d: Node) => d.id)
-          .distance(50)
+          .distance(100)
       )
       // @ts-ignore
-      .force("charge", d3.forceManyBody().strength(-50)) // Weaker repulsion within groups
+      .force(
+        "charge",
+        // @ts-ignore
+        d3
+          .forceManyBody().strength(-100)
+          .distanceMax(200)
+      ) // Weaker repulsion within groups
       .force(
         "center",
         // @ts-ignore
         d3
-          .forceCenter(window.innerWidth / 2, window.innerHeight / 2)
-          .strength(0.05)
+          .forceCenter(100, 100)
+          .strength(1.8)
       ) // Weaker central pull
 
     // Draw links
@@ -102,7 +147,8 @@ export function MoralGraph({ nodes, links }: { nodes: Node[]; links: Link[] }) {
       .selectAll("line")
       .data(links)
       .join("line")
-      .attr("stroke", "black")
+      .attr("stroke", (d: any) => d3.interpolateGreys(d.thickness * 5))
+      .attr("stroke-width", 2)
       .attr("marker-end", "url(#arrowhead)") // Add arrowheads
 
     // Draw edge labels
@@ -121,10 +167,13 @@ export function MoralGraph({ nodes, links }: { nodes: Node[]; links: Link[] }) {
     const node = g
       .append("g")
       .selectAll("circle")
-      .data(nodes)
+      .data(nodes2)
       .join("circle")
       .attr("r", 10)
-      .attr("fill", "lightblue")
+      .attr("fill", (d: Node) => (d.wisdom ?
+        d3.interpolateBlues(d.wisdom / 5) :
+        "lightgray"
+      ))
       .on("mouseover", (event: any, d: Node) => {
         if (hoverTimeout) clearTimeout(hoverTimeout)
         setHoveredNode(d)
@@ -148,7 +197,7 @@ export function MoralGraph({ nodes, links }: { nodes: Node[]; links: Link[] }) {
     const label = g
       .append("g")
       .selectAll("text")
-      .data(nodes)
+      .data(nodes2)
       .join("text")
       .text((d: Node) => d.title)
       .attr("font-size", "10px")
@@ -168,7 +217,7 @@ export function MoralGraph({ nodes, links }: { nodes: Node[]; links: Link[] }) {
 
       node.attr("cx", (d: any) => d.x).attr("cy", (d: any) => d.y)
 
-      label.attr("x", (d: any) => d.x + 10).attr("y", (d: any) => d.y + 3)
+      label.attr("x", (d: any) => d.x + 15).attr("y", (d: any) => d.y + 4)
     })
 
     // Drag functions
@@ -188,14 +237,8 @@ export function MoralGraph({ nodes, links }: { nodes: Node[]; links: Link[] }) {
       d.fx = null
       d.fy = null
     }
-  }, [nodes, links])
-
-  return (
-    <>
-      <svg ref={ref} style={{ userSelect: "none" }}>
-        <g></g>
-      </svg>
-      <InfoBox node={hoveredNode} x={position.x} y={position.y} />
-    </>
-  )
+  }, [nodes2, links])
+  return <svg ref={ref} style={{ userSelect: "none" }}>
+    <g></g>
+  </svg>
 }

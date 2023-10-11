@@ -32,7 +32,7 @@ interface Value {
   instructionsShort: string
   instructionsDetailed: string
   evaluationCriteria: string[]
-  contexts: string[]
+  // contexts: string[]
 }
 
 
@@ -44,13 +44,14 @@ interface EdgeCount {
   contexts: string[]
   counts: {
     markedWiser: number
+    markedNotWiser: number
     markedLessWise: number
     markedUnsure: number
     impressions: number
   }
   summary: {
     wiserLikelihood: number
-    confidence: number
+    entropy: number
   }
 }
 
