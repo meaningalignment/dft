@@ -24,18 +24,30 @@ type MoralGraphEdge = MoralGraphSummary["edges"][0]
 
 function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
   if (!node) return null
+
+  const boxWidth = 200; // Assume a box width
+  const offset = 20; // Offset from the cursor position
+  const viewportWidth = window.innerWidth; // Width of the viewport
+
+  // If the box would overflow the right edge of the viewport, 
+  // position it to the left of the cursor, otherwise to the right.
+  const leftPosition = x + boxWidth + offset > viewportWidth
+    ? x - boxWidth - offset
+    : x + offset;
+
   const style = {
     position: "absolute",
-    left: x + 20,
-    top: y + 20,
-    // pointerEvents: "none",
+    left: leftPosition,
+    top: y + offset,
   }
+
   return (
     <div className="info-box" style={style as any}>
       <ValuesCard card={node as any} inlineDetails />
     </div>
   )
 }
+
 
 export function MoralGraph({ nodes, edges }: { nodes: Node[]; edges: MoralGraphEdge[] }) {
   const nodes2 = [...nodes]
@@ -113,8 +125,6 @@ function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[];
     const simulation = d3
       // @ts-ignore
       .forceSimulation<Node, Link>(nodes2)
-      .alphaDecay(0.01) // Slow down simulation
-      .velocityDecay(0.05) // Slow down simulation
       .force(
         "link",
         // @ts-ignore
@@ -123,22 +133,22 @@ function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[];
           .forceLink<Link, Node>(links)
           // @ts-ignore
           .id((d: Node) => d.id)
-          .distance(100)
+          .distance(120)
       )
       // @ts-ignore
       .force(
         "charge",
         // @ts-ignore
         d3
-          .forceManyBody().strength(-100)
-          .distanceMax(200)
+          .forceManyBody().strength(-50)
+
       ) // Weaker repulsion within groups
       .force(
         "center",
         // @ts-ignore
         d3
-          .forceCenter(100, 100)
-          .strength(1.8)
+          .forceCenter(window.innerWidth / 2, window.innerHeight / 2)
+          .strength(0.05)
       ) // Weaker central pull
 
     // Draw links
