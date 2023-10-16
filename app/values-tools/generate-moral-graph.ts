@@ -47,10 +47,10 @@ class PairMap {
 
 // main
 
-type Output = Pick<MoralGraphSummary, "values" | "edges">
+type Output = Pick<MoralGraphSummary, "values" | "edges" | "byCase">
 type RawEdgeCount = Omit<MoralGraphSummary["edges"][0], "summary">
 
-interface Options {
+export interface Options {
   includeAllEdges?: boolean
   edgeWhere?: Prisma.EdgeWhereInput
 }
@@ -69,6 +69,7 @@ export async function summarizeGraph(options: Options = {}): Promise<Output> {
     if (edge.relationship === "no_upgrade") existing.counts.markedNotWiser++
     if (edge.relationship === "not_sure") existing.counts.markedUnsure++
   }
+
   // do the opposite
   for (const edge of edges) {
     const existing = pairs.get(edge.toId, edge.fromId)
@@ -96,6 +97,21 @@ export async function summarizeGraph(options: Options = {}): Promise<Output> {
     if (edge.counts.markedWiser < 2) return false
     return true
   })
+
+  const byCase = new Map<string, RawEdgeCount[]>()
+  const cases = (await db.case.findMany()).map((c) => c.id)
+
+  // Populate byCase.
+  for (const caseId of cases) {
+    const contexts = await db.context.findMany({
+      where: { ContextsOnCases: { some: { caseId } } },
+    })
+    const caseEdges = trimmedEdges.filter((edge) => {
+      return contexts.some((context) => edge.contexts.includes(context.id))
+    })
+
+    byCase.set(caseId, caseEdges)
+  }
 
   const referencedNodeIds = new Set<number>()
   for (const link of trimmedEdges) {
