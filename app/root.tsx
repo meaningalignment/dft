@@ -20,7 +20,7 @@ import { TooltipProvider } from "@radix-ui/react-tooltip"
 import { User, ValuesCard } from "@prisma/client"
 import { Toaster } from "react-hot-toast"
 import { Analytics } from "@vercel/analytics/react"
-import React from "react"
+import React, { useEffect } from "react"
 
 export const links: LinksFunction = () => [
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
@@ -56,6 +56,10 @@ export function useCurrentUserValues(): ValuesCard[] | null {
 }
 
 export default function App() {
+
+  useEffect(() => {
+    console.log("App load")
+  }, [])
   return (
     <TooltipProvider>
       <html lang="en">

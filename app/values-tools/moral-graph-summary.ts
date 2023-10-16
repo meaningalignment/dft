@@ -1,26 +1,10 @@
 export interface MoralGraphSummary {
   // input
-  cases: Case[]
+  input: Input
 
   // output
   values: Value[]
   edges: EdgeCount[]
-
-  // output, by context
-  byContext: {
-    [context: string]: {
-      edges: Omit<EdgeCount, "contexts">[]
-    }
-  }
-
-  // output, by case
-  byCase: {
-    [caseId: string]: {
-      contexts: string[]
-      votes: VoteCount[]
-      edges: EdgeCount[]
-    }
-  }
 }
 
 
@@ -55,18 +39,6 @@ interface EdgeCount {
   }
 }
 
-
-// cases
-
-interface Case {
-  id: string
-  chatDialogue: {
-    role: string
-    content: string
-  }[]
-}
-
-
 // votes
 
 interface VoteCount {
@@ -80,3 +52,16 @@ interface VoteCount {
     confidence: number
   }
 }
+
+// input filters
+
+interface Input {
+  caseId?: "abortion" | "weapons" | "parenting"
+  dateRange?: {
+    from: string
+    to: string
+  }
+  prolificOnly?: boolean
+  politicalAffiliation?: "republican" | "democrat"
+}
+

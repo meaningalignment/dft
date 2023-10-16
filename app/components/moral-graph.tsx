@@ -49,22 +49,27 @@ function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
 }
 
 
-export function MoralGraph({ nodes, edges }: { nodes: Node[]; edges: MoralGraphEdge[] }) {
+export function MoralGraph({ nodes, edges, visualizeEdgeCertainty, visualizeNodeCertainty }: { nodes: Node[]; edges: MoralGraphEdge[], visualizeEdgeCertainty?: boolean, visualizeNodeCertainty?: boolean }) {
   const nodes2 = [...nodes]
+
+  console.log("moral graph!", visualizeEdgeCertainty, visualizeNodeCertainty)
+
   const links = edges.map((edge) => ({
     source: edge.sourceValueId,
     target: edge.wiserValueId,
     avg: edge.summary.wiserLikelihood,
-    thickness: (1 - edge.summary.entropy / 1.8) * logisticFunction(edge.counts.impressions),
+    thickness: visualizeEdgeCertainty ? (1 - edge.summary.entropy / 1.8) * logisticFunction(edge.counts.impressions) : 0.5,
   })) satisfies Link[]
-  links.forEach((link) => {
-    const target = nodes2.find((node) => node.id === link.target)
-    if (target) {
-      if (!target.wisdom) target.wisdom = link.avg
-      else target.wisdom += link.avg
-    }
-  })
-  console.log(nodes2)
+
+  if (visualizeNodeCertainty) {
+    links.forEach((link) => {
+      const target = nodes2.find((node) => node.id === link.target)
+      if (target) {
+        if (!target.wisdom) target.wisdom = link.avg
+        else target.wisdom += link.avg
+      }
+    })
+  }
   return <GraphWithInfoBox nodes2={nodes2} links={links} />
 }
 
