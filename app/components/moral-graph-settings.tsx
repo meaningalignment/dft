@@ -37,7 +37,7 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
       <h2 className="text-lg font-bold mb-6">Graph Settings</h2>
 
       {/* Run Dropdown */}
-      <div className="mb-4">
+      <div className="mb-2">
         <Label htmlFor="run">Participants</Label>
         <Select onValueChange={(value: any) => {
           setSettings({ ...settings, run: value !== "all" ? value : null })
@@ -51,15 +51,19 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
           </SelectContent>
         </Select>
       </div>
-      {settings.run && (
+      {settings.run ? (
         <p className="text-xs text-gray-400 mb-4">
           Show values from a subset of participants representative of the US (age, sex, political affiliation).
         </p>
+      ) : (
+          <p className="text-xs text-gray-400 mb-4">
+            Show values from all participants.
+          </p>  
       )}
 
 
       {/* Case Dropdown */}
-      <div className="mb-4">
+      <div className="mb-2">
         <Label htmlFor="run">Case</Label>
         <Select onValueChange={(value: any) => {
           setSettings({ ...settings, caseId: value !== "all" ? value: null })
@@ -75,14 +79,15 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
           </SelectContent>
         </Select>
       </div>
-      {settings.caseId && (
+      {settings.caseId ? (
         <p className="text-xs text-gray-400 mb-4">
           Show values articulated when users were asked how they think ChatGPT should respond to:
           <br />
           <br />
          <strong>"{caseQuestions[settings.caseId]}"</strong>
         </p>
-      )}
+      ) : (<p className="text-xs text-gray-400 mb-4">
+          Show values for all cases.</p>)}
 
 
 
@@ -107,7 +112,7 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
 
 
       {/* Checkboxes */}
-      <div className="flex items-center space-x-2 mb-4 mt-4">
+      <div className="flex items-center space-x-2 mb-2 mt-4">
         <Checkbox id="edge" checked={settings.visualizeEdgeCertainty} onCheckedChange={(c: any) => {
           setSettings({ ...settings, visualizeEdgeCertainty: c })
         }}/>
@@ -122,7 +127,7 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
         Edge certainty is the likelihood participants agree on a wisdom upgrade. Visualized as the thickness of the edges.
       </p>
 
-      <div className="flex items-center space-x-2 mb-4">
+      <div className="flex items-center space-x-2 mb-2">
         <Checkbox id="node" checked={settings.visualizeWisdomScore} onCheckedChange={(c: any) => {
           console.log("#Checked change; ", c)
           setSettings({ ...settings, visualizeWisdomScore: c })
