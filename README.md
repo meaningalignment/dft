@@ -7,7 +7,7 @@
 - [Overview](#overview)
 - [Background](#background)
 - [Tech Stack](#tech-stack)
-- [Data Handling](#data-handling)
+- [Output](#output)
 - [Local Setup](#local-setup)
 - [Database Evolution](#database-evolution)
 - [Deployment](#deployment)
@@ -49,7 +49,7 @@ Subsequent endeavors will focus on fine-tuning the LLM based on these values.
 - **Event Queue**: [Inngest](https://inngest.com)
 - **Deployment Platform**: [Vercel](https://vercel.com)
 
-## Data
+## Output
 
 The moral graph, survey data and demographics data we collected can be found [here](./data/).
 
