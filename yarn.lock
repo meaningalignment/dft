@@ -1358,10 +1358,10 @@
   resolved "https://registry.npmjs.org/@prisma/engines-version/-/engines-version-5.3.1-2.61e140623197a131c2a6189271ffee05a7aa9a59.tgz"
   integrity sha512-y5qbUi3ql2Xg7XraqcXEdMHh0MocBfnBzDn5GbV1xk23S3Mq8MGs+VjacTNiBh3dtEdUERCrUUG7Z3QaJ+h79w==
 
-"@prisma/engines@5.3.1":
-  version "5.3.1"
-  resolved "https://registry.npmjs.org/@prisma/engines/-/engines-5.3.1.tgz"
-  integrity sha512-6QkILNyfeeN67BNEPEtkgh3Xo2tm6D7V+UhrkBbRHqKw9CTaz/vvTP/ROwYSP/3JT2MtIutZm/EnhxUiuOPVDA==
+"@prisma/engines@5.4.2":
+  version "5.4.2"
+  resolved "https://registry.npmjs.org/@prisma/engines/-/engines-5.4.2.tgz"
+  integrity sha512-fqeucJ3LH0e1eyFdT0zRx+oETLancu5+n4lhiYECyEz6H2RDskPJHJYHkVc0LhkU4Uv7fuEnppKU3nVKNzMh8g==
 
 "@radix-ui/number@1.0.1":
   version "1.0.1"
@@ -7309,12 +7309,12 @@ pretty-ms@^7.0.1:
   dependencies:
     parse-ms "^2.1.0"
 
-prisma@*, prisma@^5.3.1:
-  version "5.3.1"
-  resolved "https://registry.npmjs.org/prisma/-/prisma-5.3.1.tgz"
-  integrity sha512-Wp2msQIlMPHe+5k5Od6xnsI/WNG7UJGgFUJgqv/ygc7kOECZapcSz/iU4NIEzISs3H1W9sFLjAPbg/gOqqtB7A==
+prisma@*, prisma@^5.4.2:
+  version "5.4.2"
+  resolved "https://registry.npmjs.org/prisma/-/prisma-5.4.2.tgz"
+  integrity sha512-GDMZwZy7mysB2oXU+angQqJ90iaPFdD0rHaZNkn+dio5NRkGLmMqmXs31//tg/qXT3iB0cTQwnGGQNuirhSTZg==
   dependencies:
-    "@prisma/engines" "5.3.1"
+    "@prisma/engines" "5.4.2"
 
 prismjs@^1.27.0:
   version "1.29.0"

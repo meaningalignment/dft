@@ -21,6 +21,7 @@ model User {
   isAdmin    Boolean      @default(false)
   signupType String       @default("EMAIL") // EMAIL or PROLIFIC
   prolificId String?
+  politics   String? // NULL, "republican", "independent" or "democrat"
   chats      Chat[]
   votes      Vote[]
   edges      Edge[]
