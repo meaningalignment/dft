@@ -5,7 +5,6 @@
 ## Table of Contents
 
 - [Overview](#overview)
-- [What is Democratic Fine-Tuning?](#what-is-democratic-fine-tuning)
 - [Background](#background)
 - [Tech Stack](#tech-stack)
 - [Data Handling](#data-handling)
@@ -17,13 +16,7 @@
 
 ## Overview
 
-Democratic Fine-Tuning (DFT) is an initiative aimed at achieving a fine-tuned model that bridges political, cultural, and ideological boundaries. This model's tuning is grounded in values, identified through broad consensus, rather than individual or group preferences. The project employs a three-step process that involves dialogue, voting on articulated values, and the establishment of a moral graph to ascertain convergence.
-
-![Moral Graph](./graph.png)
-
-The intricacies of the graph can be [explored here](https://dft.meaningalignment.org/data/edges). Further insights on the construction of the graph and the data handling can be found in the [data section](#data). For a deep dive into the motivations and processes behind DFT, read our [introduction blog post](https://meaningalignment.substack.com/p/introducing-democratic-fine-tuning).
-
-## What is Democratic Fine-Tuning?
+Democratic Fine-Tuning (DFT) is an initiative aimed at achieving a fine-tuned model that bridges political, cultural, and ideological boundaries. 
 
 This repository hosts code for an application with a new democratic process that takes ~15 minutes to go through. The app is live at [dft.meaningalignment.org](https://dft.meaningalignment.org). 
 
@@ -35,12 +28,16 @@ Participants go through the following steps:
 
 This process generates a moral graph, which can be used to find convergence in which values ChatGPT should have in contentious scenarios, while remaining legible and democratically legitimated.
 
+![Moral Graph](./graph.png)
+
+The intricacies of the graph can be [explored here](https://dft.meaningalignment.org/data/edges). Further insights on the construction of the graph and the data handling can be found in the [data section](#data). For a deep dive into the motivations and processes behind DFT, read our [introduction blog post](https://meaningalignment.substack.com/p/introducing-democratic-fine-tuning).
+
 ## Background
 
-Our aspiration with DFT is to craft a model universally regarded as "wise." Such a model would resonate with Republicans, Democrat, irrespective of their ideological or cultural bearings. The ultimate goal is to mitigate the prospects of ideological conflicts amplified by models individually fine-tuned based on group or individualö preferences. Two novel techniques are employed:
+Our aspiration with DFT is to craft a model universally regarded as "wise." Such a model would resonate with Republicans, Democrat, irrespective of their ideological or cultural bearings. The ultimate goal is to mitigate the prospects of ideological conflicts amplified by models individually fine-tuned based on group or individual preferences. Two novel techniques are employed:
 
-- **Value Alignment**: Rather than aligning with preferences, the model is aligned with values. These values are sourced from an expansive and diverse demographic.
-- **Moral Graph Creation**: This graph amalgamates values to identify the most widely accepted ones.
+- **Value Alignment**: Rather than aligning with preferences, the model is aligned with values. These values are sourced from an expansive and diverse demographic. For more on how we define values, [please read the following](https://textbook.sfsd.io/2/making-values-concrete).
+- **Moral Graph Creation**: This graph helps find convergent values.
 
 Subsequent endeavors will focus on fine-tuning the LLM based on these values.
 
@@ -49,7 +46,8 @@ Subsequent endeavors will focus on fine-tuning the LLM based on these values.
 - **Development Language**: TypeScript
 - **Framework**: [Remix](https://remix.run)
 - **Database**: PostgreSQL
-- **Deployment Platform**: Vercel
+- **Event Queue**: [Inngest](https://inngest.com)
+- **Deployment Platform**: [Vercel](https://vercel.com)
 
 ## Data Handling
 
@@ -67,6 +65,8 @@ Subsequent endeavors will focus on fine-tuning the LLM based on these values.
 ## Database Evolution
 
 To update the database schema, execute: `npx prisma migrate dev`
+
+The database schema can be found [here](./schema.prisma).
 
 ## Deployment
 
