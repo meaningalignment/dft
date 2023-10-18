@@ -49,7 +49,9 @@ Subsequent endeavors will focus on fine-tuning the LLM based on these values.
 - **Event Queue**: [Inngest](https://inngest.com)
 - **Deployment Platform**: [Vercel](https://vercel.com)
 
-## Data Handling
+## Data
+
+The moral graph, survey data and demographics data we collected can be found [here](./data/).
 
 - **Database Schema**: The data collated during the process adheres to our [database schema](./schema.prisma).
 - **Moral Graph Generation**: The code responsible for generating the moral graph is available [here](./app/values-tools/generate-moral-graph.ts).
