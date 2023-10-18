@@ -30,7 +30,7 @@ This process generates a [moral graph](https://dft.meaningalignment.org/data/edg
 
 ![Moral Graph](./graph.png)
 
-The intricacies of the graph can be [explored here](https://dft.meaningalignment.org/data/edges). Further insights on the construction of the graph and the data handling can be found in the [data section](#data). For a deep dive into the motivations and processes behind DFT, read our [introduction blog post](https://meaningalignment.substack.com/p/introducing-democratic-fine-tuning).
+The intricacies of the graph can be [explored here](https://dft.meaningalignment.org/data/edges). Further insights on the construction of the graph and the data handling can be found in the [data section](#output). For a deep dive into the motivations and processes behind DFT, read our [introduction blog post](https://meaningalignment.substack.com/p/introducing-democratic-fine-tuning).
 
 ## Background
 
