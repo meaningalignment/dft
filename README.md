@@ -26,7 +26,7 @@ Participants go through the following steps:
 2. **Vote on Values**: Participants vote on values proposed by their peers.
 3. **Vote on Wisdom Transition**: Participants vote on wether the transition from one value to another represents an increase in wisdom.
 
-This process generates a moral graph, which can be used to find convergence in which values ChatGPT should have in contentious scenarios, while remaining legible and democratically legitimated.
+This process generates a [moral graph](https://dft.meaningalignment.org/data/edges), which can be used to find convergence in which values ChatGPT should have in contentious scenarios, while remaining legible and democratically legitimated.
 
 ![Moral Graph](./graph.png)
 
