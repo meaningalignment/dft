@@ -25,7 +25,7 @@ export async function loader({ request, params }: LoaderArgs) {
       })
     | null
 
-  if (chat?.userId !== userId) {
+  if (chat && chat.userId !== userId) {
     throw Error("Unauthorized")
   }
 
