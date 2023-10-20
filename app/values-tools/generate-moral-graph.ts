@@ -2,8 +2,6 @@ import { db } from "~/config.server"
 import { MoralGraphSummary } from "./moral-graph-summary"
 import { Prisma } from "@prisma/client";
 
-// some utilities
-
 function calculateEntropy(responseCounts: Record<string, number>): number {
   const total = Object.values(responseCounts).reduce((acc, val) => acc + val, 0);
   let entropy = 0;

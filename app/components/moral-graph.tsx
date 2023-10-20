@@ -30,24 +30,6 @@ interface Link {
 
 type MoralGraphEdge = MoralGraphSummary["edges"][0]
 
-
-// function StatsRow({ stats }: { stats: VoteStatistics }) {
-//   return (
-//     <div className="flex flex-row w-full gap-2 mb-2">
-//       <div className="bg-slate-100 text-slate-500 rounded-full py-1 px-2 text-xs">
-//         {stats.votes} votes | {stats.impressions} views
-//       </div>
-//       {stats?.politics && (
-//         <>
-//           <div className="bg-red-500 text-white rounded-full py-1 px-2 text-xs">{stats.politics!.counts.republican} Rep</div>
-//           <div className="bg-blue-500 text-white rounded-full py-1 px-2 text-xs">{stats.politics!.counts.democrat} Dem</div>
-//           <div className="bg-slate-100 text-slate-500 rounded-full py-1 px-2 text-xs">{stats.politics!.counts.independent} Other</div>
-//         </>
-//       )}
-//     </div>
-//   )
-// }
-
 function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
   if (!node) return null
 

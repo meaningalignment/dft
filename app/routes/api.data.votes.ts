@@ -2,16 +2,17 @@ import { Prisma } from "@prisma/client"
 import { LoaderArgs, json } from "@remix-run/node"
 import { db } from "~/config.server"
 import { prolificRuns } from "~/lib/consts"
+import { getPartyAffiliation } from "~/utils"
 
 interface Politics {
-  summary: {
-    affiliation?: "republican" | "democrat" | "independent"
-    affiliationPercentage?: number
+  summary?: {
+    affiliation: string
+    percentage: number
   }
   counts: {
     democrat: number
     republican: number
-    independent: number
+    other: number
   }
 }
 
@@ -31,34 +32,24 @@ function calculatePolitics(demographics: any[]): Politics | undefined {
 
   const politics = demographics.reduce(
     (acc, val) => {
-      if (!val) return acc
+      if (!val) {
+        acc.counts.other++
+        return acc
+      }
       const aff = val.usPoliticalAffiliation.toLowerCase()
       if (aff === "republican") {
         acc.counts.republican++
       } else if (aff === "democrat") {
         acc.counts.democrat++
+      } else {
+        acc.counts.other++
       }
       return acc
     },
-    { counts: { republican: 0, democrat: 0, independent: 0 } }
+    { counts: { republican: 0, democrat: 0, other: 0 } }
   ) as Politics
 
-  const counts = politics.counts
-  counts.independent = demographics.length - counts.republican - counts.democrat
-
-  if (counts.republican > counts.democrat) {
-    politics.summary = {
-      affiliation: "republican",
-      affiliationPercentage: counts.republican / demographics.length,
-    }
-  } else if (
-    counts.democrat > counts.republican
-  ) {
-    politics.summary = {
-      affiliation: "democrat",
-      affiliationPercentage: counts.democrat / demographics.length,
-    }
-  }
+  politics.summary = getPartyAffiliation(politics.counts) ?? undefined
 
   return politics
 }
