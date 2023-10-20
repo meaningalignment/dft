@@ -3,6 +3,8 @@ import ValuesCard from "./values-card";
 import * as d3 from "d3";
 import { MoralGraphSummary } from "~/values-tools/moral-graph-summary";
 import { VoteStatistics } from "~/routes/api.data.votes";
+import { getPartyAffiliation } from "~/utils";
+import { GraphSettings } from "./moral-graph-settings";
 
 function logisticFunction(n: number, midpoint: number = 6, scale: number = 2): number {
   return 1 / (1 + Math.exp(-(n - midpoint) / scale));
@@ -12,7 +14,6 @@ interface Node {
   id: number
   title: string
   wisdom?: number
-  votes?: VoteStatistics
 }
 
 interface Link {
@@ -20,24 +21,32 @@ interface Link {
   target: number
   avg: number
   thickness: number
+  pol?: {
+    republican: number
+    democrat: number
+    other: number
+  }
 }
 
 type MoralGraphEdge = MoralGraphSummary["edges"][0]
 
 
-function StatsBadge({
-  votes,
-  impressions,
-}: {
-  votes: number
-  impressions: number
-}) {
-  return (
-    <div className="absolute top-4 right-4 bg-slate-100 text-slate-500 rounded-full py-1 px-2 text-xs">
-      {votes} votes | {impressions} views
-    </div>
-  )
-}
+// function StatsRow({ stats }: { stats: VoteStatistics }) {
+//   return (
+//     <div className="flex flex-row w-full gap-2 mb-2">
+//       <div className="bg-slate-100 text-slate-500 rounded-full py-1 px-2 text-xs">
+//         {stats.votes} votes | {stats.impressions} views
+//       </div>
+//       {stats?.politics && (
+//         <>
+//           <div className="bg-red-500 text-white rounded-full py-1 px-2 text-xs">{stats.politics!.counts.republican} Rep</div>
+//           <div className="bg-blue-500 text-white rounded-full py-1 px-2 text-xs">{stats.politics!.counts.democrat} Dem</div>
+//           <div className="bg-slate-100 text-slate-500 rounded-full py-1 px-2 text-xs">{stats.politics!.counts.independent} Other</div>
+//         </>
+//       )}
+//     </div>
+//   )
+// }
 
 function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
   if (!node) return null
@@ -61,39 +70,33 @@ function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
   return (
     <div className="info-box z-50" style={style as any}>
       <ValuesCard card={node as any} inlineDetails />
-      <StatsBadge votes={node.votes?.votes || 0} impressions={node.votes?.impressions || 0} />
-      {node.votes?.politics?.summary?.affiliation === "democrat" && <div className="absolute bottom-4 right-4 bg-blue-500 text-white rounded-full py-1 px-2 text-xs">Democrat</div>}
-      {node.votes?.politics?.summary?.affiliation === "republican" && <div className="absolute bottom-4 right-4 bg-red-500 text-white rounded-full py-1 px-2 text-xs">Republican</div>}
     </div>
   )
 }
 
 
-export function MoralGraph({ votes, nodes, edges, visualizeEdgeCertainty, visualizeNodeCertainty }: { votes: VoteStatistics[], nodes: Node[]; edges: MoralGraphEdge[], visualizeEdgeCertainty?: boolean, visualizeNodeCertainty?: boolean }) {
-  const nodesWithVotes = [...nodes].map((node) => {
-    console.log(votes)
-    const voteStats = votes.find((vote) => vote.valueId === node.id)
-    if (voteStats) node.votes = voteStats
-    return node
-  })
+export function MoralGraph({ nodes, edges, settings }: { nodes: Node[]; edges: MoralGraphEdge[], settings: GraphSettings }) {
+  const newNodes = [...nodes]
+  const { visualizeWisdomScore, visualizeEdgeCertainty, visualizePolitics } = settings
 
   const links = edges.map((edge) => ({
     source: edge.sourceValueId,
     target: edge.wiserValueId,
     avg: edge.summary.wiserLikelihood,
+    pol: visualizePolitics ? edge.counts.politics : undefined,
     thickness: visualizeEdgeCertainty ? (1 - edge.summary.entropy / 1.8) * logisticFunction(edge.counts.impressions) : 0.5,
   })) satisfies Link[]
 
-  if (visualizeNodeCertainty) {
+  if (visualizeWisdomScore) {
     links.forEach((link) => {
-      const target = nodesWithVotes.find((node) => node.id === link.target)
+      const target = newNodes.find((node) => node.id === link.target)
       if (target) {
         if (!target.wisdom) target.wisdom = link.avg
         else target.wisdom += link.avg
       }
     })
   }
-  return <GraphWithInfoBox nodes={nodesWithVotes} links={links} />
+  return <GraphWithInfoBox nodes={newNodes} links={links} />
 }
 
 function GraphWithInfoBox({ nodes, links }: { nodes: Node[]; links: Link[] }) {
@@ -185,7 +188,16 @@ function Graph({ nodes, links, setHoveredNode, setPosition }: { nodes: Node[]; l
       .selectAll("line")
       .data(links)
       .join("line")
-      .attr("stroke", (d: any) => d3.interpolateGreys(d.thickness * 5))
+      .attr("stroke", (d: Link) => {
+        if (d.pol) {
+          const party = getPartyAffiliation(d.pol)
+          if (party?.affiliation === "republican") return d3.interpolateReds(d.thickness * 5)
+          if (party?.affiliation === "democrat") return d3.interpolateBlues(d.thickness * 5)
+          return d3.interpolateGreys(d.thickness * 5)
+        }
+        
+        return d3.interpolateGreys(d.thickness * 5)
+      })
       .attr("stroke-width", 2)
       .attr("marker-end", "url(#arrowhead)") // Add arrowheads
 
@@ -208,11 +220,10 @@ function Graph({ nodes, links, setHoveredNode, setPosition }: { nodes: Node[]; l
       .data(nodes)
       .join("circle")
       .attr("r", 10)
-      // .attr("fill", (d: Node) => (d.wisdom ?
-      //   d3.interpolateBlues(d.wisdom / 5) :
-      //   "lightgray"
-      // ))
-      .attr("fill", (d: Node) => d.votes?.politics?.summary?.affiliation === "democrat" ? d3.interpolateBlues(d.votes!.politics!.summary.affiliationPercentage!) : d.votes?.politics?.summary?.affiliation === "republican" ? d3.interpolateReds(d.votes!.politics!.summary.affiliationPercentage!) : "lightgray")
+      .attr("fill", (d: Node) => (d.wisdom ?
+        d3.interpolateBlues(d.wisdom / 5) :
+        "lightgray"
+      ))
       .on("mouseover", (event: any, d: Node) => {
         if (hoverTimeout) clearTimeout(hoverTimeout)
         setHoveredNode(d)

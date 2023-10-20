@@ -24,19 +24,19 @@ export interface VoteStatistics {
 }
 
 function calculatePolitics(demographics: any[]): Politics | undefined {
-  if (demographics.length === 0) {
+  // Filter out votes with too little signal.
+  if (demographics.length < 3) {
     return undefined
   }
 
   const politics = demographics.reduce(
     (acc, val) => {
+      if (!val) return acc
       const aff = val.usPoliticalAffiliation.toLowerCase()
       if (aff === "republican") {
         acc.counts.republican++
       } else if (aff === "democrat") {
         acc.counts.democrat++
-      } else if (aff === "Independent") {
-        acc.counts.independent++
       }
       return acc
     },
@@ -44,30 +44,19 @@ function calculatePolitics(demographics: any[]): Politics | undefined {
   ) as Politics
 
   const counts = politics.counts
+  counts.independent = demographics.length - counts.republican - counts.democrat
 
-  if (
-    counts.republican > counts.democrat &&
-    counts.republican > counts.independent
-  ) {
+  if (counts.republican > counts.democrat) {
     politics.summary = {
       affiliation: "republican",
       affiliationPercentage: counts.republican / demographics.length,
     }
   } else if (
-    counts.democrat > counts.republican &&
-    counts.democrat > counts.independent
+    counts.democrat > counts.republican
   ) {
     politics.summary = {
       affiliation: "democrat",
       affiliationPercentage: counts.democrat / demographics.length,
-    }
-  } else if (
-    counts.independent > counts.republican &&
-    counts.independent > counts.democrat
-  ) {
-    politics.summary = {
-      affiliation: "independent",
-      affiliationPercentage: counts.independent / demographics.length,
     }
   }
 
@@ -107,11 +96,7 @@ export async function loader({ request }: LoaderArgs) {
       (i) => i.valuesCardId === vid
     )
     const votePercentage = relevantVotes.length / relevantImpressions.length
-    const politics = calculatePolitics(
-      demographics.filter((d) =>
-        relevantVotes.map((v) => v.userId).includes(d.userId)
-      )
-    )
+    const politics = calculatePolitics(relevantVotes.map((v) => demographics.find((d) => d.userId === v.userId)))
 
     return {
       valueId: vid,

@@ -3,23 +3,22 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Checkbox } from './ui/checkbox';
-import { Separator } from '@radix-ui/react-separator';
 import { capitalize, cn } from '~/utils';
 
 export type GraphSettings = {
   run: "prolific_50" | "prolific_325" | "prolific_125" | null
   caseId: "abortion" | "weapons" | "parenting" | null
-  politicalAffiliation: "democrat" | "republican" | null
   visualizeEdgeCertainty: boolean
   visualizeWisdomScore: boolean
+  visualizePolitics: boolean
 }
 
 export const defaultGraphSettings: GraphSettings = {
   run: "prolific_325",
   caseId: null,
-  politicalAffiliation: null,
   visualizeEdgeCertainty: true,
   visualizeWisdomScore: true,
+  visualizePolitics: false,
 }
 
 const caseQuestions = {
@@ -89,28 +88,6 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
       ) : (<p className="text-xs text-gray-400 mb-4">
           Show values for all cases.</p>)}
 
-
-
-      {/* Political Affiliation - @TODO */}
-      {/* <div>
-        <Label htmlFor="run">Politics</Label>
-        <Select onValueChange={(politicalAffiliation: "democrat" | "republican" | "all") => {
-          setSettings({ ...settings, politicalAffiliation })
-        }}>
-          <SelectTrigger id="run">
-            <SelectValue placeholder="All" />
-          </SelectTrigger>
-          <SelectContent defaultValue={settings.politicalAffiliation}>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="democrats">Democrats</SelectItem>
-            <SelectItem value="republican">Republican</SelectItem>
-          </SelectContent>
-        </Select>
-      </div> */}
-
-      <Separator className="my-4 bg-border h-[1px]" />
-
-
       {/* Checkboxes */}
       <div className="flex items-center space-x-2 mb-2 mt-4">
         <Checkbox id="edge" checked={settings.visualizeEdgeCertainty} onCheckedChange={(c: any) => {
@@ -129,7 +106,6 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
 
       <div className="flex items-center space-x-2 mb-2">
         <Checkbox id="node" checked={settings.visualizeWisdomScore} onCheckedChange={(c: any) => {
-          console.log("#Checked change; ", c)
           setSettings({ ...settings, visualizeWisdomScore: c })
         }} />
         <label
@@ -141,6 +117,21 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
       </div>
       <p className="text-xs text-gray-400 mb-6">
         The wisdom score for a value is the sum of the certainty of all incoming edges. Visualized as the blueness of the nodes.
+      </p>
+
+      <div className="flex items-center space-x-2 mb-2">
+        <Checkbox id="node" checked={settings.visualizePolitics} onCheckedChange={(c: any) => {
+          setSettings({ ...settings, visualizePolitics: c })
+        }} />
+        <label
+          htmlFor="node"
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          Visualize Political Affiliation
+        </label>
+      </div>
+      <p className="text-xs text-gray-400 mb-6">
+        Show the dominant self-reported political affiliation for each edge vote. Visualized as red edges for republicans and blue for democrats.
       </p>
 
       <Button disabled={initialSettings === settings} className="mt-4" onClick={() => {

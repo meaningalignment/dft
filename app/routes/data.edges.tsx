@@ -1,11 +1,7 @@
-import { Await, useLoaderData } from "@remix-run/react";
-import { Suspense, useEffect, useState } from "react";
-import { LoaderArgs, defer, json } from "@remix-run/node";
+import { useEffect, useState } from "react";
 import { MoralGraph } from "~/components/moral-graph";
-import { Options, summarizeGraph } from "~/values-tools/generate-moral-graph";
 import { Loader2 } from "lucide-react";
 import MoralGraphSettings, { GraphSettings, defaultGraphSettings } from "~/components/moral-graph-settings";
-import { db } from "~/config.server";
 
 function LoadingScreen() {
   return <div className="h-screen w-full mx-auto flex items-center justify-center">
@@ -16,7 +12,6 @@ function LoadingScreen() {
 export default function DefaultGraphPage() {
   const [settings, setSettings] = useState<GraphSettings>(defaultGraphSettings)
   const [graph, setGraph] = useState<any>(null)
-  const [votes, setVotes] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
@@ -37,13 +32,8 @@ export default function DefaultGraphPage() {
     if (settings?.caseId) params.caseId = settings?.caseId
     if (settings?.run) params.runId = settings?.run
 
-    const fetchGraph = fetch("/api/data/edges?" + new URLSearchParams(params).toString(), { headers }).then((res) => res.json())
-    const fetchVotes = fetch("/api/data/votes?" + new URLSearchParams(params).toString(), { headers }).then((res) => res.json())
-
-    const [graph, votes] = await Promise.all([fetchGraph, fetchVotes])
-
+    const graph = await fetch("/api/data/edges?" + new URLSearchParams(params).toString(), { headers }).then((res) => res.json())
     setGraph(graph)
-    setVotes(votes.statistics)
     setIsLoading(false)
   }
 
@@ -56,7 +46,7 @@ export default function DefaultGraphPage() {
     <div style={{ display: 'flex', flexDirection: 'row' }}>
       {/* Graph */}
       <div className="flex-grow">
-        {isLoading || !graph || !votes ? <LoadingScreen /> : <MoralGraph votes={votes} nodes={graph.values} edges={graph.edges} visualizeEdgeCertainty={settings.visualizeEdgeCertainty} visualizeNodeCertainty={settings.visualizeWisdomScore} />}
+        {isLoading || !graph ? <LoadingScreen /> : <MoralGraph nodes={graph.values} edges={graph.edges} settings={settings} />}
       </div>
 
       {/* Settings */}

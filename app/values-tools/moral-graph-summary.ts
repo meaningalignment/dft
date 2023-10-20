@@ -1,6 +1,6 @@
 export interface MoralGraphSummary {
   values: Value[]
-  edges: EdgeCount[]
+  edges: EdgeStats[]
 }
 
 interface Value {
@@ -11,7 +11,7 @@ interface Value {
   evaluationCriteria: string[]
 }
 
-interface EdgeCount {
+interface EdgeStats {
   sourceValueId: number
   wiserValueId: number
   contexts: string[]
@@ -21,6 +21,11 @@ interface EdgeCount {
     markedLessWise: number
     markedUnsure: number
     impressions: number
+    politics: {
+      republican: number
+      democrat: number
+      other: number
+    }
   }
   summary: {
     wiserLikelihood: number

@@ -37,6 +37,11 @@ class PairMap {
           markedLessWise: 0,
           markedUnsure: 0,
           impressions: 0,
+          politics: {
+            republican: 0,
+            democrat: 0,
+            other: 0,
+          }
         },
       });
     }
@@ -55,18 +60,26 @@ export async function summarizeGraph(options: Options = {}): Promise<MoralGraphS
   console.log('summarizeGraph options', options)
   const values = await db.canonicalValuesCard.findMany()
   const edges = await db.edge.findMany({ where: options.edgeWhere })
+  const demographics = await db.demographic.findMany({ where: { user: options?.edgeWhere?.user || undefined } })
   const pairs = new PairMap()
 
   for (const edge of edges) {
     const existing = pairs.get(edge.fromId, edge.toId)
-    existing.contexts.push(edge.contextId)
+    existing.contexts.push(edge.contextId) 
     existing.counts.impressions++
     if (edge.relationship === "upgrade") existing.counts.markedWiser++
     if (edge.relationship === "no_upgrade") existing.counts.markedNotWiser++
     if (edge.relationship === "not_sure") existing.counts.markedUnsure++
+    
+    // Politics.
+    const demographic = demographics.find((d) => d.userId === edge.userId)
+    const party = demographic?.usPoliticalAffiliation?.toLowerCase()
+    if (!party || party === "independent") existing.counts.politics.other++
+    if (party === "republican") existing.counts.politics.republican++
+    if (party === "democrat") existing.counts.politics.democrat++
   }
 
-  // do the opposite
+  // Do the opposite.
   for (const edge of edges) {
     const existing = pairs.get(edge.toId, edge.fromId)
     existing.contexts.push(edge.contextId)
@@ -74,16 +87,25 @@ export async function summarizeGraph(options: Options = {}): Promise<MoralGraphS
     if (edge.relationship === "upgrade") existing.counts.markedLessWise++
   }
 
-  // cook them down
+  // Cook them down.
   const cookedEdges = pairs.all().map((edge) => {
     const contexts = [...new Set(edge.contexts)]
-    const total = edge.counts.markedWiser + edge.counts.markedNotWiser + edge.counts.markedUnsure + edge.counts.markedLessWise
-    const wiserLikelihood = (edge.counts.markedWiser - edge.counts.markedLessWise) / total
-    const entropy = calculateEntropy(edge.counts)
+    const total =
+      edge.counts.markedWiser +
+      edge.counts.markedNotWiser +
+      edge.counts.markedUnsure +
+      edge.counts.markedLessWise
+    const wiserLikelihood =
+      (edge.counts.markedWiser - edge.counts.markedLessWise) / total
+
+    // Calculate entropy.
+    const { politics: _, ...entropyValues } = { ...edge.counts }
+    const entropy = calculateEntropy(entropyValues)
+
     return { ...edge, contexts, summary: { wiserLikelihood, entropy } }
   })
 
-  // eliminate edges with low wiserLikelihood, low signal, or no consensus
+  // Eliminate edges with low wiserLikelihood, low signal, or no consensus.
   const trimmedEdges = cookedEdges.filter((edge) => {
     if (!edge.counts.markedWiser) return false
     if (edge.summary.wiserLikelihood < 0.33) return false
