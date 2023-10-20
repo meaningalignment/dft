@@ -16,7 +16,6 @@ interface Value {
   instructionsShort: string
   instructionsDetailed: string
   evaluationCriteria: string[]
-  // contexts: string[]
 }
 
 
@@ -39,19 +38,6 @@ interface EdgeCount {
   }
 }
 
-// votes
-
-interface VoteCount {
-  valueId: number
-  counts: {
-    votes: number
-    impressions: number
-  }
-  summary: {
-    voteLikelihood: number
-    confidence: number
-  }
-}
 
 // input filters
 

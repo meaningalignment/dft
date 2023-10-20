@@ -1,12 +1,3 @@
-/**
- *
- * @todo
- * - [x] Fix the loader to use fetch
- * - [ ] Filter graph using settings
- * - [ ] UI for settings
- * - [ ] Visualize toggles
- */
-
 import { LoaderArgs } from "@remix-run/node"
 import { Options, summarizeGraph } from "~/values-tools/generate-moral-graph"
 
