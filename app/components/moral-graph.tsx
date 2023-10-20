@@ -175,7 +175,6 @@ function Graph({ nodes, links, setHoveredNode, setPosition }: { nodes: Node[]; l
           const party = getPartyAffiliation(d.pol)
           if (party?.affiliation === "republican") return d3.interpolateReds(d.thickness * 5)
           if (party?.affiliation === "democrat") return d3.interpolateBlues(d.thickness * 5)
-          return d3.interpolateGreys(d.thickness * 5)
         }
         
         return d3.interpolateGreys(d.thickness * 5)
