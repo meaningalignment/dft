@@ -16,45 +16,47 @@ function LoadingScreen() {
 export default function DefaultGraphPage() {
   const [settings, setSettings] = useState<GraphSettings>(defaultGraphSettings)
   const [graph, setGraph] = useState<any>(null)
+  const [votes, setVotes] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     setIsLoading(true)
     if (!graph && !isLoading) {
-      fetchGraph(settings)
+      fetchData(settings)
     }
   }, [])
 
-  const fetchGraph = async (settings: GraphSettings) => {
+  const fetchData = async (settings: GraphSettings) => {
     setIsLoading(true)
+
+    const headers = {
+      "Content-Type": "application/json",
+    }
 
     const params: { caseId?: string, runId?: string } = {}
     if (settings?.caseId) params.caseId = settings?.caseId
     if (settings?.run) params.runId = settings?.run
 
-    const res = await fetch("/api/data/edges?" + new URLSearchParams(params).toString(), {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-    console.log(res)
-    const graph = await res.json()
-    console.log(graph)
+    const fetchGraph = fetch("/api/data/edges?" + new URLSearchParams(params).toString(), { headers }).then((res) => res.json())
+    const fetchVotes = fetch("/api/data/votes?" + new URLSearchParams(params).toString(), { headers }).then((res) => res.json())
+
+    const [graph, votes] = await Promise.all([fetchGraph, fetchVotes])
+
     setGraph(graph)
+    setVotes(votes.statistics)
     setIsLoading(false)
   }
 
   function onUpdateSettings(newSettings: GraphSettings) {
-    console.log(newSettings)
     setSettings(newSettings)
-    fetchGraph(newSettings)
+    fetchData(newSettings)
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'row' }}>
       {/* Graph */}
       <div className="flex-grow">
-        {isLoading || !graph ? <LoadingScreen /> : <MoralGraph nodes={graph.values} edges={graph.edges} visualizeEdgeCertainty={settings.visualizeEdgeCertainty} visualizeNodeCertainty={settings.visualizeWisdomScore} />}
+        {isLoading || !graph || !votes ? <LoadingScreen /> : <MoralGraph votes={votes} nodes={graph.values} edges={graph.edges} visualizeEdgeCertainty={settings.visualizeEdgeCertainty} visualizeNodeCertainty={settings.visualizeWisdomScore} />}
       </div>
 
       {/* Settings */}

@@ -1,14 +1,7 @@
 export interface MoralGraphSummary {
-  // input
-  input: Input
-
-  // output
   values: Value[]
   edges: EdgeCount[]
 }
-
-
-// values
 
 interface Value {
   id: number
@@ -17,9 +10,6 @@ interface Value {
   instructionsDetailed: string
   evaluationCriteria: string[]
 }
-
-
-// edges
 
 interface EdgeCount {
   sourceValueId: number
@@ -37,17 +27,3 @@ interface EdgeCount {
     entropy: number
   }
 }
-
-
-// input filters
-
-interface Input {
-  caseId?: "abortion" | "weapons" | "parenting"
-  dateRange?: {
-    from: string
-    to: string
-  }
-  prolificOnly?: boolean
-  politicalAffiliation?: "republican" | "democrat"
-}
-

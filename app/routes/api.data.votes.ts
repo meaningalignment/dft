@@ -4,20 +4,23 @@ import { db } from "~/config.server"
 import { prolificRuns } from "~/lib/consts"
 
 interface Politics {
-  mainAffiliation?: "republican" | "democrat" | "independent"
-  republican: number
-  democrat: number
-  independent: number
+  summary: {
+    affiliation?: "republican" | "democrat" | "independent"
+    affiliationPercentage?: number
+  }
+  counts: {
+    democrat: number
+    republican: number
+    independent: number
+  }
 }
 
-interface VoteStatistics {
+export interface VoteStatistics {
   valueId: number
-  counts: {
-    votes: number
-    impressions: number
-    votePercentage: number
-    politics?: Politics
-  }
+  votes: number
+  impressions: number
+  votePercentage: number
+  politics?: Politics
 }
 
 function calculatePolitics(demographics: any[]): Politics | undefined {
@@ -29,32 +32,43 @@ function calculatePolitics(demographics: any[]): Politics | undefined {
     (acc, val) => {
       const aff = val.usPoliticalAffiliation.toLowerCase()
       if (aff === "republican") {
-        acc.republican++
+        acc.counts.republican++
       } else if (aff === "democrat") {
-        acc.democrat++
+        acc.counts.democrat++
       } else if (aff === "Independent") {
-        acc.independent++
+        acc.counts.independent++
       }
       return acc
     },
-    { republican: 0, democrat: 0, independent: 0 }
-  ) as any
+    { counts: { republican: 0, democrat: 0, independent: 0 } }
+  ) as Politics
+
+  const counts = politics.counts
 
   if (
-    politics.republican > politics.democrat &&
-    politics.republican > politics.independent
+    counts.republican > counts.democrat &&
+    counts.republican > counts.independent
   ) {
-    politics.mainVoter = "republican"
+    politics.summary = {
+      affiliation: "republican",
+      affiliationPercentage: counts.republican / demographics.length,
+    }
   } else if (
-    politics.democrat > politics.republican &&
-    politics.democrat > politics.independent
+    counts.democrat > counts.republican &&
+    counts.democrat > counts.independent
   ) {
-    politics.mainVoter = "democrat"
+    politics.summary = {
+      affiliation: "democrat",
+      affiliationPercentage: counts.democrat / demographics.length,
+    }
   } else if (
-    politics.independent > politics.republican &&
-    politics.independent > politics.democrat
+    counts.independent > counts.republican &&
+    counts.independent > counts.democrat
   ) {
-    politics.mainVoter = "independent"
+    politics.summary = {
+      affiliation: "independent",
+      affiliationPercentage: counts.independent / demographics.length,
+    }
   }
 
   return politics
@@ -66,7 +80,7 @@ export async function loader({ request }: LoaderArgs) {
   const caseId = url.searchParams.get("caseId") ?? undefined
 
   let userFilter: Prisma.UserWhereInput = {}
-  
+
   if (runId) {
     userFilter = {
       prolificId: { not: null },
@@ -76,7 +90,7 @@ export async function loader({ request }: LoaderArgs) {
       },
     }
   }
-  
+
   const demographics = await db.demographic.findMany({
     where: { user: userFilter },
   })
@@ -101,15 +115,13 @@ export async function loader({ request }: LoaderArgs) {
 
     return {
       valueId: vid,
-      counts: {
-        votes: relevantVotes.length,
-        impressions: relevantImpressions.length,
-        votePercentage,
-        politics,
-      },
+      votes: relevantVotes.length,
+      impressions: relevantImpressions.length,
+      votePercentage,
+      politics,
     } as VoteStatistics
   })
 
   // Return statistics.
-  return json({ votes: statistics })
+  return json({ statistics })
 }

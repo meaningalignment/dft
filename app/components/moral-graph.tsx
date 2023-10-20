@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import ValuesCard from "./values-card";
 import * as d3 from "d3";
 import { MoralGraphSummary } from "~/values-tools/moral-graph-summary";
+import { VoteStatistics } from "~/routes/api.data.votes";
 
 function logisticFunction(n: number, midpoint: number = 6, scale: number = 2): number {
   return 1 / (1 + Math.exp(-(n - midpoint) / scale));
@@ -11,6 +12,7 @@ interface Node {
   id: number
   title: string
   wisdom?: number
+  votes?: VoteStatistics
 }
 
 interface Link {
@@ -21,6 +23,21 @@ interface Link {
 }
 
 type MoralGraphEdge = MoralGraphSummary["edges"][0]
+
+
+function StatsBadge({
+  votes,
+  impressions,
+}: {
+  votes: number
+  impressions: number
+}) {
+  return (
+    <div className="absolute top-4 right-4 bg-slate-100 text-slate-500 rounded-full py-1 px-2 text-xs">
+      {votes} votes | {impressions} views
+    </div>
+  )
+}
 
 function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
   if (!node) return null
@@ -44,15 +61,21 @@ function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
   return (
     <div className="info-box z-50" style={style as any}>
       <ValuesCard card={node as any} inlineDetails />
+      <StatsBadge votes={node.votes?.votes || 0} impressions={node.votes?.impressions || 0} />
+      {node.votes?.politics?.summary?.affiliation === "democrat" && <div className="absolute bottom-4 right-4 bg-blue-500 text-white rounded-full py-1 px-2 text-xs">Democrat</div>}
+      {node.votes?.politics?.summary?.affiliation === "republican" && <div className="absolute bottom-4 right-4 bg-red-500 text-white rounded-full py-1 px-2 text-xs">Republican</div>}
     </div>
   )
 }
 
 
-export function MoralGraph({ nodes, edges, visualizeEdgeCertainty, visualizeNodeCertainty }: { nodes: Node[]; edges: MoralGraphEdge[], visualizeEdgeCertainty?: boolean, visualizeNodeCertainty?: boolean }) {
-  const nodes2 = [...nodes]
-
-  console.log("moral graph!", visualizeEdgeCertainty, visualizeNodeCertainty)
+export function MoralGraph({ votes, nodes, edges, visualizeEdgeCertainty, visualizeNodeCertainty }: { votes: VoteStatistics[], nodes: Node[]; edges: MoralGraphEdge[], visualizeEdgeCertainty?: boolean, visualizeNodeCertainty?: boolean }) {
+  const nodesWithVotes = [...nodes].map((node) => {
+    console.log(votes)
+    const voteStats = votes.find((vote) => vote.valueId === node.id)
+    if (voteStats) node.votes = voteStats
+    return node
+  })
 
   const links = edges.map((edge) => ({
     source: edge.sourceValueId,
@@ -63,17 +86,17 @@ export function MoralGraph({ nodes, edges, visualizeEdgeCertainty, visualizeNode
 
   if (visualizeNodeCertainty) {
     links.forEach((link) => {
-      const target = nodes2.find((node) => node.id === link.target)
+      const target = nodesWithVotes.find((node) => node.id === link.target)
       if (target) {
         if (!target.wisdom) target.wisdom = link.avg
         else target.wisdom += link.avg
       }
     })
   }
-  return <GraphWithInfoBox nodes2={nodes2} links={links} />
+  return <GraphWithInfoBox nodes={nodesWithVotes} links={links} />
 }
 
-function GraphWithInfoBox({ nodes2, links }: { nodes2: Node[]; links: Link[] }) {
+function GraphWithInfoBox({ nodes, links }: { nodes: Node[]; links: Link[] }) {
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null)
   const [position, setPosition] = useState<{ x: number; y: number }>({
     x: 0,
@@ -82,13 +105,13 @@ function GraphWithInfoBox({ nodes2, links }: { nodes2: Node[]; links: Link[] }) 
 
   return (
     <>
-      <Graph nodes2={nodes2} links={links} setHoveredNode={setHoveredNode} setPosition={setPosition} />
+      <Graph nodes={nodes} links={links} setHoveredNode={setHoveredNode} setPosition={setPosition} />
       <InfoBox node={hoveredNode} x={position.x} y={position.y} />
     </>
   )
 }
 
-function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[]; links: Link[], setHoveredNode: (node: Node | null) => void, setPosition: (position: { x: number; y: number }) => void }) {
+function Graph({ nodes, links, setHoveredNode, setPosition }: { nodes: Node[]; links: Link[], setHoveredNode: (node: Node | null) => void, setPosition: (position: { x: number; y: number }) => void }) {
   let hoverTimeout: NodeJS.Timeout | null = null
   const ref = useRef<SVGSVGElement>(null)
   useEffect(() => {
@@ -129,7 +152,7 @@ function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[];
     // Create force simulation
     const simulation = d3
       // @ts-ignore
-      .forceSimulation<Node, Link>(nodes2)
+      .forceSimulation<Node, Link>(nodes)
       .force(
         "link",
         // @ts-ignore
@@ -182,13 +205,14 @@ function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[];
     const node = g
       .append("g")
       .selectAll("circle")
-      .data(nodes2)
+      .data(nodes)
       .join("circle")
       .attr("r", 10)
-      .attr("fill", (d: Node) => (d.wisdom ?
-        d3.interpolateBlues(d.wisdom / 5) :
-        "lightgray"
-      ))
+      // .attr("fill", (d: Node) => (d.wisdom ?
+      //   d3.interpolateBlues(d.wisdom / 5) :
+      //   "lightgray"
+      // ))
+      .attr("fill", (d: Node) => d.votes?.politics?.summary?.affiliation === "democrat" ? d3.interpolateBlues(d.votes!.politics!.summary.affiliationPercentage!) : d.votes?.politics?.summary?.affiliation === "republican" ? d3.interpolateReds(d.votes!.politics!.summary.affiliationPercentage!) : "lightgray")
       .on("mouseover", (event: any, d: Node) => {
         if (hoverTimeout) clearTimeout(hoverTimeout)
         setHoveredNode(d)
@@ -212,7 +236,7 @@ function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[];
     const label = g
       .append("g")
       .selectAll("text")
-      .data(nodes2)
+      .data(nodes)
       .join("text")
       .text((d: Node) => d.title)
       .attr("font-size", "10px")
@@ -252,7 +276,7 @@ function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[];
       d.fx = null
       d.fy = null
     }
-  }, [nodes2, links])
+  }, [nodes, links])
   return <svg ref={ref} style={{ userSelect: "none" }}>
     <g></g>
   </svg>
