@@ -23,16 +23,15 @@ export default function DefaultGraphPage() {
 
   const fetchData = async (settings: GraphSettings) => {
     setIsLoading(true)
-
-    const headers = {
-      "Content-Type": "application/json",
-    }
-
+    
+    const headers = { "Content-Type": "application/json" }
     const params: { caseId?: string, runId?: string } = {}
+
     if (settings?.caseId) params.caseId = settings?.caseId
     if (settings?.run) params.runId = settings?.run
 
     const graph = await fetch("/api/data/edges?" + new URLSearchParams(params).toString(), { headers }).then((res) => res.json())
+
     setGraph(graph)
     setIsLoading(false)
   }
