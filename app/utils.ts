@@ -116,3 +116,22 @@ export function isDisplayableMessage(message: {
     message?.content && (message.role === "user" || message.role === "assistant")
   )
 }
+
+
+export function getPartyAffiliation(counts: {republican: number, democrat: number, other: number}) {
+  const { republican, democrat, other } = counts
+  
+  if (republican > democrat) {
+    return {
+      affiliation: "republican",
+      percentage: republican / (republican + democrat + other),
+    }
+  } else if (democrat > republican) {
+    return {
+      affiliation: "democrat",
+      percentage: democrat / (republican + democrat + other),
+    }
+  }
+
+  return null
+}

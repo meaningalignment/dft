@@ -2,8 +2,6 @@ import { db } from "~/config.server"
 import { MoralGraphSummary } from "./moral-graph-summary"
 import { Prisma } from "@prisma/client";
 
-// some utilities
-
 function calculateEntropy(responseCounts: Record<string, number>): number {
   const total = Object.values(responseCounts).reduce((acc, val) => acc + val, 0);
   let entropy = 0;
@@ -44,10 +42,6 @@ class PairMap {
   }
 }
 
-
-// main
-
-type Output = Pick<MoralGraphSummary, "values" | "edges" | "byCase">
 type RawEdgeCount = Omit<MoralGraphSummary["edges"][0], "summary">
 
 export interface Options {
@@ -55,7 +49,7 @@ export interface Options {
   edgeWhere?: Prisma.EdgeWhereInput
 }
 
-export async function summarizeGraph(options: Options = {}): Promise<Output> {
+export async function summarizeGraph(options: Options = {}): Promise<MoralGraphSummary> {
   console.log('summarizeGraph options', options)
   const values = await db.canonicalValuesCard.findMany()
   const edges = await db.edge.findMany({ where: options.edgeWhere })
@@ -63,33 +57,36 @@ export async function summarizeGraph(options: Options = {}): Promise<Output> {
 
   for (const edge of edges) {
     const existing = pairs.get(edge.fromId, edge.toId)
-    existing.contexts.push(edge.contextId)
+    existing.contexts.push(edge.contextId) 
     existing.counts.impressions++
     if (edge.relationship === "upgrade") existing.counts.markedWiser++
     if (edge.relationship === "no_upgrade") existing.counts.markedNotWiser++
     if (edge.relationship === "not_sure") existing.counts.markedUnsure++
   }
 
-  // do the opposite
+  // Do the opposite.
   for (const edge of edges) {
     const existing = pairs.get(edge.toId, edge.fromId)
     existing.contexts.push(edge.contextId)
     existing.counts.impressions++
     if (edge.relationship === "upgrade") existing.counts.markedLessWise++
-    // Not sure if this should count in both directions
-    // if (edge.relationship === "not_sure") existing.counts.markedUnsure++
   }
 
-  // cook them down
+  // Cook them down.
   const cookedEdges = pairs.all().map((edge) => {
     const contexts = [...new Set(edge.contexts)]
-    const total = edge.counts.markedWiser + edge.counts.markedNotWiser + edge.counts.markedUnsure + edge.counts.markedLessWise
-    const wiserLikelihood = (edge.counts.markedWiser - edge.counts.markedLessWise) / total
+    const total =
+      edge.counts.markedWiser +
+      edge.counts.markedNotWiser +
+      edge.counts.markedUnsure +
+      edge.counts.markedLessWise
+    const wiserLikelihood =
+      (edge.counts.markedWiser - edge.counts.markedLessWise) / total
     const entropy = calculateEntropy(edge.counts)
     return { ...edge, contexts, summary: { wiserLikelihood, entropy } }
   })
 
-  // eliminate edges with low wiserLikelihood, low signal, or no consensus
+  // Eliminate edges with low wiserLikelihood, low signal, or no consensus.
   const trimmedEdges = cookedEdges.filter((edge) => {
     if (!edge.counts.markedWiser) return false
     if (edge.summary.wiserLikelihood < 0.33) return false
@@ -97,21 +94,6 @@ export async function summarizeGraph(options: Options = {}): Promise<Output> {
     if (edge.counts.markedWiser < 2) return false
     return true
   })
-
-  const byCase = new Map<string, RawEdgeCount[]>()
-  const cases = (await db.case.findMany()).map((c) => c.id)
-
-  // Populate byCase.
-  for (const caseId of cases) {
-    const contexts = await db.context.findMany({
-      where: { ContextsOnCases: { some: { caseId } } },
-    })
-    const caseEdges = trimmedEdges.filter((edge) => {
-      return contexts.some((context) => edge.contexts.includes(context.id))
-    })
-
-    byCase.set(caseId, caseEdges)
-  }
 
   const referencedNodeIds = new Set<number>()
   for (const link of trimmedEdges) {

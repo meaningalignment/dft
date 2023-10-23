@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import ValuesCard from "./values-card";
 import * as d3 from "d3";
 import { MoralGraphSummary } from "~/values-tools/moral-graph-summary";
+import { GraphSettings } from "./moral-graph-settings";
 
 function logisticFunction(n: number, midpoint: number = 6, scale: number = 2): number {
   return 1 / (1 + Math.exp(-(n - midpoint) / scale));
@@ -49,10 +50,9 @@ function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
 }
 
 
-export function MoralGraph({ nodes, edges, visualizeEdgeCertainty, visualizeNodeCertainty }: { nodes: Node[]; edges: MoralGraphEdge[], visualizeEdgeCertainty?: boolean, visualizeNodeCertainty?: boolean }) {
-  const nodes2 = [...nodes]
-
-  console.log("moral graph!", visualizeEdgeCertainty, visualizeNodeCertainty)
+export function MoralGraph({ nodes, edges, settings }: { nodes: Node[]; edges: MoralGraphEdge[], settings: GraphSettings }) {
+  const newNodes = [...nodes]
+  const { visualizeWisdomScore, visualizeEdgeCertainty } = settings
 
   const links = edges.map((edge) => ({
     source: edge.sourceValueId,
@@ -61,19 +61,19 @@ export function MoralGraph({ nodes, edges, visualizeEdgeCertainty, visualizeNode
     thickness: visualizeEdgeCertainty ? (1 - edge.summary.entropy / 1.8) * logisticFunction(edge.counts.impressions) : 0.5,
   })) satisfies Link[]
 
-  if (visualizeNodeCertainty) {
+  if (visualizeWisdomScore) {
     links.forEach((link) => {
-      const target = nodes2.find((node) => node.id === link.target)
+      const target = newNodes.find((node) => node.id === link.target)
       if (target) {
         if (!target.wisdom) target.wisdom = link.avg
         else target.wisdom += link.avg
       }
     })
   }
-  return <GraphWithInfoBox nodes2={nodes2} links={links} />
+  return <GraphWithInfoBox nodes={newNodes} links={links} />
 }
 
-function GraphWithInfoBox({ nodes2, links }: { nodes2: Node[]; links: Link[] }) {
+function GraphWithInfoBox({ nodes, links }: { nodes: Node[]; links: Link[] }) {
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null)
   const [position, setPosition] = useState<{ x: number; y: number }>({
     x: 0,
@@ -82,13 +82,13 @@ function GraphWithInfoBox({ nodes2, links }: { nodes2: Node[]; links: Link[] }) 
 
   return (
     <>
-      <Graph nodes2={nodes2} links={links} setHoveredNode={setHoveredNode} setPosition={setPosition} />
+      <Graph nodes={nodes} links={links} setHoveredNode={setHoveredNode} setPosition={setPosition} />
       <InfoBox node={hoveredNode} x={position.x} y={position.y} />
     </>
   )
 }
 
-function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[]; links: Link[], setHoveredNode: (node: Node | null) => void, setPosition: (position: { x: number; y: number }) => void }) {
+function Graph({ nodes, links, setHoveredNode, setPosition }: { nodes: Node[]; links: Link[], setHoveredNode: (node: Node | null) => void, setPosition: (position: { x: number; y: number }) => void }) {
   let hoverTimeout: NodeJS.Timeout | null = null
   const ref = useRef<SVGSVGElement>(null)
   useEffect(() => {
@@ -129,7 +129,7 @@ function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[];
     // Create force simulation
     const simulation = d3
       // @ts-ignore
-      .forceSimulation<Node, Link>(nodes2)
+      .forceSimulation<Node, Link>(nodes)
       .force(
         "link",
         // @ts-ignore
@@ -162,7 +162,9 @@ function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[];
       .selectAll("line")
       .data(links)
       .join("line")
-      .attr("stroke", (d: any) => d3.interpolateGreys(d.thickness * 5))
+      .attr("stroke", (d: Link) => {        
+        return d3.interpolateGreys(d.thickness * 5)
+      })
       .attr("stroke-width", 2)
       .attr("marker-end", "url(#arrowhead)") // Add arrowheads
 
@@ -182,7 +184,7 @@ function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[];
     const node = g
       .append("g")
       .selectAll("circle")
-      .data(nodes2)
+      .data(nodes)
       .join("circle")
       .attr("r", 10)
       .attr("fill", (d: Node) => (d.wisdom ?
@@ -212,7 +214,7 @@ function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[];
     const label = g
       .append("g")
       .selectAll("text")
-      .data(nodes2)
+      .data(nodes)
       .join("text")
       .text((d: Node) => d.title)
       .attr("font-size", "10px")
@@ -252,7 +254,7 @@ function Graph({ nodes2, links, setHoveredNode, setPosition }: { nodes2: Node[];
       d.fx = null
       d.fy = null
     }
-  }, [nodes2, links])
+  }, [nodes, links])
   return <svg ref={ref} style={{ userSelect: "none" }}>
     <g></g>
   </svg>

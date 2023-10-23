@@ -3,13 +3,11 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Checkbox } from './ui/checkbox';
-import { Separator } from '@radix-ui/react-separator';
 import { capitalize, cn } from '~/utils';
 
 export type GraphSettings = {
   run: "prolific_50" | "prolific_325" | "prolific_125" | null
   caseId: "abortion" | "weapons" | "parenting" | null
-  politicalAffiliation: "democrat" | "republican" | null
   visualizeEdgeCertainty: boolean
   visualizeWisdomScore: boolean
 }
@@ -17,7 +15,6 @@ export type GraphSettings = {
 export const defaultGraphSettings: GraphSettings = {
   run: "prolific_325",
   caseId: null,
-  politicalAffiliation: null,
   visualizeEdgeCertainty: true,
   visualizeWisdomScore: true,
 }
@@ -89,28 +86,6 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
       ) : (<p className="text-xs text-gray-400 mb-4">
           Show values for all cases.</p>)}
 
-
-
-      {/* Political Affiliation - @TODO */}
-      {/* <div>
-        <Label htmlFor="run">Politics</Label>
-        <Select onValueChange={(politicalAffiliation: "democrat" | "republican" | "all") => {
-          setSettings({ ...settings, politicalAffiliation })
-        }}>
-          <SelectTrigger id="run">
-            <SelectValue placeholder="All" />
-          </SelectTrigger>
-          <SelectContent defaultValue={settings.politicalAffiliation}>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="democrats">Democrats</SelectItem>
-            <SelectItem value="republican">Republican</SelectItem>
-          </SelectContent>
-        </Select>
-      </div> */}
-
-      <Separator className="my-4 bg-border h-[1px]" />
-
-
       {/* Checkboxes */}
       <div className="flex items-center space-x-2 mb-2 mt-4">
         <Checkbox id="edge" checked={settings.visualizeEdgeCertainty} onCheckedChange={(c: any) => {
@@ -129,7 +104,6 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
 
       <div className="flex items-center space-x-2 mb-2">
         <Checkbox id="node" checked={settings.visualizeWisdomScore} onCheckedChange={(c: any) => {
-          console.log("#Checked change; ", c)
           setSettings({ ...settings, visualizeWisdomScore: c })
         }} />
         <label
