@@ -53,7 +53,6 @@ export async function summarizeGraph(options: Options = {}): Promise<MoralGraphS
   console.log('summarizeGraph options', options)
   const values = await db.canonicalValuesCard.findMany()
   const edges = await db.edge.findMany({ where: options.edgeWhere })
-  const demographics = await db.demographic.findMany({ where: { user: options?.edgeWhere?.user || undefined } })
   const pairs = new PairMap()
 
   for (const edge of edges) {
