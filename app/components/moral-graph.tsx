@@ -3,6 +3,7 @@ import ValuesCard from "./values-card";
 import * as d3 from "d3";
 import { MoralGraphSummary } from "~/values-tools/moral-graph-summary";
 import { GraphSettings } from "./moral-graph-settings";
+import { CanonicalValuesCard } from "@prisma/client";
 
 function logisticFunction(n: number, midpoint: number = 6, scale: number = 2): number {
   return 1 / (1 + Math.exp(-(n - midpoint) / scale));
@@ -15,15 +16,23 @@ interface Node {
 }
 
 interface Link {
-  source: number
-  target: number
-  avg: number
+  source: number | CanonicalValuesCard
+  target: number | CanonicalValuesCard
+  avg: number,
+  contexts: string[],
+  counts: {
+    markedWiser: number
+    markedNotWiser: number
+    markedLessWise: number
+    markedUnsure: number
+    impressions: number
+  },
   thickness: number
 }
 
 type MoralGraphEdge = MoralGraphSummary["edges"][0]
 
-function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
+function NodeInfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
   if (!node) return null
 
   const boxWidth = 200; // Assume a box width
@@ -49,6 +58,59 @@ function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
   )
 }
 
+function LinkInfoBox({ link, x, y }: { link: Link | null; x: number; y: number }) {
+  if (!link) return null
+
+  const boxWidth = 200; // Assume a box width
+  const offset = 20; // Offset from the cursor position
+  const viewportWidth = window.innerWidth; // Width of the viewport
+
+  // If the box would overflow the right edge of the viewport, 
+  // position it to the left of the cursor, otherwise to the right.
+  const leftPosition = x + boxWidth + offset > viewportWidth
+    ? x - boxWidth - offset
+    : x + offset;
+
+  const style = {
+    position: "absolute",
+    left: leftPosition,
+    top: y + offset,
+  }
+
+  function formatCount(count: number) {
+    return `${count} participant${count > 1 || count === 0 ? "s" : ""}`
+  }
+
+  return (
+    <div className="info-box z-50" style={style as any}>
+      <div className="border-2 border-gray-200 rounded-xl px-8 py-4 max-w-sm bg-white flex flex-col">
+        <p className="text-sm font-semibold text-gray-400 mb-1">{link.contexts.join(", ")}</p>
+        <p className="text-base mb-6">
+          Is it wiser to follow <em className="font-semibold">{(link.target as CanonicalValuesCard).title}</em> rather than <em className="font-semibold">{(link.source as CanonicalValuesCard).title}</em>?
+        </p>
+        <div className="flex justify-between">
+          <p className="font-bold">Wiser</p>
+          <p className="text-gray-400">{formatCount(link.counts.markedWiser)}</p>
+        </div>
+        <div className="flex justify-between">
+          <p className="font-bold">Not Wiser</p>
+          <p className="text-gray-400">{formatCount(link.counts.markedNotWiser)}</p>
+        </div>
+        {link.counts.markedLessWise > 0 && (
+          <div className="flex justify-between">
+            <p className="font-bold">Less Wise</p>
+            <p className="text-gray-400">{formatCount(link.counts.markedLessWise)}</p>
+          </div>
+        )}
+        <div className="flex justify-between">
+          <p className="font-bold">Unsure</p>
+          <p className="text-gray-400">{formatCount(link.counts.markedUnsure)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 export function MoralGraph({ nodes, edges, settings }: { nodes: Node[]; edges: MoralGraphEdge[], settings: GraphSettings }) {
   const newNodes = [...nodes]
@@ -58,6 +120,8 @@ export function MoralGraph({ nodes, edges, settings }: { nodes: Node[]; edges: M
     source: edge.sourceValueId,
     target: edge.wiserValueId,
     avg: edge.summary.wiserLikelihood,
+    counts: edge.counts,
+    contexts: edge.contexts,
     thickness: visualizeEdgeCertainty ? (1 - edge.summary.entropy / 1.8) * logisticFunction(edge.counts.impressions) : 0.5,
   })) satisfies Link[]
 
@@ -75,6 +139,8 @@ export function MoralGraph({ nodes, edges, settings }: { nodes: Node[]; edges: M
 
 function GraphWithInfoBox({ nodes, links }: { nodes: Node[]; links: Link[] }) {
   const [hoveredNode, setHoveredNode] = useState<Node | null>(null)
+  const [hoveredLink, setHoveredLink] = useState<Link | null>(null);
+
   const [position, setPosition] = useState<{ x: number; y: number }>({
     x: 0,
     y: 0,
@@ -82,13 +148,14 @@ function GraphWithInfoBox({ nodes, links }: { nodes: Node[]; links: Link[] }) {
 
   return (
     <>
-      <Graph nodes={nodes} links={links} setHoveredNode={setHoveredNode} setPosition={setPosition} />
-      <InfoBox node={hoveredNode} x={position.x} y={position.y} />
+      <Graph nodes={nodes} links={links} setHoveredNode={setHoveredNode} setHoveredLink={setHoveredLink} setPosition={setPosition} />
+      <NodeInfoBox node={hoveredNode} x={position.x} y={position.y} />
+      <LinkInfoBox link={hoveredLink} x={position.x} y={position.y} />
     </>
   )
 }
 
-function Graph({ nodes, links, setHoveredNode, setPosition }: { nodes: Node[]; links: Link[], setHoveredNode: (node: Node | null) => void, setPosition: (position: { x: number; y: number }) => void }) {
+function Graph({ nodes, links, setHoveredNode, setHoveredLink, setPosition }: { nodes: Node[]; links: Link[], setHoveredNode: (node: Node | null) => void, setHoveredLink: (link: Link | null) => void, setPosition: (position: { x: number; y: number }) => void }) {
   let hoverTimeout: NodeJS.Timeout | null = null
   const ref = useRef<SVGSVGElement>(null)
   useEffect(() => {
@@ -162,11 +229,22 @@ function Graph({ nodes, links, setHoveredNode, setPosition }: { nodes: Node[]; l
       .selectAll("line")
       .data(links)
       .join("line")
-      .attr("stroke", (d: Link) => {        
+      .attr("stroke", (d: Link) => {
         return d3.interpolateGreys(d.thickness * 5)
       })
       .attr("stroke-width", 2)
       .attr("marker-end", "url(#arrowhead)") // Add arrowheads
+      .on("mouseover", (event: any, d: Link) => {
+        if (hoverTimeout) clearTimeout(hoverTimeout);
+        setHoveredLink(d);
+        setHoveredNode(null)
+        setPosition({ x: event.clientX, y: event.clientY });
+      })
+      .on("mouseout", () => {
+        hoverTimeout = setTimeout(() => {
+          setHoveredLink(null);
+        }, 200); // 200 milliseconds delay
+      });
 
     // Draw edge labels
     const edgeLabels = g
@@ -179,6 +257,17 @@ function Graph({ nodes, links, setHoveredNode, setPosition }: { nodes: Node[]; l
       .attr("fill", "#cccccc")
       .attr("text-anchor", "middle")
       .attr("dy", -5)
+      .on("mouseover", (event: any, d: Link) => {
+        if (hoverTimeout) clearTimeout(hoverTimeout);
+        setHoveredLink(d);
+        setHoveredNode(null)
+        setPosition({ x: event.clientX, y: event.clientY });
+      })
+      .on("mouseout", () => {
+        hoverTimeout = setTimeout(() => {
+          setHoveredLink(null);
+        }, 200); // 200 milliseconds delay
+      });
 
     // Draw nodes
     const node = g
@@ -194,6 +283,7 @@ function Graph({ nodes, links, setHoveredNode, setPosition }: { nodes: Node[]; l
       .on("mouseover", (event: any, d: Node) => {
         if (hoverTimeout) clearTimeout(hoverTimeout)
         setHoveredNode(d)
+        setHoveredLink(null)
         setPosition({ x: event.clientX, y: event.clientY })
       })
       .on("mouseout", () => {

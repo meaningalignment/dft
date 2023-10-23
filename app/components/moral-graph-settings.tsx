@@ -3,7 +3,7 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Checkbox } from './ui/checkbox';
-import { capitalize, cn } from '~/utils';
+import { capitalize } from '~/utils';
 
 export type GraphSettings = {
   run: "prolific_50" | "prolific_325" | "prolific_125" | null
@@ -118,7 +118,6 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
       </p>
 
       <Button disabled={initialSettings === settings} className="mt-4" onClick={() => {
-        console.log(settings)
         onUpdateSettings(settings)
       }}>
         Update Graph
