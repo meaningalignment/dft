@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import ValuesCard from "./values-card";
 import * as d3 from "d3";
 import { MoralGraphSummary } from "~/values-tools/moral-graph-summary";
-import { VoteStatistics } from "~/routes/api.data.votes";
-import { getPartyAffiliation } from "~/utils";
 import { GraphSettings } from "./moral-graph-settings";
 
 function logisticFunction(n: number, midpoint: number = 6, scale: number = 2): number {
@@ -21,11 +19,6 @@ interface Link {
   target: number
   avg: number
   thickness: number
-  pol?: {
-    republican: number
-    democrat: number
-    other: number
-  }
 }
 
 type MoralGraphEdge = MoralGraphSummary["edges"][0]
@@ -59,13 +52,12 @@ function InfoBox({ node, x, y }: { node: Node | null; x: number; y: number }) {
 
 export function MoralGraph({ nodes, edges, settings }: { nodes: Node[]; edges: MoralGraphEdge[], settings: GraphSettings }) {
   const newNodes = [...nodes]
-  const { visualizeWisdomScore, visualizeEdgeCertainty, visualizePolitics } = settings
+  const { visualizeWisdomScore, visualizeEdgeCertainty } = settings
 
   const links = edges.map((edge) => ({
     source: edge.sourceValueId,
     target: edge.wiserValueId,
     avg: edge.summary.wiserLikelihood,
-    pol: visualizePolitics ? edge.counts.politics : undefined,
     thickness: visualizeEdgeCertainty ? (1 - edge.summary.entropy / 1.8) * logisticFunction(edge.counts.impressions) : 0.5,
   })) satisfies Link[]
 
@@ -170,13 +162,7 @@ function Graph({ nodes, links, setHoveredNode, setPosition }: { nodes: Node[]; l
       .selectAll("line")
       .data(links)
       .join("line")
-      .attr("stroke", (d: Link) => {
-        if (d.pol) {
-          const party = getPartyAffiliation(d.pol)
-          if (party?.affiliation === "republican") return d3.interpolateReds(d.thickness * 5)
-          if (party?.affiliation === "democrat") return d3.interpolateBlues(d.thickness * 5)
-        }
-        
+      .attr("stroke", (d: Link) => {        
         return d3.interpolateGreys(d.thickness * 5)
       })
       .attr("stroke-width", 2)

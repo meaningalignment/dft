@@ -10,7 +10,6 @@ export type GraphSettings = {
   caseId: "abortion" | "weapons" | "parenting" | null
   visualizeEdgeCertainty: boolean
   visualizeWisdomScore: boolean
-  visualizePolitics: boolean
 }
 
 export const defaultGraphSettings: GraphSettings = {
@@ -18,7 +17,6 @@ export const defaultGraphSettings: GraphSettings = {
   caseId: null,
   visualizeEdgeCertainty: true,
   visualizeWisdomScore: true,
-  visualizePolitics: false,
 }
 
 const caseQuestions = {
@@ -117,21 +115,6 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
       </div>
       <p className="text-xs text-gray-400 mb-6">
         The wisdom score for a value is the sum of the certainty of all incoming edges. Visualized as the blueness of the nodes.
-      </p>
-
-      <div className="flex items-center space-x-2 mb-2">
-        <Checkbox id="node" checked={settings.visualizePolitics} onCheckedChange={(c: any) => {
-          setSettings({ ...settings, visualizePolitics: c })
-        }} />
-        <label
-          htmlFor="node"
-          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-        >
-          Visualize Political Affiliation
-        </label>
-      </div>
-      <p className="text-xs text-gray-400 mb-6">
-        Show the dominant self-reported political affiliation for each edge vote. Visualized as red edges for republicans and blue for democrats.
       </p>
 
       <Button disabled={initialSettings === settings} className="mt-4" onClick={() => {

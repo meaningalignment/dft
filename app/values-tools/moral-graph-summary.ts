@@ -21,11 +21,6 @@ interface EdgeStats {
     markedLessWise: number
     markedUnsure: number
     impressions: number
-    politics: {
-      republican: number
-      democrat: number
-      other: number
-    }
   }
   summary: {
     wiserLikelihood: number
