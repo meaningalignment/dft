@@ -86,15 +86,14 @@ export default function LoginScreen() {
 
         <p className="text-center text-sm text-muted-foreground">
           Built by the{" "}
-          <ExternalLink href="https://meaningalignment.institute">
+          <ExternalLink href="https://meaningalignment.org">
             Institute for Meaning Alignment
           </ExternalLink>
           .
         </p>
         <div
-          className={`mt-6 w-full text-center transition-opacity duration-300 ease-in-out ${
-            showError ? "opacity-100" : "opacity-0"
-          }`}
+          className={`mt-6 w-full text-center transition-opacity duration-300 ease-in-out ${showError ? "opacity-100" : "opacity-0"
+            }`}
         >
           <div className="text-red-500">{actionData?.error ?? "error"}</div>
         </div>
