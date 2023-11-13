@@ -1867,9 +1867,9 @@ ahocorasick@1.0.2:
   integrity sha512-hCOfMzbFx5IDutmWLAt6MZwOUjIfSM9G9FyVxytmE4Rs/5YDPWQrD/+IR1w+FweD9H2oOZEnv36TmkjhNURBVA==
 
 ai@^2.2.20:
-  version "2.2.20"
-  resolved "https://registry.npmjs.org/ai/-/ai-2.2.20.tgz"
-  integrity sha512-BTZ8VEsIdapZM46Tt72FzYPY4Kt55ANpYubUSYJCrrdUfMDCPfT/XwqPsXZam1i7Go6YrUPha9VBdrvzQxBtXw==
+  version "2.2.22"
+  resolved "https://registry.npmjs.org/ai/-/ai-2.2.22.tgz"
+  integrity sha512-H1TXjX3uGYU4bb8/GUTaY7BJ6YiMJDpp8WpmqwdVLmAh0+HufB7r27vCX0R4XXzJhdRaYp0ex6s9QvqkfvVA2A==
   dependencies:
     eventsource-parser "1.0.0"
     nanoid "3.3.6"
@@ -6315,9 +6315,9 @@ remark-rehype@^10.0.0:
     unified "^10.0.0"
 
 remix@^2.1.0:
-  version "2.1.0"
-  resolved "https://registry.npmjs.org/remix/-/remix-2.1.0.tgz"
-  integrity sha512-HVg+DGCiNbIkRluKeyrN/x3XcPBBL6mkX4oL/WL+JADd+e1wme4na3uncKNB+TWXXjVCLwJiALEJ+ff5PRmT8Q==
+  version "2.2.0"
+  resolved "https://registry.npmjs.org/remix/-/remix-2.2.0.tgz"
+  integrity sha512-CLZs5uHkpjlQo7N5DYiZbE/yoHyDxHao3smTb/i0Qo+pFcH9jqCSYZajGag89vL8peGMMiNVXgdp0JdVU/0c6g==
 
 require-directory@^2.1.1:
   version "2.1.1"
