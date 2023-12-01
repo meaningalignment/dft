@@ -1,4 +1,3 @@
-
 export default function DeduplicationsThanksScreen() {
   return (
     <div className="flex flex-col h-screen w-screen">
