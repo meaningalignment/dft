@@ -12,20 +12,21 @@ generator client {
 }
 
 model User {
-  id          Int          @id @default(autoincrement())
-  email       String       @unique
-  name        String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  role        String[]     @default(["USER"])
-  isAdmin     Boolean      @default(false)
-  signupType  String       @default("EMAIL") // EMAIL or PROLIFIC
-  prolificId  String?
-  chats       Chat[]
-  votes       Vote[]
-  edges       Edge[]
-  Impression  Impression[]
-  Demographic Demographic?
+  id                           Int                            @id @default(autoincrement())
+  email                        String                         @unique
+  name                         String?
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime                       @updatedAt
+  role                         String[]                       @default(["USER"])
+  isAdmin                      Boolean                        @default(false)
+  signupType                   String                         @default("EMAIL") // EMAIL or PROLIFIC
+  prolificId                   String?
+  chats                        Chat[]
+  votes                        Vote[]
+  edges                        Edge[]
+  Impression                   Impression[]
+  Demographic                  Demographic?
+  CanonicalizationVerification CanonicalizationVerification[]
 }
 
 model Demographic {
@@ -62,37 +63,39 @@ enum ValueCardQuality {
 }
 
 model ValuesCard {
-  id                   Int                          @id @default(autoincrement())
-  title                String
-  instructionsShort    String
-  instructionsDetailed String
-  evaluationCriteria   String[]
-  createdAt            DateTime                     @default(now())
-  updatedAt            DateTime                     @updatedAt
-  canonicalCardId      Int?
-  chatId               String                       @unique
-  chat                 Chat                         @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  canonicalCard        CanonicalValuesCard?         @relation(fields: [canonicalCardId], references: [id], onDelete: SetNull)
-  embedding            Unsupported("vector(1536)")?
-  quality              ValueCardQuality             @default(ok)
+  id                           Int                            @id @default(autoincrement())
+  title                        String
+  instructionsShort            String
+  instructionsDetailed         String
+  evaluationCriteria           String[]
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime                       @updatedAt
+  canonicalCardId              Int?
+  chatId                       String                         @unique
+  chat                         Chat                           @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  canonicalCard                CanonicalValuesCard?           @relation(fields: [canonicalCardId], references: [id], onDelete: SetNull)
+  embedding                    Unsupported("vector(1536)")?
+  quality                      ValueCardQuality               @default(ok)
+  CanonicalizationVerification CanonicalizationVerification[]
 }
 
 model CanonicalValuesCard {
-  id                   Int                          @id @default(autoincrement())
-  title                String
-  instructionsShort    String
-  instructionsDetailed String
-  evaluationCriteria   String[]
-  createdAt            DateTime                     @default(now())
-  updatedAt            DateTime                     @updatedAt
-  embedding            Unsupported("vector(1536)")?
-  valuesCards          ValuesCard[]
-  edgesFrom            Edge[]                       @relation("FromValueRelation")
-  edgesTo              Edge[]                       @relation("ToValueRelation")
-  Vote                 Vote[]
-  Impression           Impression[]
-  edgeHypothesisFrom   EdgeHypothesis[]             @relation("FromHypothesizedValueRelation")
-  edgeHypothesisTo     EdgeHypothesis[]             @relation("ToHypothesizedValueRelation")
+  id                           Int                            @id @default(autoincrement())
+  title                        String
+  instructionsShort            String
+  instructionsDetailed         String
+  evaluationCriteria           String[]
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime                       @updatedAt
+  embedding                    Unsupported("vector(1536)")?
+  valuesCards                  ValuesCard[]
+  edgesFrom                    Edge[]                         @relation("FromValueRelation")
+  edgesTo                      Edge[]                         @relation("ToValueRelation")
+  Vote                         Vote[]
+  Impression                   Impression[]
+  edgeHypothesisFrom           EdgeHypothesis[]               @relation("FromHypothesizedValueRelation")
+  edgeHypothesisTo             EdgeHypothesis[]               @relation("ToHypothesizedValueRelation")
+  CanonicalizationVerification CanonicalizationVerification[]
 
   @@unique([title, instructionsShort, instructionsDetailed, evaluationCriteria]) // Prevent duplicate insertions.
 }
@@ -199,4 +202,24 @@ model ContextsOnCases {
   updatedAt DateTime @updatedAt
 
   @@id([contextId, caseId])
+}
+
+enum CanonicalizationVerificationOption {
+  same
+  different
+  unsure
+}
+
+model CanonicalizationVerification {
+  userId              Int
+  valuesCardId        Int
+  canonicalCardId     Int
+  option              CanonicalizationVerificationOption
+  createdAt           DateTime                           @default(now())
+  updatedAt           DateTime                           @updatedAt
+  user                User                               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  valuesCard          ValuesCard                         @relation(fields: [valuesCardId], references: [id], onDelete: Cascade)
+  canonicalValuesCard CanonicalValuesCard                @relation(fields: [canonicalCardId], references: [id], onDelete: Cascade)
+
+  @@id([userId, valuesCardId, canonicalCardId])
 }
