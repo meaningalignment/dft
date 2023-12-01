@@ -45,23 +45,20 @@ export async function loader(args: LoaderArgs) {
 
 export async function action({ request, params }: ActionArgs) {
   const userId = parseInt(params.userId!)
-
-  const { pair, response: option } = (await request.json()) as { pair: Pair, response: Response }
-  const valuesCardId = pair.card.id
-  const canonicalCardId = pair.canonical.id
+  const { card, canonical, response } = (await request.json()) as Pair
 
   await db.canonicalizationVerification.upsert({
     create: {
-      canonicalCardId,
-      valuesCardId,
-      option,
+      canonicalCardId: canonical.id,
+      valuesCardId: card.id,
+      option: response!,
       userId
     },
-    update: { option },
+    update: { option: response! },
     where: {
       userId_valuesCardId_canonicalCardId: {
-        canonicalCardId,
-        valuesCardId,
+        canonicalCardId: canonical.id,
+        valuesCardId: card.id,
         userId,
       }
     }
@@ -70,12 +67,12 @@ export async function action({ request, params }: ActionArgs) {
   return json({})
 }
 
-function Canonicalization({ card, canonical, onResponse: onPairResponse }: { card: ValuesCardType, canonical: CanonicalValuesCard, onResponse: (pair: Pair) => void }) {
-  const [response, setResponse] = useState<Response | null>(null)
+function Canonicalization({ pair, onResponse: onPairResponse }: { pair: Pair, onResponse: (pair: Pair) => void }) {
+  const [response, setResponse] = useState<Response | null>(pair.response)
 
   const onClick = (response: Response) => {
     setResponse(response)
-    onPairResponse({ card, canonical, response })
+    onPairResponse({ ...pair, response })
   }
 
   return (
@@ -87,21 +84,21 @@ function Canonicalization({ card, canonical, onResponse: onPairResponse }: { car
           `grid grid-cols-1 md:grid-cols-3 mx-auto gap-4 items-center justify-items-center md:grid-cols-[max-content,min-content,max-content] mb-4`
         )}
       >
-        <div key={card.id} className="flex flex-col h-full">
+        <div key={pair.card.id} className="flex flex-col h-full">
           <p className="mx-8 mb-2 text-sm text-neutral-500">
             Your Value
           </p>
           <div className="flex-grow h-full w-96">
-            <ValuesCard card={card} />
+            <ValuesCard card={pair.card} />
           </div>
         </div>
         <IconArrowRight className="h-8 w-8 mx-auto rotate-90 md:rotate-0" />
-        <div key={card.id} className="flex flex-col h-full">
+        <div key={pair.canonical.id} className="flex flex-col h-full">
           <p className="mx-8 mb-2 text-sm text-neutral-500">
             Deduplicated Version
           </p>
           <div className="flex-grow h-full w-96">
-            <ValuesCard card={canonical} />
+            <ValuesCard card={pair.canonical} />
           </div>
         </div>
       </div>
@@ -110,7 +107,7 @@ function Canonicalization({ card, canonical, onResponse: onPairResponse }: { car
         <div className="text-lg">Does the deduplicated card capture your value?</div>
         <div className="flex flex-col items-center justify-center">
           <div className="flex flex-row items-center justify-center space-x-4">
-            <Button onClick={() => onClick("same")} disabled={Boolean(response)} variant={response === "same" ? "ghost" : "default"}>Yes</Button>
+            <Button onClick={() => onClick("same")} disabled={Boolean(response)} variant={response === "different" ? "ghost" : "default"}>Yes</Button>
             <Button onClick={() => onClick("different")} disabled={Boolean(response)} variant={response === "different" ? "default" : "ghost"}>No</Button>
           </div>
         </div>
@@ -147,7 +144,7 @@ export default function AdminLink() {
         <div className="text-3xl font-bold mb-2 mt-12 max-w-2xl">Your cards and their deduplicated versions</div>
         <div className="text-gray-400 max-w-2xl text-center">In order to create our moral graph, we automatically deduplicate values cards submitted by participants in the background that seem to be about the same value. Please verify that the deduplicated cards below capture the values you articulated.</div>
       </div>
-      {pairs.map((p) => <Canonicalization key={`${p.card.id}_${p.canonical.id}`} card={p.card as any} canonical={p.canonical as any} onResponse={onResponse} />)}
+      {pairs.map((p) => <Canonicalization key={`${p.card.id}_${p.canonical.id}`} pair={p} onResponse={onResponse} />)}
     </div>
   )
 }
