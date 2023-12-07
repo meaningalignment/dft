@@ -36,15 +36,32 @@ Joe & Oliver`
       },
       chats: {
         some: {
-          ValuesCard: {}
+          ValuesCard: {
+            canonicalCardId: {
+              not: null
+            }
+          }
+        }
+      },
+    },
+    include: {
+      chats: {
+        include: {
+          ValuesCard: {
+            include: {
+              canonicalCard: true
+            }
+          }
         }
       }
     }
-  })
-
-  if (users.length > 1) {
-    throw new Error("More than one user with this email")
-  }
+  }).then((l) => l.filter((u) => {
+    return u.chats.filter((c) => {
+      return (
+        c.ValuesCard?.title && c.ValuesCard?.title !== c.ValuesCard.canonicalCard?.title
+      )
+    }).length > 0
+  }))
 
   for (const user of users) {
     try {
@@ -60,6 +77,7 @@ Joe & Oliver`
         ),
       })
     } catch (e) {
+      console.log(`Error sending email to ${user.email}`)
       console.log(e)
     }
   }
