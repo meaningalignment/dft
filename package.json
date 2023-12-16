@@ -51,8 +51,7 @@
     "remark-gfm": "^3.0.1",
     "remark-math": "^5.1.1",
     "tailwind-merge": "^1.14.0",
-    "uuid": "^9.0.0",
-    "mailgun.js": "^9.3.0"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@prisma/client": "^5.6.0",
