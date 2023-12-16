@@ -122,6 +122,13 @@ export default function MoralGraphSettings({ initialSettings, onUpdateSettings }
       }}>
         Update Graph
       </Button>
+      <div className="flex-grow" />
+      <div className='flex flex-row'>
+        <div className='flex-grow' />
+        <a href="https://meaningalignment.substack.com/p/the-first-moral-graph" className="text-xs underline">
+          Learn More
+        </a>
+      </div>
     </div>
   );
 };
