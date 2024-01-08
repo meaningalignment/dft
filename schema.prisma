@@ -26,7 +26,7 @@ model User {
   edges            Edge[]
   Impression       Impression[]
   Demographic      Demographic?
-  FollowUpResponse FollowUpResponse[]
+  CanonicalizationVerification CanonicalizationVerification[]
 }
 
 model Demographic {
@@ -76,7 +76,7 @@ model ValuesCard {
   canonicalCard        CanonicalValuesCard?         @relation(fields: [canonicalCardId], references: [id], onDelete: SetNull)
   embedding            Unsupported("vector(1536)")?
   quality              ValueCardQuality             @default(ok)
-  FollowUpResponse     FollowUpResponse[]
+  CanonicalizationVerification     CanonicalizationVerification[]
 }
 
 model CanonicalValuesCard {
@@ -95,7 +95,7 @@ model CanonicalValuesCard {
   Impression           Impression[]
   edgeHypothesisFrom   EdgeHypothesis[]             @relation("FromHypothesizedValueRelation")
   edgeHypothesisTo     EdgeHypothesis[]             @relation("ToHypothesizedValueRelation")
-  FollowUpResponse     FollowUpResponse[]
+  CanonicalizationVerification     CanonicalizationVerification[]
 
   @@unique([title, instructionsShort, instructionsDetailed, evaluationCriteria]) // Prevent duplicate insertions.
 }
@@ -210,7 +210,7 @@ enum CanonicalizationVerificationOption {
   unsure
 }
 
-model FollowUpResponse {
+model CanonicalizationVerification {
   userId                  Int
   valuesCardId            Int
   canonicalCardId         Int

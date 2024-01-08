@@ -25,11 +25,11 @@ export async function loader(args: LoaderArgs) {
     where: {
       chat: { userId },
       canonicalCardId: { not: null },
-      FollowUpResponse: { none: { userId } }
+      CanonicalizationVerification: { none: { userId } }
     },
     include: {
       canonicalCard: true,
-      FollowUpResponse: true
+      CanonicalizationVerification: true
     }
   }))
     .filter((c) => c.canonicalCard)
@@ -37,7 +37,7 @@ export async function loader(args: LoaderArgs) {
       return {
         card: vc,
         canonical: vc.canonicalCard!,
-        response: vc.FollowUpResponse[0]?.option || null
+        response: vc.CanonicalizationVerification[0]?.option || null
       }
     }).filter((p) => isDifferent(p.card, p.canonical))
 
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionArgs) {
   const { card, canonical, response } = (await request.json()) as Pair
 
   // Upsert the verification.
-  await db.followUpResponse.upsert({
+  await db.canonicalizationVerification.upsert({
     create: {
       canonicalCardId: canonical.id,
       valuesCardId: card.id,
@@ -71,11 +71,11 @@ export async function action({ request, params }: ActionArgs) {
     where: {
       chat: { userId },
       canonicalCardId: { not: null },
-      FollowUpResponse: { none: { userId } }
+      CanonicalizationVerification: { none: { userId } }
     },
     include: {
       canonicalCard: true,
-      FollowUpResponse: true
+      CanonicalizationVerification: true
     }
   }))
     .filter((c) => c.canonicalCard)
@@ -174,7 +174,7 @@ export default function SurveyDeduplications() {
         <div className="text-3xl text-center font-bold mb-2 mt-12 max-w-2xl">Your cards and their deduplicated versions</div>
         <div className="text-gray-400 max-w-2xl text-center">In order to create our moral graph, we automatically deduplicate values cards submitted by participants in the background that seem to be about the same value. Please verify that the deduplicated cards below capture the values you articulated.</div>
       </div>
-      {pairs.map((p) => <Canonicalization key={`${p.card.id}_${p.canonical.id}`} pair={p} onResponse={onResponse} />)}
+      {pairs.map((p) => <Canonicalization key={`${p.card.id}_${p.canonical.id}`} pair={p as any} onResponse={onResponse} />)}
     </div>
   )
 }

@@ -6,7 +6,7 @@ import { db } from "~/config.server"
 import { cn } from "~/utils"
 import { Button } from "~/components/ui/button"
 import { useEffect, useState } from "react"
-import { Loader2, Truck } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import React from "react"
 import { EdgeStats, MoralGraphSummary } from "~/values-tools/moral-graph-summary"
 
@@ -49,7 +49,7 @@ export async function action(args: ActionArgs) {
   const userId = parseInt(args.params.userId!)
   const { value, original, isFair } = (await args.request.json()) as { value: Value, original: { id: number }, isFair: boolean }
 
-  await db.followUpResponse.upsert({
+  await db.canonicalizationVerification.upsert({
     create: {
       canonicalCardId: value.id,
       valuesCardId: original.id,
