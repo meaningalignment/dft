@@ -50,7 +50,6 @@ export interface Options {
 }
 
 export async function summarizeGraph(options: Options = {}): Promise<MoralGraphSummary> {
-  console.log('summarizeGraph options', options)
   const values = await db.canonicalValuesCard.findMany()
   const edges = await db.edge.findMany({ where: options.edgeWhere })
   const pairs = new PairMap()
@@ -101,14 +100,14 @@ export async function summarizeGraph(options: Options = {}): Promise<MoralGraphS
     referencedNodeIds.add(link.wiserValueId)
   }
 
-  const extraStuff: any = {}
+  const extra: any = {}
   if (options.includeAllEdges) {
-    extraStuff["allEdges"] = cookedEdges
+    extra["allEdges"] = cookedEdges
   }
 
   return {
     values: values.filter((n) => referencedNodeIds.has(n.id)),
     edges: trimmedEdges,
-    ...extraStuff,
+    ...extra,
   }
 }

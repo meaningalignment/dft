@@ -66,7 +66,7 @@ export async function action({ request, params }: ActionArgs) {
     }
   })
 
-  // Redirect to thanks page if we're done.
+  // Redirect to link page if we're done.
   const cardsWithoutVerifications = (await db.valuesCard.findMany({
     where: {
       chat: { userId },
@@ -82,7 +82,7 @@ export async function action({ request, params }: ActionArgs) {
     .filter((c) => isDifferent(c, c.canonicalCard!))
 
   if (cardsWithoutVerifications.length === 0) {
-    return redirect(`/data/deduplication-thanks`)
+    return redirect(`/survey/graph-position/${userId}`)
   }
 
   return json({})
@@ -140,13 +140,13 @@ function Canonicalization({ pair, onResponse: onPairResponse }: { pair: Pair, on
 }
 
 
-export default function UserDeduplications() {
+export default function SurveyDeduplications() {
   const { pairs } = useLoaderData<typeof loader>()
   const userId = useParams().userId!
   const navigate = useNavigate()
 
   const onResponse = async (pair: Pair) => {
-    const response = await fetch(`/data/deduplications/${userId}`, {
+    const response = await fetch(`/survey/deduplications/${userId}`, {
       method: "POST",
       body: JSON.stringify(pair)
     })
@@ -174,7 +174,7 @@ export default function UserDeduplications() {
         <div className="text-3xl text-center font-bold mb-2 mt-12 max-w-2xl">Your cards and their deduplicated versions</div>
         <div className="text-gray-400 max-w-2xl text-center">In order to create our moral graph, we automatically deduplicate values cards submitted by participants in the background that seem to be about the same value. Please verify that the deduplicated cards below capture the values you articulated.</div>
       </div>
-      {pairs.map((p) => <Canonicalization key={`${p.card.id}_${p.canonical.id}`} pair={p} onResponse={onResponse} />)}
+      {pairs.map((p) => <Canonicalization key={`${p.card.id}_${p.canonical.id}`} pair={p as any} onResponse={onResponse} />)}
     </div>
   )
 }

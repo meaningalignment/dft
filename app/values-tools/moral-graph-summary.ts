@@ -11,7 +11,7 @@ interface Value {
   evaluationCriteria: string[]
 }
 
-interface EdgeStats {
+export interface EdgeStats {
   sourceValueId: number
   wiserValueId: number
   contexts: string[]
