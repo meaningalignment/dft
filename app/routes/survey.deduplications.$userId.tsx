@@ -25,11 +25,11 @@ export async function loader(args: LoaderArgs) {
     where: {
       chat: { userId },
       canonicalCardId: { not: null },
-      CanonicalizationVerification: { none: { userId } }
+      FollowUpResponse: { none: { userId } }
     },
     include: {
       canonicalCard: true,
-      CanonicalizationVerification: true
+      FollowUpResponse: true
     }
   }))
     .filter((c) => c.canonicalCard)
@@ -37,7 +37,7 @@ export async function loader(args: LoaderArgs) {
       return {
         card: vc,
         canonical: vc.canonicalCard!,
-        response: vc.CanonicalizationVerification[0]?.option || null
+        response: vc.FollowUpResponse[0]?.option || null
       }
     }).filter((p) => isDifferent(p.card, p.canonical))
 
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionArgs) {
   const { card, canonical, response } = (await request.json()) as Pair
 
   // Upsert the verification.
-  await db.canonicalizationVerification.upsert({
+  await db.followUpResponse.upsert({
     create: {
       canonicalCardId: canonical.id,
       valuesCardId: card.id,
@@ -66,23 +66,23 @@ export async function action({ request, params }: ActionArgs) {
     }
   })
 
-  // Redirect to thanks page if we're done.
+  // Redirect to link page if we're done.
   const cardsWithoutVerifications = (await db.valuesCard.findMany({
     where: {
       chat: { userId },
       canonicalCardId: { not: null },
-      CanonicalizationVerification: { none: { userId } }
+      FollowUpResponse: { none: { userId } }
     },
     include: {
       canonicalCard: true,
-      CanonicalizationVerification: true
+      FollowUpResponse: true
     }
   }))
     .filter((c) => c.canonicalCard)
     .filter((c) => isDifferent(c, c.canonicalCard!))
 
   if (cardsWithoutVerifications.length === 0) {
-    return redirect(`/data/deduplication-thanks`)
+    return redirect(`/survey/graph-position/${userId}`)
   }
 
   return json({})
@@ -140,7 +140,7 @@ function Canonicalization({ pair, onResponse: onPairResponse }: { pair: Pair, on
 }
 
 
-export default function UserDeduplications() {
+export default function SurveyDeduplications() {
   const { pairs } = useLoaderData<typeof loader>()
   const userId = useParams().userId!
   const navigate = useNavigate()
