@@ -146,7 +146,7 @@ export default function SurveyDeduplications() {
   const navigate = useNavigate()
 
   const onResponse = async (pair: Pair) => {
-    const response = await fetch(`/data/deduplications/${userId}`, {
+    const response = await fetch(`/survey/deduplications/${userId}`, {
       method: "POST",
       body: JSON.stringify(pair)
     })

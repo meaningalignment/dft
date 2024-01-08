@@ -39,28 +39,26 @@ export async function loader(args: LoaderArgs) {
   }))
 
   if (!card) {
-    return redirect(`/data/deduplication-thanks`) // TODO
+    return redirect(`/survey/thanks/${userId}`)
   }
 
-  return json({ canonical: card.canonicalCard, original: card, caseId: card.chat.caseId })
+  return json({ canonical: card.canonicalCard, caseId: card.chat.caseId })
 }
 
 export async function action(args: ActionArgs) {
   const userId = parseInt(args.params.userId!)
-  const { value, original, isFair } = (await args.request.json()) as { value: Value, original: { id: number }, isFair: boolean }
+  const { canonical, isFair } = (await args.request.json()) as { canonical: { id: number }, original: { id: number }, isFair: boolean }
 
-  await db.canonicalizationVerification.upsert({
+  await db.graphPositionVerification.upsert({
     create: {
-      canonicalCardId: value.id,
-      valuesCardId: original.id,
+      canonicalCardId: canonical.id,
       isSatisfiedWithPosition: isFair,
       userId
     },
     update: { isSatisfiedWithPosition: isFair },
     where: {
-      userId_valuesCardId_canonicalCardId: {
-        canonicalCardId: value.id,
-        valuesCardId: original.id,
+      userId_canonicalCardId: {
+        canonicalCardId: canonical.id,
         userId,
       }
     }
@@ -78,6 +76,7 @@ interface TripletData {
 }
 
 function Triplet({ triplet, onResponse }: { triplet: TripletData, onResponse: (agree: boolean) => void }) {
+  console.log(triplet)
   return (
     <div>
       <div className="w-full max-w-2xl">
@@ -115,14 +114,13 @@ function Triplet({ triplet, onResponse }: { triplet: TripletData, onResponse: (a
           </div>
         </div>
 
-
         {triplet.to && (
           <React.Fragment key={triplet.to.id}>
             <IconArrowRight className="h-8 w-8 mx-auto rotate-90 md:rotate-0" />
 
             <div className="flex flex-col h-full">
               <p className="mx-8 mb-2 text-sm text-neutral-500">
-                {triplet.fromEdge?.counts.markedWiser} people voted "wiser" than your value
+                {triplet.toEdge?.counts.markedWiser} people voted "wiser" than your value
               </p>
               <div className="flex-grow h-full w-96">
                 <ValuesCard card={triplet.to as any} />
@@ -152,7 +150,7 @@ export default function SurveyGraphPosition() {
   const [triplet, setTriplet] = useState<TripletData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const { canonical, original, caseId } = useLoaderData<typeof loader>()
+  const { canonical, caseId } = useLoaderData<typeof loader>()
   const userId = useParams().userId!
   const navigate = useNavigate()
 
@@ -179,6 +177,11 @@ export default function SurveyGraphPosition() {
     const toEdge = graph.edges.find((e) => e.sourceValueId === canonical!.id)
     const to = graph.values.find((n) => toEdge?.wiserValueId === n.id)
 
+    // Redirect if the card is not linked to another value.
+    if (!from && !to) {
+      return navigate(`/survey/thanks/${userId}`)
+    }
+
     // Set the triplet.
     setTriplet({
       from,
@@ -194,7 +197,7 @@ export default function SurveyGraphPosition() {
   const onResponse = async (isFair: boolean) => {
     const response = await fetch(`/survey/graph-position/${userId}`, {
       method: "POST",
-      body: JSON.stringify({ canonical, original, isFair })
+      body: JSON.stringify({ canonical, isFair })
     })
 
     if (response.redirected) {
@@ -238,9 +241,9 @@ export default function SurveyGraphPosition() {
 
         >
           Explore the full{" "}
-          <Link className="underline" to="/data/edges">
+          <a className="underline" href="/data/edges" target="_blank" rel="noopener noreferrer">
             Moral Graph
-          </Link>
+          </a>
           .
         </p>
       </div>

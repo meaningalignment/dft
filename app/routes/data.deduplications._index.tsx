@@ -43,14 +43,7 @@ export async function loader(args: LoaderArgs) {
   return json({ pairs })
 }
 
-function Canonicalization({ pair, onResponse: onPairResponse }: { pair: Pair, onResponse: (pair: Pair) => void }) {
-  const [response, setResponse] = useState<Response | null>(pair.response)
-
-  const onClick = (response: Response) => {
-    console.log("clicked", response)
-    setResponse(response)
-    onPairResponse({ ...pair, response })
-  }
+function Canonicalization({ pair }: { pair: Pair }) {
 
   return (
     <div>
@@ -86,23 +79,7 @@ function Canonicalization({ pair, onResponse: onPairResponse }: { pair: Pair, on
 
 export default function UserDeduplications() {
   const { pairs } = useLoaderData<typeof loader>()
-  const userId = useParams().userId!
-  const navigate = useNavigate()
-
-  const onResponse = async (pair: Pair) => {
-    const response = await fetch(`/data/deduplications/${userId}`, {
-      method: "POST",
-      body: JSON.stringify(pair)
-    })
-
-    if (response.redirected) {
-      const redirectUrl = new URL(response.url)
-      const path = redirectUrl.pathname + redirectUrl.search;
-      console.log(redirectUrl, path)
-      navigate(path)
-    }
-  }
-
+  
   if (!pairs.length) return (
     <div className="grid place-items-center space-y-4 py-24 px-8">
       <div className="flex flex-col items-center justify-center">
@@ -117,7 +94,7 @@ export default function UserDeduplications() {
       <div className="flex flex-col items-center justify-center my-8">
         <div className="text-3xl text-center font-bold mb-2 mt-12 max-w-2xl">Articulated cards and their deduplicated versions</div>
       </div>
-      {pairs.map((p) => <Canonicalization key={`${p.card.id}_${p.canonical.id}`} pair={p as any} onResponse={onResponse} />)}
+      {pairs.map((p) => <Canonicalization key={`${p.card.id}_${p.canonical.id}`} pair={p as any} />)}
     </div>
   )
 }
