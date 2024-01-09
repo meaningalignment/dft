@@ -3,12 +3,14 @@ export interface MoralGraphSummary {
   edges: EdgeStats[]
 }
 
-interface Value {
+export interface Value {
   id: number
   title: string
   instructionsShort: string
   instructionsDetailed: string
   evaluationCriteria: string[]
+  pageRank?: number
+  votes?: number
 }
 
 export interface EdgeStats {
