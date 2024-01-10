@@ -1,4 +1,4 @@
-import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
+import { CanonicalValuesCard, DeduplicatedCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { Configuration, OpenAIApi } from "openai-edge"
 import { db, inngest, openai } from "~/config.server"
 import { ValuesCardData, valueStyle } from "~/lib/consts"
@@ -18,23 +18,8 @@ export default class EmbeddingService {
     this.db = db
   }
 
-  private toEmbeddingString(card: ValuesCard | CanonicalValuesCard) {
-    return (
-      "### Title" +
-      card.title +
-      "\n" +
-      "### Short Instruction" +
-      "\n" +
-      card.instructionsShort +
-      "\n" +
-      "### Long Instruction" +
-      "\n" +
-      card.instructionsDetailed +
-      "\n" +
-      `# ${valueStyle.evaluationCriteriaIntroString}` +
-      "\n" +
-      card.evaluationCriteria.join("\n")
-    )
+  private toEmbeddingString(card: { evaluationCriteria: string[] }) {
+    return card.evaluationCriteria.join("\n")
   }
 
   private async embed(str: string): Promise<number[]> {
@@ -54,6 +39,18 @@ export default class EmbeddingService {
     // Update in DB.
     await this.db
       .$executeRaw`UPDATE "CanonicalValuesCard" SET embedding = ${JSON.stringify(
+        embedding
+      )}::vector WHERE id = ${card.id};`
+  }
+
+  async embedDeduplicatedCard(card: DeduplicatedCard): Promise<void> {
+    // Embed card.
+    const input = this.toEmbeddingString(card)
+    const embedding = await this.embed(input)
+
+    // Update in DB.
+    await this.db
+      .$executeRaw`UPDATE "DeduplicatedCard" SET embedding = ${JSON.stringify(
         embedding
       )}::vector WHERE id = ${card.id};`
   }
@@ -85,6 +82,13 @@ export default class EmbeddingService {
   async getNonCanonicalCardsWithoutEmbedding(): Promise<Array<ValuesCard>> {
     return (await this.db
       .$queryRaw`SELECT id, title, "instructionsShort", "instructionsDetailed", "evaluationCriteria" FROM "ValuesCard" WHERE "ValuesCard".embedding IS NULL`) as ValuesCard[]
+  }
+
+  async getDeduplicatedCardsWithoutEmbedding(): Promise<
+    Array<DeduplicatedCard>
+  > {
+    return (await this.db
+      .$queryRaw`SELECT id, title, "instructionsShort", "instructionsDetailed", "evaluationCriteria", embedding::text FROM "DeduplicatedCard" WHERE "DeduplicatedCard".embedding IS NULL`) as DeduplicatedCard[]
   }
 
   async getCanonicalCardsWithoutEmbedding(): Promise<
@@ -172,6 +176,12 @@ export const embed = inngest.createFunction(
       async () => service.getCanonicalCardsWithoutEmbedding()
     )) as any as CanonicalValuesCard[]
 
+    const deduplicatedCards = (await step.run(
+      "Fetching deduplicated cards",
+      async () => service.getDeduplicatedCardsWithoutEmbedding()
+    )) as any as DeduplicatedCard[]
+
+
     const nonCanonicalCards = (await step.run(
       "Fetching canonical cards",
       async () => service.getNonCanonicalCardsWithoutEmbedding()
@@ -184,6 +194,12 @@ export const embed = inngest.createFunction(
     for (const card of canonicalCards) {
       await step.run("Embed canonical card", async () => {
         await service.embedCanonicalCard(card)
+      })
+    }
+
+    for (const card of deduplicatedCards) {
+      await step.run("Embed deduplocated card", async () => {
+        await service.embedDeduplicatedCard(card)
       })
     }
 
