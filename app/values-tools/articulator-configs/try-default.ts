@@ -1,5 +1,5 @@
 import type { ArticulatorConfig } from "~/values-tools/articulator-config"
-import { definitionOfASourceOfMeaning, embodiedJustice, exampleCards, faithInPeople, valuesCardCriteria } from "../prompt-segments"
+import { attentionPoliciesCriteria, definitionOfASourceOfMeaning, embodiedJustice, exampleCards, faithInPeople } from "../prompt-segments"
 
 const mainPrompt = `You are a meaning assistant, helping a user understand what their underlying "sources of meaning" are.
 
@@ -40,9 +40,9 @@ Here are some examples of the cards you will be helping the user articulate:
 
 ${JSON.stringify(exampleCards)}
 
-And some guidelines specifically on making the cards:
+And some guidelines specifically on making attentional policies for the cards:
 
-${valuesCardCriteria}
+${attentionPoliciesCriteria}
 
 # Emotions Table
 
@@ -63,7 +63,7 @@ The values card should reflect the user's sources of meaning, not yours or those
 
 # Card Guidelines
 
-${valuesCardCriteria}
+${attentionPoliciesCriteria}
 
 # Example Values Cards
 

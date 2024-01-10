@@ -67,12 +67,9 @@ export default class EmbeddingService {
       )}::vector WHERE id = ${card.id};`
   }
 
-  async embedCandidate(card: ValuesCardData): Promise<number[]> {
+  async embedCandidate(card: { evaluationCriteria: string[] }): Promise<number[]> {
     const syntheticCard = {
-      title: card.title,
-      instructionsShort: card.instructions_short,
-      instructionsDetailed: card.instructions_detailed,
-      evaluationCriteria: card.evaluation_criteria ?? [],
+      evaluationCriteria: card.evaluationCriteria ?? [],
     } as ValuesCard
 
     const input = this.toEmbeddingString(syntheticCard)

@@ -1,4 +1,4 @@
-import { definitionOfASourceOfMeaning, valuesCardCriteria } from "./prompt-segments"
+import { attentionPoliciesCriteria, definitionOfASourceOfMeaning } from "./prompt-segments"
 import { gpt4 } from "./gpt"
 import { json } from "@remix-run/node"
 import { db } from "~/config.server"
@@ -131,9 +131,9 @@ Your response should have five parts:
 
 ${definitionOfASourceOfMeaning}
 
-# Criteria
+# Criteria for attention policies
 
-${valuesCardCriteria}
+${attentionPoliciesCriteria}
 
 # Example
 

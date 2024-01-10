@@ -7,17 +7,14 @@ A source of meaning is distinct from similar concepts:
 - A source of meaning is not a norm or a social expectation. A source of meaning is not something you do because you feel like you have to, or because you feel like you should. It is something the user does because it is intrinsically important to them.
 - A source of meaning is not an internalized norm – a norm the user has adopted outside of the original social context. It is a way of living that produces a sense of meaning for you, not a way of living that you think is "right" or "correct".`
 
-export const valuesCardCriteria = `
-1. **Be coherent.** The things to attend to should fit together to form a coherent whole. They should not be contradictory or unrelated. All elements of the source of meaning should be required, and work together, in the context.
-2. **Use noun phrases.** List things that can be attended to directly, not broader actions, processes, or virtues. The attentional policies should each be written in the order "<plural form of thing to attend to> that <qualifier>, so as to <reason it's meaningful to attend to it>".
-3. **Be clear and specific.** Simply instructing someone to attend to these things should be enough to show them this source of meaning. Avoid instructions that are vague, abstract, or difficult to understand. Be as specific as possible.
-4. **No poetry.** No items should use the word "meaningful" itself (or synonyms like "deep"). Replace it with something that implies what exactly is meaningful about attending to the thing. In general, remove poetic or abstract language.
-5. **Write from the perspective of the actor.** The instructions should be written from the perspective of the person who exhibits the source of meaning, not from the perspective of an outside observer.
-6. **Say what's meaningful.** A person should be able to sense why each item could be meaningful within the context. They should be able to see how attending to the thing could produce a sense of meaning. Otherwise, add information.
-7. **No goals.** Attending to these things should be broadly beneficial, leading to many outcomes. The journey itself should be part of the good life for the person with the source of meaning, rather than being instrumental. They should be things that can be attended to in a choice, not things that are the result of a choice. They should be things where attending to them opens possibilities, rather than things to ensure or check off.
-8. **State things positively.** They should be things a person COULD attend to, not things to avoid attending to.
-9. **Use clear, simple language.** Anyone in the relevant context should be able to see what you mean about what to attend to. The instructions should be clear enough that you could use them in a survey to see whether or not someone was attending to those things.
-10. **Use general words.** For instance, prefer "strangers" to "customers" if either would work.
+export const attentionPoliciesCriteria = `
+- **Gather details, so policies aren't vague or abstract.** Collect precise, but general, instructions that almost anyone could see how to follow with their attention. Don't say "LOVE and OPENNESS which emerges" (too abstract). Instead, say "FEELINGS in my chest that indicate..." or "MOMENTS where a new kind of relating opens up". Ask the user questions, until you can achieve this specificity.
+- **Ensure the policies make clear what's meaningful.** A person should be able to see how attending to the thing could produce a sense of meaning. Otherwise, specify more.
+- **Make sure they fit together.** The policies should fit together to form a coherent whole. They should not be unrelated, but should work together.
+-. **Start with plural noun phrases.** Policies should start with a capitalized phrase that's the kind of thing to attend to ("MOMENTS", "SENSATIONS", "CHOICES", etc), followed by a qualifier phrase that provides detail on which type of that thing it's meaningful to attend to.
+- **Write from the perspective of the actor.** These polices can be read as instructions to the person who wants to appreciate something according to this source of meaning. ("SENSATIONS that point to misgivings I have about the current path").
+- **Use general words.** For instance, prefer "strangers" to "customers" when either would work. Prefer "objects" to "trees".
+- **Be precise.** Remove vague or abstract language. Don't use the word "meaningful" itself, or synonyms like "deep". Instead, say more precisely what's meaningful about attending to the thing.
 `
 
 export const exampleCards = [{
