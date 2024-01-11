@@ -3,7 +3,7 @@ import { Link, useLoaderData, useNavigate, useParams } from "@remix-run/react"
 import { IconArrowRight } from "~/components/ui/icons"
 import ValuesCard from "~/components/values-card"
 import { db } from "~/config.server"
-import { cn } from "~/utils"
+import { cn, getDeduplicate } from "~/utils"
 import { Button } from "~/components/ui/button"
 import { useEffect, useState } from "react"
 import { Loader2 } from "lucide-react"
@@ -35,6 +35,9 @@ export async function loader(args: LoaderArgs) {
     include: {
       chat: true,
       canonicalCard: true,
+      deduplications: {
+        include: { deduplicatedCard: true }
+      }
     }
   }))
 
@@ -42,23 +45,23 @@ export async function loader(args: LoaderArgs) {
     return redirect(`/survey/thanks/${userId}`)
   }
 
-  return json({ canonical: card.canonicalCard, caseId: card.chat.caseId })
+  return json({ canonical: card.canonicalCard, deduplicate: getDeduplicate(card), caseId: card.chat.caseId })
 }
 
 export async function action(args: ActionArgs) {
   const userId = parseInt(args.params.userId!)
-  const { canonical, isFair } = (await args.request.json()) as { canonical: { id: number }, original: { id: number }, isFair: boolean }
+  const { deduplicate, isFair } = (await args.request.json()) as { deduplicate: { id: number }, original: { id: number }, isFair: boolean }
 
   await db.graphPositionVerification.upsert({
     create: {
-      canonicalCardId: canonical.id,
+      deduplicatedCardId: deduplicate.id,
       isSatisfiedWithPosition: isFair,
       userId
     },
     update: { isSatisfiedWithPosition: isFair },
     where: {
-      userId_canonicalCardId: {
-        canonicalCardId: canonical.id,
+      userId_deduplicatedCardId: {
+        deduplicatedCardId: deduplicate.id,
         userId,
       }
     }
@@ -150,7 +153,7 @@ export default function SurveyGraphPosition() {
   const [triplet, setTriplet] = useState<TripletData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const { canonical, caseId } = useLoaderData<typeof loader>()
+  const { canonical, deduplicate, caseId } = useLoaderData<typeof loader>()
   const userId = useParams().userId!
   const navigate = useNavigate()
 
@@ -186,7 +189,8 @@ export default function SurveyGraphPosition() {
     setTriplet({
       from,
       fromEdge,
-      userValue: canonical!,
+      // We show the deduplicated version of the user's value, and the legacy canonical versions of the other values.
+      userValue: deduplicate!,
       to,
       toEdge
     })
@@ -197,7 +201,7 @@ export default function SurveyGraphPosition() {
   const onResponse = async (isFair: boolean) => {
     const response = await fetch(`/survey/graph-position/${userId}`, {
       method: "POST",
-      body: JSON.stringify({ canonical, isFair })
+      body: JSON.stringify({ canonical, deduplicate, isFair })
     })
 
     if (response.redirected) {

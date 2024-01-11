@@ -1,7 +1,13 @@
-import { CanonicalValuesCard, ValuesCard } from "@prisma/client"
+import {
+  CanonicalValuesCard,
+  DeduplicatedCard,
+  Deduplication,
+  ValuesCard,
+} from "@prisma/client"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { ValuesCardData } from "./lib/consts"
+import { generation } from "./values-tools/deduplicator2"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -113,14 +119,18 @@ export function isDisplayableMessage(message: {
   content?: string
 }) {
   return (
-    message?.content && (message.role === "user" || message.role === "assistant")
+    message?.content &&
+    (message.role === "user" || message.role === "assistant")
   )
 }
 
-
-export function getPartyAffiliation(counts: {republican: number, democrat: number, other: number}) {
+export function getPartyAffiliation(counts: {
+  republican: number
+  democrat: number
+  other: number
+}) {
   const { republican, democrat, other } = counts
-  
+
   if (republican > democrat) {
     return {
       affiliation: "republican",
@@ -134,4 +144,13 @@ export function getPartyAffiliation(counts: {republican: number, democrat: numbe
   }
 
   return null
+}
+
+export function getDeduplicate(
+  valuesCard: ValuesCard & {
+    deduplications: (Deduplication & { deduplicatedCard: DeduplicatedCard })[]
+  }
+): DeduplicatedCard {
+  return valuesCard.deduplications.filter((d) => d.generation === generation)[0]
+    .deduplicatedCard
 }
