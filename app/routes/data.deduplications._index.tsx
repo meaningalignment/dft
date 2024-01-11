@@ -2,19 +2,19 @@ import { LoaderArgs, json } from "@remix-run/node"
 import { useLoaderData } from "@remix-run/react"
 import { IconArrowRight } from "~/components/ui/icons"
 import ValuesCard from "~/components/values-card"
-import { CanonicalValuesCard, ValuesCard as ValuesCardType } from "@prisma/client"
+import { DeduplicatedCard, ValuesCard as ValuesCardType } from "@prisma/client"
 import { db } from "~/config.server"
-import { cn } from "~/utils"
+import { cn, getDeduplicate } from "~/utils"
 import { generation as currentGeneration } from "~/values-tools/deduplicator2"
 
 type Response = "same" | "different"
-type Pair = { card: ValuesCardType, canonical: CanonicalValuesCard, response: Response | null }
+type Pair = { card: ValuesCardType, deduplicate: DeduplicatedCard, response: Response | null }
 
-function isDifferent(card: ValuesCardType, canonical: CanonicalValuesCard) {
-  return card.title != canonical.title &&
-    card.instructionsShort != canonical.instructionsShort &&
-    card.instructionsDetailed != canonical.instructionsDetailed &&
-    canonical.evaluationCriteria.join("") != card.evaluationCriteria.join("")
+function isDifferent(card: ValuesCardType, deduplicated: DeduplicatedCard) {
+  return card.title != deduplicated.title &&
+    card.instructionsShort != deduplicated.instructionsShort &&
+    card.instructionsDetailed != deduplicated.instructionsDetailed &&
+    deduplicated.evaluationCriteria.join("") != card.evaluationCriteria.join("")
 }
 
 export async function loader({ request }: LoaderArgs) {
@@ -28,7 +28,6 @@ export async function loader({ request }: LoaderArgs) {
     },
     include: {
       deduplications: {
-        where: { generation },
         include: { deduplicatedCard: true }
       }
     },
@@ -37,9 +36,9 @@ export async function loader({ request }: LoaderArgs) {
     .map((vc) => {
       return {
         card: vc,
-        canonical: vc.deduplications[0].deduplicatedCard,
+        deduplicate: getDeduplicate(vc),
       }
-    }).filter((p) => isDifferent(p.card, p.canonical))
+    }).filter((p) => isDifferent(p.card, p.deduplicate))
 
   return json({ pairs })
 }
@@ -64,12 +63,12 @@ function Canonicalization({ pair }: { pair: Pair }) {
           </div>
         </div>
         <IconArrowRight className="h-8 w-8 mx-auto rotate-90 md:rotate-0" />
-        <div key={pair.canonical.id} className="flex flex-col h-full">
+        <div key={pair.deduplicate.id} className="flex flex-col h-full">
           <p className="mx-8 mb-2 text-sm text-neutral-500">
             Deduplicated Version
           </p>
           <div className="flex-grow h-full w-96">
-            <ValuesCard card={pair.canonical} inlineDetails />
+            <ValuesCard card={pair.deduplicate} inlineDetails />
           </div>
         </div>
       </div>
@@ -95,7 +94,7 @@ export default function UserDeduplications() {
       <div className="flex flex-col items-center justify-center my-8">
         <div className="text-3xl text-center font-bold mb-2 mt-12 max-w-2xl">Articulated cards and their deduplicated versions</div>
       </div>
-      {pairs.map((p) => <Canonicalization key={`${p.card.id}_${p.canonical.id}`} pair={p as any} />)}
+      {pairs.map((p) => <Canonicalization key={`${p.card.id}_${p.deduplicate.id}`} pair={p as any} />)}
     </div>
   )
 }

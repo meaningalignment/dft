@@ -2,20 +2,21 @@ import { ActionArgs, LoaderArgs, json, redirect } from "@remix-run/node"
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react"
 import { IconArrowRight } from "~/components/ui/icons"
 import ValuesCard from "~/components/values-card"
-import { CanonicalValuesCard, ValuesCard as ValuesCardType } from "@prisma/client"
+import { DeduplicatedCard, ValuesCard as ValuesCardType } from "@prisma/client"
 import { db } from "~/config.server"
-import { cn } from "~/utils"
+import { cn, getDeduplicate } from "~/utils"
 import { Button } from "~/components/ui/button"
 import { useState } from "react"
+import { generation } from "~/values-tools/deduplicator2"
 
 type Response = "same" | "different"
-type Pair = { card: ValuesCardType, canonical: CanonicalValuesCard, response: Response | null }
+type Pair = { card: ValuesCardType, deduplicate: DeduplicatedCard, response: Response | null }
 
-function isDifferent(card: ValuesCardType, canonical: CanonicalValuesCard) {
-  return card.title != canonical.title &&
-    card.instructionsShort != canonical.instructionsShort &&
-    card.instructionsDetailed != canonical.instructionsDetailed &&
-    canonical.evaluationCriteria.join("") != card.evaluationCriteria.join("")
+function isDifferent(card: ValuesCardType, deduplicate: DeduplicatedCard) {
+  return card.title != deduplicate.title &&
+    card.instructionsShort != deduplicate.instructionsShort &&
+    card.instructionsDetailed != deduplicate.instructionsDetailed &&
+    deduplicate.evaluationCriteria.join("") != card.evaluationCriteria.join("")
 }
 
 export async function loader(args: LoaderArgs) {
@@ -25,41 +26,48 @@ export async function loader(args: LoaderArgs) {
     where: {
       chat: { userId },
       canonicalCardId: { not: null },
-      CanonicalizationVerification: { none: { userId } }
+      DeduplicationVerification: { none: { userId } }
     },
     include: {
-      canonicalCard: true,
-      CanonicalizationVerification: true
+      DeduplicationVerification: true,
+      deduplications: {
+        include: { deduplicatedCard: true }
+      }
     }
   }))
-    .filter((c) => c.canonicalCard)
+    .filter((c) => c.deduplications.filter((d) => d.generation === generation))
     .map((vc) => {
       return {
         card: vc,
-        canonical: vc.canonicalCard!,
-        response: vc.CanonicalizationVerification[0]?.option || null
+        deduplicate: getDeduplicate(vc),
+        response: vc.DeduplicationVerification[0]?.option || null
       }
-    }).filter((p) => isDifferent(p.card, p.canonical))
+    }).filter((p) => isDifferent(p.card, p.deduplicate))
+
+
+  if (pairs.length === 0) {
+    return redirect(`/survey/graph-position/${userId}`)
+  }
 
   return json({ pairs })
 }
 
 export async function action({ request, params }: ActionArgs) {
   const userId = parseInt(params.userId!)
-  const { card, canonical, response } = (await request.json()) as Pair
+  const { card, deduplicate: deduplicate, response } = (await request.json()) as Pair
 
   // Upsert the verification.
-  await db.canonicalizationVerification.upsert({
+  await db.deduplicationVerification.upsert({
     create: {
-      canonicalCardId: canonical.id,
+      deduplicatedCardId: deduplicate.id,
       valuesCardId: card.id,
       option: response!,
       userId
     },
     update: { option: response! },
     where: {
-      userId_valuesCardId_canonicalCardId: {
-        canonicalCardId: canonical.id,
+      userId_valuesCardId_deduplicatedCardId: {
+        deduplicatedCardId: deduplicate.id,
         valuesCardId: card.id,
         userId,
       }
@@ -71,15 +79,17 @@ export async function action({ request, params }: ActionArgs) {
     where: {
       chat: { userId },
       canonicalCardId: { not: null },
-      CanonicalizationVerification: { none: { userId } }
+      DeduplicationVerification: { none: { userId } }
     },
     include: {
-      canonicalCard: true,
-      CanonicalizationVerification: true
+      DeduplicationVerification: true,
+      deduplications: {
+        include: { deduplicatedCard: true }
+      }
     }
   }))
-    .filter((c) => c.canonicalCard)
-    .filter((c) => isDifferent(c, c.canonicalCard!))
+    .filter((c) => getDeduplicate(c))
+    .filter((c) => isDifferent(c, getDeduplicate(c)))
 
   if (cardsWithoutVerifications.length === 0) {
     return redirect(`/survey/graph-position/${userId}`)
@@ -88,8 +98,10 @@ export async function action({ request, params }: ActionArgs) {
   return json({})
 }
 
-function Canonicalization({ pair, onResponse: onPairResponse }: { pair: Pair, onResponse: (pair: Pair) => void }) {
+function DeduplicationView({ pair, onResponse: onPairResponse }: { pair: Pair, onResponse: (pair: Pair) => void }) {
   const [response, setResponse] = useState<Response | null>(pair.response)
+
+  console.log(pair)
 
   const onClick = (response: Response) => {
     console.log("clicked", response)
@@ -115,18 +127,18 @@ function Canonicalization({ pair, onResponse: onPairResponse }: { pair: Pair, on
           </div>
         </div>
         <IconArrowRight className="h-8 w-8 mx-auto rotate-90 md:rotate-0" />
-        <div key={pair.canonical.id} className="flex flex-col h-full">
+        <div key={pair.deduplicate.id} className="flex flex-col h-full">
           <p className="mx-8 mb-2 text-sm text-neutral-500">
             Deduplicated Version
           </p>
           <div className="flex-grow h-full w-96">
-            <ValuesCard card={pair.canonical} />
+            <ValuesCard card={pair.deduplicate} />
           </div>
         </div>
       </div>
 
       <div className={cn("flex flex-col items-center justify-center mt-8 mb-16 space-y-6", response ? "opacity-20" : "")}>
-        <div className="text-md text-center max-w-md">Does <span className="font-bold">{pair.canonical.title}</span> represent your value?</div>
+        <div className="text-md text-center max-w-md">Does <span className="font-bold">{pair.deduplicate.title}</span> represent your value?</div>
         <div className="flex flex-col items-center justify-center">
           <div className="flex flex-row items-center justify-center space-x-4">
             <Button onClick={() => onClick("same")} disabled={Boolean(response)} variant={response === "different" ? "ghost" : "default"}>Yes</Button>
@@ -159,22 +171,13 @@ export default function SurveyDeduplications() {
     }
   }
 
-  if (!pairs.length) return (
-    <div className="grid place-items-center space-y-4 py-24 px-8">
-      <div className="flex flex-col items-center justify-center">
-        <div className="text-3xl font-bold mb-2">No deduplications</div>
-        <div className="text-xl text-center">All of your cards were used exactly as you articulated them.</div>
-      </div>
-    </div>
-  )
-
   return (
     <div className="grid place-items-center space-y-8 px-8 mb-8">
       <div className="flex flex-col items-center justify-center my-8">
         <div className="text-3xl text-center font-bold mb-2 mt-12 max-w-2xl">Your cards and their deduplicated versions</div>
         <div className="text-gray-400 max-w-2xl text-center">In order to create our moral graph, we automatically deduplicate values cards submitted by participants in the background that seem to be about the same value. Please verify that the deduplicated cards below capture the values you articulated.</div>
       </div>
-      {pairs.map((p) => <Canonicalization key={`${p.card.id}_${p.canonical.id}`} pair={p as any} onResponse={onResponse} />)}
+      {pairs.map((p) => <DeduplicationView key={`${p.card.id}_${p.deduplicate.id}`} pair={p as any} onResponse={onResponse} />)}
     </div>
   )
 }
