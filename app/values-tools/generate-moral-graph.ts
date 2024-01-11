@@ -45,10 +45,15 @@ function calculatePageRankWeighted(
       const outgoingEdges = edges.filter(
         (e) => e.sourceValueId === edge.sourceValueId
       )
-      const totalWeight = outgoingEdges.reduce((sum, e) => sum + e.summary.wiserLikelihood, 0)
+      const totalWeight = outgoingEdges.reduce(
+        (sum, e) => sum + e.summary.wiserLikelihood,
+        0
+      )
       if (totalWeight > 0) {
         newRank[edge.wiserValueId] +=
-          (dampingFactor * pageRank[edge.sourceValueId] * edge.summary.wiserLikelihood) /
+          (dampingFactor *
+            pageRank[edge.sourceValueId] *
+            edge.summary.wiserLikelihood) /
           totalWeight
       }
     })
@@ -76,7 +81,9 @@ function calculatePageRank(
     )
 
     edges.forEach((edge) => {
-      const outgoingEdges = edges.filter((e) => e.sourceValueId === edge.sourceValueId).length
+      const outgoingEdges = edges.filter(
+        (e) => e.sourceValueId === edge.sourceValueId
+      ).length
       if (outgoingEdges > 0) {
         newRank[edge.wiserValueId] +=
           (dampingFactor * pageRank[edge.sourceValueId]) / outgoingEdges
@@ -119,6 +126,7 @@ type RawEdgeCount = Omit<MoralGraphSummary["edges"][0], "summary">
 
 export interface Options {
   includeAllEdges?: boolean
+  includePageRank?: boolean
   edgeWhere?: Prisma.EdgeWhereInput
 }
 
@@ -127,9 +135,7 @@ export async function summarizeGraph(
 ): Promise<MoralGraphSummary> {
   const values = (await db.canonicalValuesCard.findMany()) as Value[]
   const edges = await db.edge.findMany({ where: options.edgeWhere })
-  const votes = await db.vote.findMany({
-    where: { user: options.edgeWhere?.user },
-  })
+
   const pairs = new PairMap()
 
   for (const edge of edges) {
@@ -183,30 +189,17 @@ export async function summarizeGraph(
     extra["allEdges"] = cookedEdges
   }
 
-  // calculate page rank
-  const pageRank = calculatePageRankWeighted(trimmedEdges)
-  for (const node of values) {
-    node.pageRank = pageRank[node.id]
-    node.votes = votes.filter((v) => v.valuesCardId === node.id).length
-  }
-
-  console.log(pageRank)
-
-  // Find the 3 highest page rank values
-  const topValues = values
-    .filter((v) => v.pageRank)
-    .sort((a, b) => b.pageRank! - a.pageRank!)
-    .slice(0, 3)
-    .map((v) => {
-      return {
-        id: v.id,
-        title: v.title,
-        pageRank: v.pageRank,
-        votes: v.votes,
-      }
+  if (options.includePageRank) {
+    const pageRank = calculatePageRankWeighted(trimmedEdges)
+    const votes = await db.vote.findMany({
+      where: { user: options.edgeWhere?.user },
     })
 
-  console.log("topValues", topValues)
+    for (const node of values) {
+      node.pageRank = pageRank[node.id]
+      node.votes = votes.filter((v) => v.valuesCardId === node.id).length
+    }
+  }
 
   return {
     values: values.filter((n) => referencedNodeIds.has(n.id)),
