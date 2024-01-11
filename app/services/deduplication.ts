@@ -266,7 +266,7 @@ export default class DeduplicationService {
     console.log(`Fetching similar canonical card, candidate: ${JSON.stringify(candidate)}`)
 
     // Embed the candidate.
-    const card_embeddings = await embeddings.embedCandidate(candidate)
+    const card_embeddings = await embeddings.embedCandidate({ evaluationCriteria: candidate.evaluation_criteria || [] })
 
     console.log("Got card embeddings, fetching canonical card.")
 

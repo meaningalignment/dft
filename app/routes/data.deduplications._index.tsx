@@ -1,11 +1,11 @@
-import {  LoaderArgs, json } from "@remix-run/node"
-import { useLoaderData, useNavigate, useParams } from "@remix-run/react"
+import { LoaderArgs, json } from "@remix-run/node"
+import { useLoaderData } from "@remix-run/react"
 import { IconArrowRight } from "~/components/ui/icons"
 import ValuesCard from "~/components/values-card"
 import { CanonicalValuesCard, ValuesCard as ValuesCardType } from "@prisma/client"
 import { db } from "~/config.server"
 import { cn } from "~/utils"
-import { useState } from "react"
+import { generation as currentGeneration } from "~/values-tools/deduplicator2"
 
 type Response = "same" | "different"
 type Pair = { card: ValuesCardType, canonical: CanonicalValuesCard, response: Response | null }
@@ -17,26 +17,27 @@ function isDifferent(card: ValuesCardType, canonical: CanonicalValuesCard) {
     canonical.evaluationCriteria.join("") != card.evaluationCriteria.join("")
 }
 
-export async function loader(args: LoaderArgs) {
+export async function loader({ request }: LoaderArgs) {
+  const searchParams = new URL(request.url).searchParams
+  const generation = Number(searchParams.get("generation") || currentGeneration)
   const pairs = (await db.valuesCard.findMany({
     where: {
-      canonicalCardId: { not: null },
-      CanonicalizationVerification: { none: { } }
+      deduplications: {
+        some: { generation }
+      }
     },
     include: {
-      canonicalCard: true,
-      CanonicalizationVerification: true
+      deduplications: {
+        where: { generation },
+        include: { deduplicatedCard: true }
+      }
     },
-    orderBy: {
-      createdAt: "desc"
-    }
+    orderBy: { createdAt: "desc" }
   }))
-    .filter((c) => c.canonicalCard)
     .map((vc) => {
       return {
         card: vc,
-        canonical: vc.canonicalCard!,
-        response: vc.CanonicalizationVerification[0]?.option || null
+        canonical: vc.deduplications[0].deduplicatedCard,
       }
     }).filter((p) => isDifferent(p.card, p.canonical))
 
@@ -79,7 +80,7 @@ function Canonicalization({ pair }: { pair: Pair }) {
 
 export default function UserDeduplications() {
   const { pairs } = useLoaderData<typeof loader>()
-  
+
   if (!pairs.length) return (
     <div className="grid place-items-center space-y-4 py-24 px-8">
       <div className="flex flex-col items-center justify-center">

@@ -247,8 +247,6 @@ model DeduplicatedCard {
   updatedAt            DateTime                     @updatedAt
   embedding            Unsupported("vector(1536)")?
   deduplications       Deduplication[]
-
-  @@unique([title, instructionsShort, instructionsDetailed, evaluationCriteria]) // Prevent duplicate insertions.
 }
 
 model Deduplication {
