@@ -22,28 +22,34 @@ function isDifferent(card: ValuesCardType, deduplicate: DeduplicatedCard) {
 export async function loader(args: LoaderArgs) {
   const userId = parseInt(args.params.userId!)
 
-  const pairs = (await db.valuesCard.findMany({
-    where: {
-      chat: { userId },
-      canonicalCardId: { not: null },
-      DeduplicationVerification: { none: { userId } }
-    },
-    include: {
-      DeduplicationVerification: true,
-      deduplications: {
-        include: { deduplicatedCard: true }
-      }
-    }
-  }))
-    .filter((c) => c.deduplications.filter((d) => d.generation === generation))
+  const pairs = (
+    await db.valuesCard.findMany({
+      where: {
+        chat: { userId },
+        DeduplicationVerification: { none: { userId } },
+        deduplications: {
+          some: {
+            generation,
+          },
+        },
+      },
+      include: {
+        DeduplicationVerification: true,
+        deduplications: {
+          include: { deduplicatedCard: true },
+          where: { generation },
+        },
+      },
+    })
+  )
     .map((vc) => {
       return {
         card: vc,
         deduplicate: getDeduplicate(vc),
-        response: vc.DeduplicationVerification[0]?.option || null
+        response: vc.DeduplicationVerification[0]?.option || null,
       }
-    }).filter((p) => isDifferent(p.card, p.deduplicate))
-
+    })
+    .filter((p) => isDifferent(p.card, p.deduplicate))
 
   if (pairs.length === 0) {
     return redirect(`/survey/graph-position/${userId}`)
