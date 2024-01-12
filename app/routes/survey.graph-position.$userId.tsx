@@ -99,7 +99,7 @@ function Triplet({ triplet, onResponse }: { triplet: TripletData, onResponse: (a
                 <ValuesCard card={triplet.from as any} />
               </div>
             </div>
-            <IconArrowRight className="h-8 w-8 mx-auto rotate-90 md:rotate-0" />
+            <IconArrowRight className="h-8 w-8 mx-auto rotate-0" />
           </React.Fragment>
         )
         }
@@ -119,7 +119,7 @@ function Triplet({ triplet, onResponse }: { triplet: TripletData, onResponse: (a
 
         {triplet.to && (
           <React.Fragment key={triplet.to.id}>
-            <IconArrowRight className="h-8 w-8 mx-auto rotate-90 md:rotate-0" />
+            <IconArrowRight className="h-8 w-8 mx-auto rotate-0" />
 
             <div className="flex flex-col h-full">
               <p className="mx-8 mb-2 text-sm text-neutral-500">
