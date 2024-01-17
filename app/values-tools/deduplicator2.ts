@@ -131,6 +131,20 @@ function cosineDistance(vecA: number[], vecB: number[]) {
 // DBSCAN instance
 let dbscan = new DBSCAN();
 
+export interface ClusterableObject { id: number, embedding: number[] }
+export function cluster(objs: ClusterableObject[], { epsilon = 0.11, minPoints = 3 }: { epsilon: number, minPoints: number } = { epsilon: 0.11, minPoints: 3 }) {
+  // Epsilon (maximum radius) and minimum points
+  // let epsilon = 0.11; // Adjust this based on your needs
+  // let minPoints = 3;
+
+  // Run DBSCAN with cosine distance
+  let clusters = dbscan.run(objs.map(c => c.embedding), epsilon, minPoints, cosineDistance).map(cluster => cluster.map(i => objs[i]));
+
+  // clusters now contains your clustered vectors
+  console.log(`Found ${clusters.length} clusters.`)
+  console.log({ clusters })
+  return clusters
+}
 
 /**
  * Handles all logic around deduplicating and canonicalizing values cards.
@@ -153,27 +167,6 @@ export default class DeduplicationService {
     // Embed the canonical values card.
     await embeddings.embedDeduplicatedCard(canonical)
     return canonical
-  }
-
-  /**
-   * Deduplicate a set of values cards using a prompt.
-   */
-  async clusters() {
-    interface Result { id: number, embedding: number[] }
-    const cards = await db.$queryRawUnsafe<Array<Result>>(`SELECT id, embedding::real[] FROM "ValuesCard"`)
-
-    // Epsilon (maximum radius) and minimum points
-    let epsilon = 0.11; // Adjust this based on your needs
-    let minPoints = 3;
-
-    // Run DBSCAN with cosine distance
-    let clusters = dbscan.run(cards.map(c => c.embedding), epsilon, minPoints, cosineDistance).map(cluster => cluster.map(i => cards[i].id));
-
-    // clusters now contains your clustered vectors
-    console.log(`Found ${clusters.length} clusters.`)
-    console.log({ clusters })
-
-    return clusters
   }
 
   /**
@@ -304,9 +297,10 @@ export const seedGeneration = inngest.createFunction({
   event: "seed_generation"
 }, async ({ step, logger }) => {
   // cluster them ALL mf (currently with prompt - maybe eventually use )
-  const clusters = (await step.run(`Clustering, using badass linear algebra`, async () =>
-    service.clusters()
-  ))
+  const clusters = (await step.run(`Clustering, using badass linear algebra`, async () => {
+    const cards = await db.$queryRawUnsafe<Array<ClusterableObject>>(`SELECT id, embedding::real[] FROM "ValuesCard"`)
+    return cluster(cards).map(cluster => cluster.map(c => c.id))
+  }))
 
   logger.info(`Found ${clusters.length} clusters.`)
 
