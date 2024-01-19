@@ -64,6 +64,7 @@ function SimilarCards({
         {similar.map((card) => (
           <Link to={`/admin/card/${card.id}`} className="mb-6">
             <ValuesCard
+              inlineDetails
               key={card.id}
               card={card as any as CanonicalValuesCard}
             />
