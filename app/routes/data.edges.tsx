@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { MoralGraph } from "~/components/moral-graph";
 import { Loader2 } from "lucide-react";
 import MoralGraphSettings, { GraphSettings, defaultGraphSettings } from "~/components/moral-graph-settings";
+import { useSearchParams } from "@remix-run/react";
 
 function LoadingScreen() {
   return <div className="h-screen w-full mx-auto flex items-center justify-center">
@@ -13,6 +14,7 @@ export default function DefaultGraphPage() {
   const [settings, setSettings] = useState<GraphSettings>(defaultGraphSettings)
   const [graph, setGraph] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [searchParams, _] = useSearchParams()
 
   useEffect(() => {
     setIsLoading(true)
@@ -25,8 +27,9 @@ export default function DefaultGraphPage() {
     setIsLoading(true)
     
     const headers = { "Content-Type": "application/json" }
-    const params: { caseId?: string, runId?: string } = {}
+    const params: { caseId?: string, runId?: string, batches?: string } = {}
 
+    if (searchParams.has('batches')) params.batches = searchParams.get('batches')!
     if (settings?.caseId) params.caseId = settings?.caseId
     if (settings?.run) params.runId = settings?.run
 

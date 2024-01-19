@@ -6,6 +6,7 @@ export async function loader({ request }: LoaderArgs) {
   const url = new URL(request.url)
   const caseId = url.searchParams.get("caseId")
   const runId = url.searchParams.get("runId")
+  const batches = url.searchParams.get("batches")
 
   const options: Options = {}
 
@@ -24,6 +25,13 @@ export async function loader({ request }: LoaderArgs) {
     options.edgeWhere = options.edgeWhere || {}
     options.edgeWhere.context = {
       ContextsOnCases: { some: { caseId } },
+    }
+  }
+
+  if (batches) {
+    options.edgeWhere = options.edgeWhere || {}
+    options.edgeWhere.user = {
+      batch: { in: batches.split(",").map((x) => parseInt(x)).filter((x) => !isNaN(x)) },
     }
   }
 
