@@ -75,15 +75,13 @@ export default function ValuesCard({ card, header, inlineDetails }: Props) {
       <p className="text-md font-bold">{card.title}</p>
       <p className="text-md text-neutral-500">{card.instructionsShort}</p>
       <div className="flex-grow" />
-      {!inlineDetails ? (
+      {!inlineDetails && (
         <>
           <p className="text-sm pt-4 font-bold text-stone-300">HOW?</p>
           <p className="text-sm text-neutral-500">{card.instructionsDetailed}</p>
         </>
-      ) : (
-          <p className="text-sm pt-4 font-bold text-stone-300">CHATGPT SHOULD SURFACE</p>
       )}
-      <div className={cn("w-full flex flex-row items-baseline", inlineDetails ? "mt-2" : "mt-4")}>
+      <div className="w-full flex flex-row items-baseline mt-4">
         {inlineDetails ? (<>
           <Details card={card} />
         </>) :
