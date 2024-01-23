@@ -1,4 +1,4 @@
-import { isAllUppercase } from "~/utils"
+import { cn, isAllUppercase } from "~/utils"
 import { Button } from "./ui/button"
 import {
   Dialog,
@@ -20,7 +20,7 @@ type Props = {
 
 function Details({ card }: { card: DataModel | CanonicalValuesCard }) {
   return (
-    <div className="flex space-y-1 flex-col overflow-auto">
+    <div className="flex flex-col overflow-auto">
       {card.evaluationCriteria?.map((criterion, id) => (
         <li key={id} className="text-sm text-neutral-500">
           {criterion.split(" ").map((word, index) => (
@@ -74,10 +74,16 @@ export default function ValuesCard({ card, header, inlineDetails }: Props) {
       {header && header}
       <p className="text-md font-bold">{card.title}</p>
       <p className="text-md text-neutral-500">{card.instructionsShort}</p>
-      <p className="text-sm pt-4 font-bold text-stone-300">HOW?</p>
-      <p className="text-sm text-neutral-500">{card.instructionsDetailed}</p>
       <div className="flex-grow" />
-      <div className="w-full flex flex-row mt-4 items-baseline">
+      {!inlineDetails ? (
+        <>
+          <p className="text-sm pt-4 font-bold text-stone-300">HOW?</p>
+          <p className="text-sm text-neutral-500">{card.instructionsDetailed}</p>
+        </>
+      ) : (
+          <p className="text-sm pt-4 font-bold text-stone-300">CHATGPT SHOULD SURFACE</p>
+      )}
+      <div className={cn("w-full flex flex-row items-baseline", inlineDetails ? "mt-2" : "mt-4")}>
         {inlineDetails ? (<>
           <Details card={card} />
         </>) :

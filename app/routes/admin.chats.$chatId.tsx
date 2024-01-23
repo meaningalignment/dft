@@ -1,6 +1,6 @@
 import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
 import { Form, Link, useLoaderData, useNavigation } from "@remix-run/react"
-import { Message } from "ai"
+import { CohereStream, Message } from "ai"
 import { Loader2 } from "lucide-react"
 import { useState } from "react"
 import { ChatList } from "~/components/chat-list"
@@ -15,6 +15,15 @@ export async function loader({ params, request }: LoaderArgs) {
   const chat = await db.chat.findUnique({
     where: { id: chatId },
   })
+  const cardId = (await db.canonicalValuesCard.findFirst({
+    where: {
+      valuesCards: {
+        some: {
+          chatId,
+        },
+      },
+    }
+  }))?.id
   if (!chat) throw new Error("Chat not found")
   const evaluation = chat?.evaluation as Record<string, string>
   const messages = (chat?.transcript as any as Message[]).slice(1).map((m) => {
@@ -28,6 +37,7 @@ export async function loader({ params, request }: LoaderArgs) {
     messages,
     evaluation,
     chatId,
+    cardId,
     chat,
     isUser: chat?.userId === userId,
   })
@@ -64,6 +74,16 @@ function EvaluateButton() {
       )}
     </Form>
   )
+}
+
+function ValuesCardButton() {
+  const { cardId } = useLoaderData<typeof loader>()
+
+  return <a href={`/admin/card/${cardId}`}>
+    <Button size="sm" variant="ghost">
+      See Values Card
+    </Button>
+  </a>
 }
 
 function DebugButton({
@@ -142,6 +162,7 @@ export default function AdminChat() {
             chatId={chatId}
             shouldDuplicate={!(isUser && chat.copiedFromId)}
           />
+          <ValuesCardButton />
         </div>
       </div>
       <Separator className="my-4 md:my-8" />
