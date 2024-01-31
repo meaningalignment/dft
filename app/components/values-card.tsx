@@ -16,6 +16,7 @@ type Props = {
   card: DataModel | CanonicalValuesCard
   header?: React.ReactNode
   inlineDetails?: boolean
+  hideDetailedInstructions?: boolean
 }
 
 function Details({ card }: { card: DataModel | CanonicalValuesCard }) {
@@ -64,7 +65,7 @@ function DetailsDialog({
   )
 }
 
-export default function ValuesCard({ card, header, inlineDetails }: Props) {
+export default function ValuesCard({ card, header, inlineDetails, hideDetailedInstructions }: Props) {
   return (
     <div
       className={
@@ -74,6 +75,12 @@ export default function ValuesCard({ card, header, inlineDetails }: Props) {
       {header && header}
       <p className="text-md font-bold">{card.title}</p>
       <p className="text-md text-neutral-500">{card.instructionsShort}</p>
+      {hideDetailedInstructions ? null : (
+        <>
+          <p className="text-sm pt-4 font-bold text-stone-300">HOW?</p>
+          <p className="text-sm text-neutral-500">{card.instructionsDetailed}</p>
+        </>
+      )}
       <div className="flex-grow" />
       {!inlineDetails && (
         <>
