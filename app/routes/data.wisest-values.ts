@@ -2,11 +2,13 @@ import { json } from "@remix-run/node"
 import { summarizeGraph } from "~/values-tools/generate-moral-graph"
 import { MoralGraphSummary } from "~/values-tools/moral-graph-summary";
 
-type WiseValue = MoralGraphSummary["values"][0] & { wisdom: number }
+type WiseValue = MoralGraphSummary["values"][0] & { wisdom: number, contexts: Set<string> }
 
 export async function loader() {
   const { edges, values } = await summarizeGraph({
-    includeAllEdges: true
+    includeAllEdges: true,
+    includePageRank: true,
+    includeContexts: true,
   })
 
   edges.forEach((link) => {
@@ -24,7 +26,9 @@ export async function loader() {
   }).filter((v) => v.wisdom > 1).map((v) => ({
     id: v.id,
     title: v.title,
-    attentionalPolicies: v.evaluationCriteria
+    attentionalPolicies: v.evaluationCriteria,
+    pageRank: v.pageRank,
+    contexts: [...v.contexts],
   }))
 
   return json(sorted)

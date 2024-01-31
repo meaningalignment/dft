@@ -127,6 +127,7 @@ type RawEdgeCount = Omit<MoralGraphSummary["edges"][0], "summary">
 export interface Options {
   includeAllEdges?: boolean
   includePageRank?: boolean
+  includeContexts?: boolean
   edgeWhere?: Prisma.EdgeWhereInput
 }
 
@@ -187,6 +188,17 @@ export async function summarizeGraph(
   const extra: any = {}
   if (options.includeAllEdges) {
     extra["allEdges"] = cookedEdges
+  }
+
+  if (options.includeContexts) {
+    values.forEach((node: Value & { contexts?: Set<string> }) => {
+      node.contexts = new Set<string>()
+      trimmedEdges.forEach((edge) => {
+        if (edge.wiserValueId === node.id) {
+          edge.contexts.forEach((context) => node.contexts!.add(context))
+        }
+      })
+    })
   }
 
   if (options.includePageRank) {
