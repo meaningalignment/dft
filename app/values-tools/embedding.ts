@@ -135,7 +135,6 @@ export default class EmbeddingService {
     const embedding = await db.$queryRaw<Array<{ embedding: any }>>`SELECT embedding::text FROM "CanonicalValuesCard" cvc WHERE cvc."id" = ${card.id}`
     if (!embedding.length) throw new Error("Card not found")
     if (embedding[0].embedding === null) throw new Error("Embedding is null")
-    console.log('got embeddding', embedding[0].embedding)
     return embedding[0].embedding as number[]
   }
 
