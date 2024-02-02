@@ -28,6 +28,7 @@ export async function loader({ request }: LoaderArgs) {
   }
 
   options.includeAllEdges = url.searchParams.get("includeAllEdges") === "true"
+  options.includePageRank = url.searchParams.get("includePageRank") === "true"
   
   const graph = await summarizeGraph(options)
   

@@ -7,6 +7,7 @@ export async function loader({ request }: LoaderArgs) {
   const caseId = url.searchParams.get("caseId")
   const runId = url.searchParams.get("runId")
   const batches = url.searchParams.get("batches")
+  const includePageRank = url.searchParams.get("includePageRank")
 
   const options: Options = {}
 
@@ -33,6 +34,10 @@ export async function loader({ request }: LoaderArgs) {
     options.edgeWhere.user = {
       batch: { in: batches.split(",").map((x) => parseInt(x)).filter((x) => !isNaN(x)) },
     }
+  }
+
+  if (includePageRank) {
+    options.includePageRank = true
   }
 
   return summarizeGraph(options)
