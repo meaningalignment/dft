@@ -32,6 +32,10 @@ This process generates a [moral graph](https://dft.meaningalignment.org/data/edg
 
 The intricacies of the graph can be [explored here](https://dft.meaningalignment.org/data/edges). Further insights on the construction of the graph and the data handling can be found in the [data section](#output). For a deep dive into the motivations and processes behind DFT, read our [introduction blog post](https://meaningalignment.substack.com/p/introducing-democratic-fine-tuning).
 
+## Paper
+
+The paper for this project is [avaialble here](./paper.pdf).
+
 ## Background
 
 Our aspiration with DFT is to craft a model universally regarded as "wise." Such a model would resonate with Republicans, Democrat, irrespective of their ideological or cultural bearings. The ultimate goal is to mitigate the prospects of ideological conflicts amplified by models individually fine-tuned based on group or individual preferences. Two novel techniques are employed:
