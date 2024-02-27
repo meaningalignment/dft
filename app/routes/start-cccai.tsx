@@ -25,7 +25,7 @@ export default function StartC3AI() {
             You will be asked how ChatGPT should act in a morally tricky
             situation.
           </p>
-          <Link to={`/cccai?PROLIFIC_ID=${prolificId}`}>
+          <a href={`/cccai?PROLIFIC_ID=${prolificId}`}>
             <Button
               disabled={isLoading}
               onClick={() => {
@@ -35,7 +35,7 @@ export default function StartC3AI() {
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Let's Go
             </Button>
-          </Link>
+          </a>
         </div>
       </div>
     </div>
