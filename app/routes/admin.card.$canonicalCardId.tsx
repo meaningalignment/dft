@@ -1,4 +1,4 @@
-import { ActionArgs, json, LoaderArgs, SerializeFrom } from "@remix-run/node"
+import { ActionFunctionArgs, json, LoaderFunctionArgs, SerializeFrom } from "@remix-run/node"
 import { Link, useLoaderData } from "@remix-run/react"
 import { CanonicalValuesCard } from "@prisma/client"
 import ValuesCard from "~/components/values-card"
@@ -7,7 +7,7 @@ import { runTaskFromForm, updateCardFromForm } from "~/values-tools/critique"
 import { embeddingService } from "~/values-tools/embedding"
 import { ValuesCardEditor } from "~/components/values-card-editor"
 
-export async function loader({ params }: LoaderArgs) {
+export async function loader({ params }: LoaderFunctionArgs) {
   const card = await db.canonicalValuesCard.findUniqueOrThrow({
     where: { id: Number(params.canonicalCardId) },
     include: {
@@ -23,7 +23,7 @@ export async function loader({ params }: LoaderArgs) {
   return json({ card, similar })
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData()
   const action = formData.get("action") as string
   if (!action) {

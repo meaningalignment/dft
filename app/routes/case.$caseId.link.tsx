@@ -1,7 +1,7 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react"
-import { LoaderArgs, json } from "@remix-run/node"
+import { LoaderFunctionArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
 import { useEffect, useState } from "react"
@@ -19,7 +19,7 @@ import va from "@vercel/analytics"
 
 type Relationship = "upgrade" | "no_upgrade" | "not_sure"
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await auth.getUserId(request)
   const service = new LinkingService(db)
 
@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderArgs) {
   return json({ draw })
 }
 
-export async function action({ request }: LoaderArgs) {
+export async function action({ request }: LoaderFunctionArgs) {
   const userId = await auth.getUserId(request)
   const body = await request.json()
   const { edge, comment, relationship } = body

@@ -1,7 +1,7 @@
-import { LoaderArgs, json } from "@remix-run/node"
+import { LoaderFunctionArgs, json } from "@remix-run/node"
 import { summarizeGraph } from "~/values-tools/generate-moral-graph"
 
-export async function loader({ params }: LoaderArgs) {
+export async function loader({ params }: LoaderFunctionArgs) {
   const caseId = params.caseId!
   const graph = await summarizeGraph(({
     edgeWhere: {

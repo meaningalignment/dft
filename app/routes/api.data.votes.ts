@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client"
-import { LoaderArgs, json } from "@remix-run/node"
+import { LoaderFunctionArgs, json } from "@remix-run/node"
 import { db } from "~/config.server"
 import { prolificRuns } from "~/lib/consts"
 import { getPartyAffiliation } from "~/utils"
@@ -54,7 +54,7 @@ function calculatePolitics(demographics: any[]): Politics | undefined {
   return politics
 }
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url)
   const runId = url.searchParams.get("runId") ?? undefined
   const caseId = url.searchParams.get("caseId") ?? undefined

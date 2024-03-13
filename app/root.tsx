@@ -3,7 +3,7 @@ import {
   json,
   SerializeFrom,
   type LinksFunction,
-  type LoaderArgs,
+  type LoaderFunctionArgs,
 } from "@remix-run/node"
 import {
   Links,
@@ -27,7 +27,7 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: styles },
 ]
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await auth.getUserId(request)
 
   const user =

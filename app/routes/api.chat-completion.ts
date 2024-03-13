@@ -1,5 +1,5 @@
 import { auth, db, openai } from "~/config.server"
-import { ActionArgs, ActionFunction } from "@remix-run/node"
+import { ActionFunctionArgs, ActionFunction } from "@remix-run/node"
 import { ValuesCardData } from "~/lib/consts"
 import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
 import { ArticulatorService } from "~/services/articulator"
@@ -30,7 +30,7 @@ export const config = {
 
 export const action: ActionFunction = async ({
   request,
-}: ActionArgs): Promise<Response> => {
+}: ActionFunctionArgs): Promise<Response> => {
   const articulatorConfig = request.headers.get("X-Articulator-Config")
   const userId = await auth.getUserId(request)
   const json = await request.json()

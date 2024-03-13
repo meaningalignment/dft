@@ -1,4 +1,4 @@
-import { ActionArgs, redirect } from "@remix-run/node"
+import { ActionFunctionArgs, redirect } from "@remix-run/node"
 import { Form, useSearchParams } from "@remix-run/react"
 import { auth, db } from "~/config.server"
 import { ExternalLink } from "~/components/external-link"
@@ -14,7 +14,7 @@ import { Loader2 } from "lucide-react"
  * It is needed for Prolific since we don't have a way to send them a login code.
  * Should be deactivated when not running a prolific study (remove the env var)
  */
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   if (process.env.PROLIFIC_SIGNUP_ENABLED !== "true") {
     throw new Error("Prolific signup attempted but is not enabled.")
   }
