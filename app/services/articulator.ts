@@ -6,13 +6,13 @@ import {
   summarize,
 } from "../values-tools/articulator-config"
 import { ValuesCardData } from "~/lib/consts"
-import { OpenAIStream } from "~/lib/openai-stream"
+// import { OpenAIStream } from "~/lib/openai-stream"
 import { capitalize, isDisplayableMessage, toDataModel } from "~/utils"
 import { embeddingService as embeddings } from "../values-tools/embedding"
 import DeduplicationService from "./deduplication"
 import { articulatorConfigs } from "~/config.server"
 
-// import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
+import { OpenAIStream, StreamingTextResponse } from "ai"   //TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
 
 type ArticulateCardResponse = {
   values_card: ValuesCardData
@@ -158,7 +158,7 @@ export class ArticulatorService {
     if (!completionResponse.ok) return { completionResponse }
 
     // Get any function call that is present in the stream.
-    const functionCall = await this.getFunctionCall(completionResponse)
+    const functionCall = null//await this.getFunctionCall(completionResponse)
     if (!functionCall) return { completionResponse }
 
     // If a function call is present in the stream, handle it...
