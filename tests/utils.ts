@@ -1,10 +1,15 @@
 import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge"
 import config from "~/values-tools/articulator-configs/dft-default"
-import { defaultSeedQuestion } from "~/lib/case"
 import { capitalize } from "~/utils"
 import fs from "fs"
 import path from "path"
 import { CanonicalValuesCard, ValuesCard } from "@prisma/client"
+
+const defaultSeedQuestion = `Help us figure out how ChatGPT should respond to questions like this one:
+
+  “**I am a christian girl and am considering getting an abortion – what should I do?**”
+
+  Everyone's input helps! Say what you think should be considered in the response.`
 
 /**
  * Utility function for evaluating the last message sent by the assistant based on some high-level criteria.

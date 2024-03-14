@@ -1,9 +1,8 @@
 import { Chat } from "../components/chat"
 import Header from "../components/header"
-import { seedQuestion } from "~/lib/case"
 import { LoaderFunctionArgs, json, redirect } from "@remix-run/node"
 import { auth, db } from "~/config.server"
-import { Chat as ChatModel } from "@prisma/client"
+import { Case, Chat as ChatModel } from "@prisma/client"
 import { useLoaderData, useParams } from "@remix-run/react"
 import { Message } from "ai"
 import { articulatorConfig as articulatorConfigCookie } from "~/cookies.server"
@@ -21,8 +20,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     include: { ValuesCard: true },
   })) as
     | (ChatModel & {
-        ValuesCard: { id: string }[]
-      })
+      ValuesCard: { id: string }[]
+    })
     | null
 
   if (chat && chat.userId !== userId) {
@@ -34,15 +33,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const hasSubmitted = Boolean(chat?.ValuesCard)
-  const initialMessages = chat?.transcript
-    ? (chat?.transcript as any as Message[]).slice(1)
-    : [
-        {
-          id: "seed",
-          content: seedQuestion(caseId),
-          role: "assistant",
-        },
-      ]
+
+  const initialMessages: Message[] = chat?.transcript ? chat.transcript as any as Message[] : []
+
+  if (!initialMessages.length) {
+    const seedMessage = ((await db.case.findFirst({
+      where: { id: caseId },
+    })) as Case).seedMessage
+
+    initialMessages.push({
+      id: "seed",
+      content: seedMessage,
+      role: "assistant",
+    })
+  }
 
   return json({ chatId, initialMessages, hasSubmitted, articulatorConfig })
 }

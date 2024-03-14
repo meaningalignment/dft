@@ -191,6 +191,7 @@ model Case {
   id              String            @id
   title           String
   question        String
+  seedMessage     String            @default("OLD")
   ContextsOnCases ContextsOnCases[]
 }
 

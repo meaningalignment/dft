@@ -3,10 +3,19 @@ import { useState } from "react"
 import { Check } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
-import { Link } from "@remix-run/react"
-import { Case, cases } from "~/lib/case"
+import { Link, useLoaderData } from "@remix-run/react"
 import ContinueButton from "~/components/continue-button"
 import va from "@vercel/analytics"
+
+import { json } from "@remix-run/node"
+import { db } from "~/config.server"
+import { Case } from "@prisma/client"
+
+export async function loader() {
+  const cases = await db.case.findMany()
+  return json({ cases })
+}
+
 
 function CaseCard({ caseData }: { caseData: Case }) {
   return (
@@ -17,7 +26,7 @@ function CaseCard({ caseData }: { caseData: Case }) {
       }
     >
       <p className="text-md font-bold">{caseData.title}</p>
-      <p className="text-md text-neutral-500">{'"' + caseData.text + '"'}</p>
+      <p className="text-md text-neutral-500">{'"' + caseData.question + '"'}</p>
       <div className="flex-grow" />
     </div>
   )
@@ -38,6 +47,7 @@ function SelectedCaseCard({ caseData }: { caseData: Case }) {
 }
 
 export default function CaseSelectScreen() {
+  const cases = useLoaderData<typeof loader>().cases
   const [showCases, setShowCases] = useState(false)
   const [selected, setSelected] = useState<Case | null>(null)
 
