@@ -1,9 +1,11 @@
 import { ActionFunctionArgs, json, redirect } from "@remix-run/node"
-import { Form, useActionData, useLoaderData } from "@remix-run/react"
+import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react"
+import { useRef, useState } from "react"
+import { Button } from "~/components/ui/button"
 import { db } from "~/config.server"
 
 export const loader = async () => {
-  const cases = await db.case.findMany()
+  const cases = await db.case.findMany({ orderBy: { id: 'asc' } })
   return json({ cases })
 }
 
@@ -36,53 +38,110 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return redirect('/admin/cases')
 }
 
+export default function AdminCases() {
+  const { cases } = useLoaderData<typeof loader>();
+  const nav = useNavigation();
+  const newTitleRef = useRef<HTMLInputElement>(null);
+  const newQuestionRef = useRef<HTMLTextAreaElement>(null);
+  const newSeedMessageRef = useRef<HTMLTextAreaElement>(null);
+  const [isCreateDisabled, setIsCreateDisabled] = useState(false);
 
-function AdminCases() {
-  const { cases } = useLoaderData<typeof loader>()
-  const actionData = useActionData<typeof action>()
+  const onUpdate = () => {
+    setIsCreateDisabled(!newTitleRef.current?.value || !newQuestionRef.current?.value || !newSeedMessageRef.current?.value)
+  }
 
   return (
-    <div>
-      <h1>Cases Admin Panel</h1>
-      <Form method="post">
-        <label>
-          Title:
-          <input type="text" name="title" placeholder="Abortion" required />
-        </label>
-        <label>
-          Question:
-          <input type="text" name="question" placeholder="What should the abortion policies be in the US?" required />
-        </label>
-        <label>
-          Seed Chat Message:
-          <input type="text" name="seedMessage" placeholder="Your task is to figure out what the abortion policies should be in the US. Please tell us what you think is important to take into consideration when forming these policies!" required />
-        </label>
-        <button type="submit" name="_action" value="create">Create Case</button>
-      </Form>
-      <ul>
-        {cases.map((c) => (
-          <li key={c.id}>
-            {c.title} - {c.question}
-            <Form method="post">
+    <div className="flex justify-center items-center h-full pb-8"> {/* Added padding at the bottom */}
+      <div className="w-full max-w-md">
+        <h1 className="text-3xl font-bold my-8 text-center">Cases Admin Panel</h1>
+        {cases.map((c, index) => (
+          <div key={c.id} className={`mt-8 max-w-xl mx-4 flex flex-col gap-4 ${index !== 0 ? 'border-t border-gray-200 pt-8' : ''}`}>
+            <Form method="post" className="flex flex-col gap-4">
               <input type="hidden" name="id" value={c.id} />
-              <label>
-                Title:
-                <input type="text" name="title" value={c.title} required />
+              <label className="text-gray-700">
+                <strong>Title</strong>
+                <input
+                  type="text"
+                  name="title"
+                  defaultValue={c.title}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 px-2 py-1.5 text-sm"
+                  required
+                />
               </label>
-              <label>
-                Question:
-                <input type="text" name="question" value={c.question} required />
+              <label className="text-gray-700">
+                <strong>Question</strong>
+                <textarea
+                  name="question"
+                  defaultValue={c.question}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 px-2 py-1.5 text-sm"
+                  required
+                />
               </label>
-              <label>
-                Seed Chat Message:
-                <input type="text" name="seedMessage" value={c.seedMessage} required />
+              <label className="text-gray-700">
+                <strong>Seed Chat Message</strong>
+                <textarea
+                  name="seedMessage"
+                  defaultValue={c.seedMessage}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 px-2 py-1.5 text-sm"
+                  required
+                />
               </label>
-              <button type="submit" name="_action" value="update">Edit</button>
+              <div className="flex items-end justify-center gap-2">
+                <Button type="submit" name="_action" value="update" className="mt-4 px-4 py-2">
+                  {nav.state === 'submitting' ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
             </Form>
-          </li>
+          </div>
         ))}
-      </ul>
+        <div className="mt-8 w-96 flex flex-col gap-4 border-t border-gray-200 pt-8">
+          <Form method="post" className="flex flex-col gap-4">
+            <label className="text-gray-700">
+              <strong>Title</strong>
+              <input
+                ref={newTitleRef}
+                type="text"
+                name="title"
+                onChange={onUpdate}
+                placeholder="Housing Policy"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 px-2 py-1.5 text-sm"
+                required
+              />
+            </label>
+            <label className="text-gray-700">
+              <strong>Question</strong>
+              <textarea
+                ref={newQuestionRef}
+                name="question"
+                placeholder="What should be considered when shaping SF housing policy?"
+                onChange={onUpdate}
+                defaultValue=""
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 px-2 py-1.5 text-sm"
+                required
+              />
+            </label>
+            <label className="text-gray-700">
+              <strong>Seed Chat Message</strong>
+              <textarea
+                ref={newSeedMessageRef}
+                name="seedMessage"
+                placeholder={`**What should be considered when shaping SF housing policy?**
+
+Your input will be used to inform policymakers and shape the future of housing in San Francisco. Let's get started!`}
+                onChange={onUpdate}
+                defaultValue=""
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 px-2 py-1.5 text-sm min-h-40"
+                required
+              />
+            </label>
+            <div className="flex items-end justify-center gap-2">
+              <Button type="submit" name="_action" value="create" className="mt-4 px-4 py-2" disabled={!newTitleRef.current?.value || !newQuestionRef.current?.value || !newSeedMessageRef.current?.value}>
+                {nav.state === 'submitting' ? 'Creating...' : 'Create New Case'}
+              </Button>
+            </div>
+          </Form>
+        </div>
+      </div>
     </div>
   )
 }
-

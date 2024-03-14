@@ -5,14 +5,19 @@ import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
 import { Link, useLoaderData } from "@remix-run/react"
 import ContinueButton from "~/components/continue-button"
-import va from "@vercel/analytics"
 
-import { json } from "@remix-run/node"
+import { json, redirect } from "@remix-run/node"
 import { db } from "~/config.server"
 import { Case } from "@prisma/client"
 
 export async function loader() {
   const cases = await db.case.findMany()
+
+  // Skip case select if there's only one case.
+  if (cases.length === 1) {
+    return redirect(`/case/${cases[0].id}/chat-explainer`)
+  }
+
   return json({ cases })
 }
 
@@ -84,9 +89,8 @@ export default function CaseSelectScreen() {
           ))}
         </div>
         <div
-          className={`flex flex-col justify-center items-center pt-4 transition-opacity ease-in duration-500 delay-525 ${
-            showCases ? "opacity-100" : "opacity-0"
-          }`}
+          className={`flex flex-col justify-center items-center pt-4 transition-opacity ease-in duration-500 delay-525 ${showCases ? "opacity-100" : "opacity-0"
+            }`}
         >
           <Link to={selected ? `/case/${selected.id}/chat-explainer` : "#"}>
             <ContinueButton event="Selected Case" />

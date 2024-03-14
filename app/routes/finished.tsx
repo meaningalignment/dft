@@ -99,13 +99,9 @@ export default function FinishedScreen() {
               </h1>
             </div>
           )}
-          <p className="text-sm text-neutral-500 my-8">
-            Once the Moral Graph is complete, you'll receive a follow-up email
-            showcasing the results.
-          </p>
         </div>
 
-        <div className="overflow-x-hidden w-screen h-full flex justify-center">
+        <div className="overflow-x-hidden w-screen h-full flex justify-center mt-16">
           <Carousel cards={carouselValues as any[]} />
         </div>
       </div>

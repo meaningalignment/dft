@@ -41,7 +41,7 @@ export const action: ActionFunction = async ({
 
   // Create stream for next chat message.
   const articulator = new ArticulatorService(
-    articulatorConfig ?? "default",
+    articulatorConfig ?? process.env.ARTICULATOR_CONFIG ?? "default",
     deduplication,
     openai,
     db

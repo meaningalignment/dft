@@ -36,7 +36,7 @@ const cardGuidelines = `1. **Cards should be indeterminate.** The card should de
 9. **The card should be applicable to any user, not just the particular user from the transcript**. Therefore, the instructions and evaluation criterias should *not* refer to "the woman", "the parent" or "the girl" from the transcript, but "the user" instead.
 10. The card should be written from first-person perspective.`
 
-const mainPrompt = `You are a meaning assistant, helping a user understand what their underlying "sources of meaning" are when deliberating about how they think ChatGPT should respond to morally tricky situations.
+const mainPrompt = `You are a meaning assistant, helping a user understand what their underlying "sources of meaning" are when deliberating about a topic.
 
 ${definitionOfASourceOfMeaning}
 
@@ -69,7 +69,7 @@ Some general guidelines:
 - Always refer to "sources of meaning" as "values" in the conversation with the user. The user may not be familiar with the term "source of meaning".
 - Don't overwhelm the user by asking multiple questions at the same time.
 - If the user seems to have multiple sources of meaning, ask them to pick one to focus on, and tell them they can do the rest in a second conversation.
-- Only call 'show_values_card' when you are confident you have found a source of meaning, and you know several things that the user thinks ChatGPT should pay attention to in the situation, which fit together in a coherent way.
+- Only call 'show_values_card' when you are confident you have found a source of meaning, and you know several things that the user thinks it applies to the situation, which fit together in a coherent way.
 - Only call 'submit_card' once you have shown a card to the user that they are satisfied with.
 
 Here are some examples of the cards you will be helping the user articulate:
@@ -87,7 +87,7 @@ A "values card" is a representation of a "source of meaning". A values card has 
 
 ${definitionOfASourceOfMeaning}
 
-The values card should be written from the perspective of how ChatGPT should respond to the situation in the first message, but should not contain specific details from that situation or reference the subjects exactly. (Instead of "the girl" you can write "the user" or "a person"). The card should reflect the user's sources of meaning, not yours or those of ChatGPT's creators.
+The values card should be written from first-person perspective, and should not contain specific details from the transcript or reference the subjects exactly. (Instead of "Amanda" you can write "the girl" or "A person"). The card should reflect the user's sources of meaning, not yours.
 
 # Card Guidelines
 
@@ -176,7 +176,7 @@ Below are some critiques of values cards, and how they could be improved by foll
 }`
 
 const config: ArticulatorConfig = {
-  name: "default",
+  name: "general",
   model: "gpt-4-0613",
   prompts: {
     main: {
@@ -198,7 +198,7 @@ const config: ArticulatorConfig = {
                       type: "string",
                     },
                     description:
-                      "A list of things to attend to that clearly distinguish whether ChatGPT is following this source of meaning. Items should be precise, but general, instructions such that almost anyone could see how to attend to them.",
+                      "A list of things to attend to that clearly distinguish whether someone is following this source of meaning. Items should be precise, but general, instructions such that almost anyone could see how to attend to them.",
                   },
                 },
               },
