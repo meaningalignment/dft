@@ -5,7 +5,6 @@ import {
 } from "openai-edge"
 import { db, dialogueEvaluatorConfig, inngest } from "~/config.server"
 import { normalizeMessage } from "../services/articulator"
-import { model } from "~/lib/consts"
 import { Chat, Prisma } from "@prisma/client"
 import crypto from "crypto"
 
@@ -31,7 +30,7 @@ export async function evaluateTranscript(chat: Chat) {
     []) as any as ChatCompletionRequestMessage[]
   const messages = transcript.map(normalizeMessage).slice(1)
   const res = await openai.createChatCompletion({
-    model: model,
+    model: "gpt-4-1106-preview",
     temperature: 0.2,
     messages: [
       {

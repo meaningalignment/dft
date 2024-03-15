@@ -26,23 +26,24 @@ async function createHeaders(
 }
 
 export const config = {
-    maxDuration: 300
-};
+  maxDuration: 300,
+}
 
 export const action: ActionFunction = async ({
   request,
 }: ActionFunctionArgs): Promise<Response> => {
-  const articulatorConfig = request.headers.get("X-Articulator-Config")
+  const ff = process.env.ARTICULATOR_CONFIG
+
+  console.log(ff)
+  const articulatorConfig = process.env.ARTICULATOR_CONFIG ?? "default"
   const userId = await auth.getUserId(request)
   const json = await request.json()
 
   const { messages, chatId, caseId, function_call } = json
 
-  console.log(`Chat completion for chat ${chatId}`)
-
   // Create stream for next chat message.
   const articulator = new ArticulatorService(
-    articulatorConfig ?? process.env.ARTICULATOR_CONFIG ?? "default",
+    articulatorConfig,
     deduplication,
     openai,
     db
@@ -70,7 +71,6 @@ export const action: ActionFunction = async ({
     // ...otherwise, return the response.
     return new StreamingTextResponse(OpenAIStream(completionResponse), {
       headers: await createHeaders(),
-      
     })
   }
 }

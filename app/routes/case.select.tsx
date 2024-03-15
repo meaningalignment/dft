@@ -9,9 +9,14 @@ import ContinueButton from "~/components/continue-button"
 import { json, redirect } from "@remix-run/node"
 import { db } from "~/config.server"
 import { Case } from "@prisma/client"
+import { EmptyScreen } from "~/components/empty-screen"
 
 export async function loader() {
   const cases = await db.case.findMany()
+
+  if (cases.length === 0) {
+    throw Error("No cases found. To add a new case, make sure you're an admin user and naviagte to /admin/cases.")
+  }
 
   // Skip case select if there's only one case.
   if (cases.length === 1) {

@@ -3,7 +3,7 @@ datasource db {
   url               = env("POSTGRES_PRISMA_URL") // uses connection pooling
   directUrl         = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
   shadowDatabaseUrl = env("POSTGRES_URL_NON_POOLING_SHADOW") // used for migrations
-  extensions        = [pgvector(map: "vector", schema: "extensions")] // Add the pgvector extension
+  extensions        = [pgvector(map: "vector")] // Add the pgvector extension
 }
 
 generator client {
@@ -73,7 +73,7 @@ model ValuesCard {
   updatedAt                 DateTime                     @updatedAt
   canonicalCardId           Int?
   chatId                    String                       @unique
-  chat                      Chat                         @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  chat                      Chat?                        @relation(fields: [chatId], references: [id], onDelete: Cascade)
   canonicalCard             CanonicalValuesCard?         @relation(fields: [canonicalCardId], references: [id], onDelete: SetNull)
   embedding                 Unsupported("vector(1536)")?
   quality                   ValueCardQuality             @default(ok)
@@ -196,8 +196,8 @@ model Case {
 }
 
 model ContextsOnCases {
-  context   Context  @relation(fields: [contextId], references: [id])
-  case      Case     @relation(fields: [caseId], references: [id])
+  context   Context  @relation(fields: [contextId], references: [id], onDelete: Cascade)
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
   contextId String
   caseId    String
   createdAt DateTime @default(now())

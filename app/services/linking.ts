@@ -146,8 +146,8 @@ async function clusterCanonicalCards(contexts: string[]) {
   )
 
   const res = await openai.createChatCompletion({
-    model: "gpt-4-32k-0613",
-    temperature: 0.3,
+    model: "gpt-4-1106-preview",
+    temperature: 0.0,
     messages: [
       { role: "system", content: clusterPrompt(contexts) },
       { role: "user", content: cardDataAsJson },
@@ -179,7 +179,7 @@ const clusterFunction = {
             },
             condition: {
               description:
-                "The situation when the values in the cluster applies. Must be one of the predefined conditions.",
+                "One of the supplied conditions.",
               type: "string",
             },
           },
@@ -221,13 +221,10 @@ interface Cluster {
 
 const clusterPrompt = (contexts: string[]) => `You'll receive a bunch of values.
 
-First, pick a condition for when to apply each value from the following list:
+First, pick a condition for when to apply each value from the following list.
 ${contexts.join("\n")}
 
-Then, cluster the values based on similarity of conditions.
-
-# Guidelines:
-Conditions are not about what the user needs, seeks, values, or wants. What the user is up to is irrelevant. Instead, conditions should be about the situation or state the user is in, or that a dialogue with the user is in.`
+Then, cluster the values based on how relevant they are for the conditions. Make sure some clusters have at least 2 values.`
 
 export async function generateTransitions(cardIds: number[]): Promise<{
   transitions: Transition[]
@@ -246,7 +243,7 @@ export async function generateTransitions(cardIds: number[]): Promise<{
   )
 
   const res = await openai.createChatCompletion({
-    model: "gpt-4-32k-0613",
+    model: "gpt-4-1106-preview",
     temperature: 0.3,
     messages: [
       { role: "system", content: transitionsPrompt },
@@ -297,9 +294,9 @@ async function cleanupTransitions(runId: string): Promise<{
     where: { runId: { not: runId } },
   })
 
-  if (newTransitions < 3) {
+  if (newTransitions < 1) {
     throw Error(
-      "Fewer than 3 new transitions found by prompt, will break screen 3"
+      "No new transitions found by prompt, will break screen 3"
     )
   }
 
@@ -546,9 +543,20 @@ ${JSON.stringify(exampleTransitions, null, 2)}`
 // Ingest function for creating edge hypotheses.
 //
 
+export const hypothesize_cron = inngest.createFunction(
+  { name: "Create Hypothetical Edges Cron", concurrency: 1 },
+  { cron: "0 */12 * * *" },
+  async ({ step }) => {
+  await step.sendEvent({ name: "hypothesize", data: {} })
+
+  return {
+    message: "Triggered a hypothesization run."
+  }
+})
+
 export const hypothesize = inngest.createFunction(
   { name: "Create Hypothetical Edges", concurrency: 1 },
-  { cron: "0 */12 * * *" },
+  { event: "hypothesize" },
   async ({ step, logger, runId }) => {
     logger.info("Creating hypothetical links for all cases.")
 

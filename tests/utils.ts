@@ -43,7 +43,7 @@ export async function evaluateTranscript(
   transcript += "\n" + capitalize("assistant") + ": " + lastMessage
 
   const evaluationResponse = await openai.createChatCompletion({
-    model: "gpt-4-0613",
+    model: "gpt-4-1106-preview",
     messages: [
       {
         role: "system",

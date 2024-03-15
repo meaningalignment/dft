@@ -126,6 +126,9 @@ export default function LinkScreen() {
 
     // Move to the next pair.
     setIndex((i) => i + 1)
+
+    // Scroll to the top of the page.
+    window?.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   if (!draw[index]) {

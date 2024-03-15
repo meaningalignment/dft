@@ -28,7 +28,7 @@ export default function LoginScreen() {
   const redirect = searchParams.get("redirect") as string
 
   useEffect(() => {
-    if (actionData?.status !== 200) {
+    if (actionData && actionData?.status !== 200) {
       setShowError(true)
       setIsLoading(false)
       setEmail("")

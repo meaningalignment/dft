@@ -2,7 +2,7 @@ import { ActionFunctionArgs, json, redirect } from "@remix-run/node"
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react"
 import { useRef, useState } from "react"
 import { Button } from "~/components/ui/button"
-import { db } from "~/config.server"
+import { db, inngest } from "~/config.server"
 
 export const loader = async () => {
   const cases = await db.case.findMany({ orderBy: { id: 'asc' } })
@@ -16,23 +16,30 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (action === 'create') {
     const title = formData.get('title') as string
-    const id = title.toLowerCase().replace(/ /g, '_')
+    const caseId = title.toLowerCase().replace(/ /g, '_')
     const question = formData.get('question') as string
     const seedMessage = formData.get('seedMessage') as string
 
     await db.case.create({
-      data: { id, title, question, seedMessage },
+      data: { id: caseId, title, question, seedMessage },
     })
+
+    // Seed the new case with contexts and values cards.
+    await inngest.send({ name: "seed", data: { caseId, question } });
   } else if (action === 'update') {
-    const id = formData.get('id') as string
+    const caseId = formData.get('id') as string
     const title = formData.get('title') as string
     const question = formData.get('question') as string
     const seedMessage = formData.get('seedMessage') as string
 
     await db.case.update({
-      where: { id },
+      where: { id: caseId },
       data: { title, question, seedMessage },
     })
+
+
+    // TODO remove
+    await inngest.send({ name: "seed", data: { caseId, question } });
   }
 
   return redirect('/admin/cases')
@@ -53,7 +60,12 @@ export default function AdminCases() {
   return (
     <div className="flex justify-center items-center h-full pb-8"> {/* Added padding at the bottom */}
       <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold my-8 text-center">Cases Admin Panel</h1>
+        <h2 className="text-2xl font-bold text-center mb-4 mt-8">Active Cases</h2>
+        {cases.length === 0 && (
+          <div className="flex items-center justify-center h-32">
+            <p className="text-lg text-gray-600">No active cases.</p>
+          </div>
+        )}
         {cases.map((c, index) => (
           <div key={c.id} className={`mt-8 max-w-xl mx-4 flex flex-col gap-4 ${index !== 0 ? 'border-t border-gray-200 pt-8' : ''}`}>
             <Form method="post" className="flex flex-col gap-4">
@@ -88,13 +100,14 @@ export default function AdminCases() {
               </label>
               <div className="flex items-end justify-center gap-2">
                 <Button type="submit" name="_action" value="update" className="mt-4 px-4 py-2">
-                  {nav.state === 'submitting' ? 'Saving...' : 'Save'}
+                  {nav.state === 'submitting' ? 'Saving...' : 'Update'}
                 </Button>
               </div>
             </Form>
           </div>
         ))}
-        <div className="mt-8 w-96 flex flex-col gap-4 border-t border-gray-200 pt-8">
+        <div className="mt-8 max-w-xl flex flex-col gap-4 border-t border-gray-200 pt-8">
+          <h2 className="text-2xl font-bold text-center mb-4">Add New Case</h2>
           <Form method="post" className="flex flex-col gap-4">
             <label className="text-gray-700">
               <strong>Title</strong>
@@ -135,7 +148,7 @@ Your input will be used to inform policymakers and shape the future of housing i
               />
             </label>
             <div className="flex items-end justify-center gap-2">
-              <Button type="submit" name="_action" value="create" className="mt-4 px-4 py-2" disabled={!newTitleRef.current?.value || !newQuestionRef.current?.value || !newSeedMessageRef.current?.value}>
+              <Button type="submit" name="_action" value="create" className="mt-4 px-4 py-2" disabled={isCreateDisabled}>
                 {nav.state === 'submitting' ? 'Creating...' : 'Create New Case'}
               </Button>
             </div>

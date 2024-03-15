@@ -1,7 +1,6 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { db } from "../config.server"
 import { ChatCompletionFunctions, OpenAIApi } from "openai-edge"
-import { model } from "~/lib/consts"
 import { v4 as uuid } from "uuid"
 import { embeddingService as embedding } from "../values-tools/embedding"
 
@@ -45,10 +44,7 @@ export default class SelectionService {
   private db: PrismaClient
   private openai: OpenAIApi
 
-  constructor(
-    openai: OpenAIApi,
-    db: PrismaClient,
-  ) {
+  constructor(openai: OpenAIApi, db: PrismaClient) {
     this.openai = openai
     this.db = db
   }
@@ -74,13 +70,20 @@ export default class SelectionService {
             userId,
           },
         },
-        valuesCards: {
-          some: {
-            chat: {
-              caseId,
+        OR: [
+          {
+            valuesCards: {
+              some: {
+                chat: {
+                  caseId,
+                },
+              },
             },
           },
-        },
+          {
+            valuesCards: { none: {} },
+          },
+        ],
       },
     })) as Array<
       CanonicalValuesCard & {
@@ -153,11 +156,7 @@ export default class SelectionService {
 
     console.log("Got average embedding for user.")
 
-    return await embedding.findValuesSimilarTo(
-      userEmbedding,
-      candidates,
-      6
-    )
+    return await embedding.findValuesSimilarTo(userEmbedding, candidates, 6)
   }
 
   async trimCandidatesWithPrompt(
@@ -187,7 +186,7 @@ export default class SelectionService {
 
     // Call prompt.
     const response = await this.openai.createChatCompletion({
-      model,
+      model: "gpt-4-1106-preview",
       messages: [
         { role: "system", content: system },
         { role: "user", content: message },

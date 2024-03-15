@@ -1,7 +1,5 @@
 import { dftStyle } from "~/values-tools/value-styles"
 
-export const model = "gpt-4-0613"
-
 /**
  * The type of the `parameters` field of the values card OpenAI functions.
  */

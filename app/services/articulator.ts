@@ -158,7 +158,7 @@ export class ArticulatorService {
     if (!completionResponse.ok) return { completionResponse }
 
     // Get any function call that is present in the stream.
-    const functionCall = null//await this.getFunctionCall(completionResponse)
+    const functionCall = await this.getFunctionCall(completionResponse)
     if (!functionCall) return { completionResponse }
 
     // If a function call is present in the stream, handle it...
@@ -211,8 +211,10 @@ export class ArticulatorService {
     // We can use that key to check if the response is a function call.
     //
     const { value: first } = await reader.read()
+    const decoder = new TextDecoder()
+    const firstString = decoder.decode(first)
 
-    const isFunctionCall = first
+    const isFunctionCall = firstString
       ?.replace(/[^a-zA-Z0-9_]/g, "")
       ?.startsWith("function_call")
 
@@ -224,7 +226,7 @@ export class ArticulatorService {
     // Function arguments are streamed as tokens, so we need to
     // read the whole stream, concatenate the tokens, and parse the resulting JSON.
     //
-    let result = first
+    let result = firstString
 
     while (true) {
       const { done, value } = await reader.read()
@@ -233,7 +235,7 @@ export class ArticulatorService {
         break
       }
 
-      result += value
+      result += decoder.decode(value)
     }
 
     //
