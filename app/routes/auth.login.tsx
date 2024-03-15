@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { ActionFunctionArgs, json } from "@remix-run/node"
+import { ActionArgs, json } from "@remix-run/node"
 import { Form, useActionData, useSearchParams } from "@remix-run/react"
 import { auth } from "~/config.server"
 import { Button } from "~/components/ui/button"
@@ -9,7 +9,7 @@ import { Loader2 } from "lucide-react"
 import { ExternalLink } from "~/components/external-link"
 import va from "@vercel/analytics"
 
-export async function action(args: ActionFunctionArgs) {
+export async function action(args: ActionArgs) {
   try {
     return await auth.loginSubmitAction(args)
   } catch (error: any) {

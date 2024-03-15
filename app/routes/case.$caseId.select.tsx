@@ -1,7 +1,7 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react"
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node"
+import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
 import { useEffect, useState } from "react"
@@ -15,7 +15,7 @@ import va from "@vercel/analytics"
 
 const minRequiredVotes = 2
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = await auth.getUserId(request)
   const caseId = params.caseId!
 
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({ values, drawId: id })
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
+export async function action({ request, params }: ActionArgs) {
   const userId = await auth.getUserId(request)
   const caseId = params.caseId!
 

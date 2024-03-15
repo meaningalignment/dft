@@ -1,6 +1,6 @@
 import { Chat } from "../components/chat"
 import Header from "../components/header"
-import { LoaderFunctionArgs, json, redirect } from "@remix-run/node"
+import { LoaderArgs, json, redirect } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import { Case, Chat as ChatModel } from "@prisma/client"
 import { useLoaderData, useParams } from "@remix-run/react"
@@ -8,7 +8,7 @@ import { Message } from "ai"
 import { articulatorConfig as articulatorConfigCookie } from "~/cookies.server"
 import { ChatContext } from "~/context/case"
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ request, params }: LoaderArgs) {
   const userId = await auth.getUserId(request)
   const chatId = params.chatId!
   const caseId = params.caseId!

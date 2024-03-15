@@ -1,4 +1,5 @@
-import { NavLink, Outlet, json, useLoaderData } from "@remix-run/react"
+import { json } from "@remix-run/node"
+import { NavLink, Outlet, useLoaderData } from "@remix-run/react"
 import { db } from "~/config.server"
 
 export const loader = async () => {

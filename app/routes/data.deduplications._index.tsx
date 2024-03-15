@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node"
+import { LoaderArgs, json } from "@remix-run/node"
 import { useLoaderData } from "@remix-run/react"
 import { IconArrowRight } from "~/components/ui/icons"
 import ValuesCard from "~/components/values-card"
@@ -17,7 +17,7 @@ function isDifferent(card: ValuesCardType, deduplicated: DeduplicatedCard) {
     deduplicated.evaluationCriteria.join("") != card.evaluationCriteria.join("")
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: LoaderArgs) {
   const searchParams = new URL(request.url).searchParams
   const generation = Number(searchParams.get("generation") || currentGeneration)
   const pairs = (await db.valuesCard.findMany({

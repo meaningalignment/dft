@@ -1,7 +1,7 @@
-import { LoaderFunctionArgs, redirect } from "@remix-run/node"
+import { LoaderArgs, redirect } from "@remix-run/node"
 import { db } from "~/config.server"
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: LoaderArgs) {
   const url = new URL(request.url)
   
   const prolificId = url.searchParams.get("prolificId")

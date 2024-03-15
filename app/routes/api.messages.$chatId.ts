@@ -1,8 +1,8 @@
-import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node"
+import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
 import { Message } from "ai"
 import { db } from "~/config.server"
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params }: LoaderArgs) {
   const chatId = params.chatId
   const chat = await db.chat.findUnique({
     where: { id: chatId },
@@ -26,7 +26,7 @@ function mergeMessages(oldMessages: Message[], newMessages: Message[]) {
   return [...oldMessages, ...newMessages.slice(i)]
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request }: ActionArgs) {
   const body = await request.json()
   let { messages, chatId } = body
   messages = messages.filter((message: any) => message.content !== "")

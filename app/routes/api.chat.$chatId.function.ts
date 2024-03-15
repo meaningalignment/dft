@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, ActionFunction, LoaderFunctionArgs, LoaderFunction, json } from "@remix-run/node"
+import { ActionArgs, ActionFunction, LoaderArgs, LoaderFunction, json } from "@remix-run/node"
 import { Message } from "ai"
 import { db } from "~/config.server"
 import { isDisplayableMessage } from "~/utils"
@@ -16,7 +16,7 @@ function getDisplayName(functionName?: string) {
 
 export const loader: LoaderFunction = async ({
   params,
-}: LoaderFunctionArgs): Promise<Response> => {
+}: LoaderArgs): Promise<Response> => {
   const chatId = params.chatId
   const chat = await db.chat.findUnique({ where: { id: chatId } })
 
@@ -33,7 +33,7 @@ export const loader: LoaderFunction = async ({
 
 export const action: ActionFunction = async ({
   params, request
-}: ActionFunctionArgs): Promise<Response> => {
+}: ActionArgs): Promise<Response> => {
   if (request.method !== 'DELETE') {
     return new Response('Method Not Allowed', { status: 405 });
   }

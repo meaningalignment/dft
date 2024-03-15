@@ -1,11 +1,11 @@
-import { LoaderFunctionArgs, json } from "@remix-run/node"
+import { LoaderArgs, json } from "@remix-run/node"
 import Header from "~/components/header"
 import { useLoaderData } from "@remix-run/react"
 import { auth, db } from "~/config.server"
 import Carousel from "~/components/carousel"
 import { useCurrentUser } from "~/root"
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: LoaderArgs) {
   const userId = await auth.getUserId(request)
 
   const [

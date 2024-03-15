@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node"
+import { ActionArgs, LoaderArgs, json, redirect } from "@remix-run/node"
 import { Link, useLoaderData, useNavigate, useParams } from "@remix-run/react"
 import { IconArrowRight } from "~/components/ui/icons"
 import ValuesCard from "~/components/values-card"
@@ -24,7 +24,7 @@ function LoadingScreen() {
   </div>
 }
 
-export async function loader(args: LoaderFunctionArgs) {
+export async function loader(args: LoaderArgs) {
   const userId = parseInt(args.params.userId!)
 
   const card = (await db.valuesCard.findFirst({
@@ -48,7 +48,7 @@ export async function loader(args: LoaderFunctionArgs) {
   return json({ canonical: card.canonicalCard, deduplicate: getDeduplicate(card), caseId: card.chat.caseId })
 }
 
-export async function action(args: ActionFunctionArgs) {
+export async function action(args: ActionArgs) {
   const userId = parseInt(args.params.userId!)
   const { deduplicate, isFair } = (await args.request.json()) as { deduplicate: { id: number }, original: { id: number }, isFair: boolean }
 

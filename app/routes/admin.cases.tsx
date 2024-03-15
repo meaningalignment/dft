@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, json, redirect } from "@remix-run/node"
+import { ActionArgs, json, redirect } from "@remix-run/node"
 import { Form, useActionData, useLoaderData, useNavigation } from "@remix-run/react"
 import { useRef, useState } from "react"
 import { Button } from "~/components/ui/button"
@@ -10,7 +10,7 @@ export const loader = async () => {
 }
 
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = async ({ request }: ActionArgs) => {
   const formData = await request.formData()
   const action = formData.get('_action')
 
