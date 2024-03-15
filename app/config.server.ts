@@ -5,6 +5,7 @@ import { Configuration, OpenAIApi } from "openai-edge"
 import { DialogueEvaluatorConfig } from "./values-tools/dialogue-evaluator"
 import { ArticulatorConfig } from "./values-tools/articulator-config"
 import dftDefaultConfig from "./values-tools/articulator-configs/dft-default"
+import dftGeneralConfig from "./values-tools/articulator-configs/dft-general"
 
 export const db = new PrismaClient()
 
@@ -18,6 +19,7 @@ export const auth = cowpunkify({
 export const inngest = new Inngest({
   name: "Democratic Fine-Tuning",
   apiKey: process.env.INNGEST_API_KEY,
+  eventKey: process.env.INNGEST_EVENT_KEY,
 })
 
 export const openai = new OpenAIApi(
@@ -46,4 +48,5 @@ export const dialogueEvaluatorConfig: DialogueEvaluatorConfig = {
 
 export const articulatorConfigs: { [key: string]: ArticulatorConfig } = {
   default: dftDefaultConfig,
+  general: dftGeneralConfig,
 }

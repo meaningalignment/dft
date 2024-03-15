@@ -36,6 +36,7 @@ module.exports = {
     /^trim-lines.*/,
   ],
   tailwind: true,
+  sourcemap: true,
   future: {
     v2_dev: true,
     v2_errorBoundary: true,
@@ -44,5 +45,4 @@ module.exports = {
     v2_normalizeFormMethod: true,
     v2_routeConvention: true,
   },
-  sourcemap: true,
 }

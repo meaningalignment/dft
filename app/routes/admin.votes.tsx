@@ -1,7 +1,15 @@
-import { NavLink, Outlet } from "@remix-run/react"
-import { cases } from "~/lib/case"
+import { json } from "@remix-run/node"
+import { NavLink, Outlet, useLoaderData } from "@remix-run/react"
+import { db } from "~/config.server"
+
+export const loader = async () => {
+  const cases = await db.case.findMany()
+  return json({ cases })
+}
 
 export default function AdminVotes() {
+  const { cases } = useLoaderData<typeof loader>() 
+
   return (
     <div className="grid grid-cols-5">
       <div className="col-span-1 border-r h-screen overflow-y-auto">
@@ -24,7 +32,7 @@ export default function AdminVotes() {
                 className="border-b border-gray-300 py-2 px-4 py-2 "
               >
                 <div className="font-bold">{c.title}</div>
-                <div>{c.text}</div>
+                <div>{c.question}</div>
               </li>
             </NavLink>
           ))}

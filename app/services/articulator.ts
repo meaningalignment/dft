@@ -6,13 +6,13 @@ import {
   summarize,
 } from "../values-tools/articulator-config"
 import { ValuesCardData } from "~/lib/consts"
-import { OpenAIStream } from "~/lib/openai-stream"
 import { capitalize, isDisplayableMessage, toDataModel } from "~/utils"
 import { embeddingService as embeddings } from "../values-tools/embedding"
 import DeduplicationService from "./deduplication"
 import { articulatorConfigs } from "~/config.server"
+import { OpenAIStream, StreamingTextResponse } from "~/lib/openai-stream"
 
-// import { OpenAIStream, StreamingTextResponse } from "ai"   TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
+// import { OpenAIStream, StreamingTextResponse } from "ai"   //TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
 
 type ArticulateCardResponse = {
   values_card: ValuesCardData
@@ -252,7 +252,6 @@ export class ArticulatorService {
     chatId: string,
     messages: ChatCompletionRequestMessage[]
   ): Promise<FunctionResult> {
-
     console.log("Articulating card for chat " + chatId)
     //
     // Fetch the chat with the provisional card from the database.
@@ -265,12 +264,16 @@ export class ArticulatorService {
       ? (chat.provisionalCard as ValuesCardData)
       : null
 
-    console.log(`Previous card for chat ${chatId}: ${JSON.stringify(previousCard)}`)
+    console.log(
+      `Previous card for chat ${chatId}: ${JSON.stringify(previousCard)}`
+    )
 
     // Articulate the values card.
     const response = await this.articulateValuesCard(messages, previousCard)
 
-    console.log(`Articulated card for chat ${chatId}: ${JSON.stringify(response)}`)
+    console.log(
+      `Articulated card for chat ${chatId}: ${JSON.stringify(response)}`
+    )
 
     // The newly articulated card.
     let newCard = response.values_card
@@ -448,7 +451,9 @@ export class ArticulatorService {
     chatId: string,
     canonicalCardId: number | null
   ): Promise<string> {
-    console.log(`Submitting values card:\n\n${JSON.stringify(card)} for chat ${chatId}`)
+    console.log(
+      `Submitting values card:\n\n${JSON.stringify(card)} for chat ${chatId}`
+    )
 
     const data = {
       title: card.title,
@@ -461,10 +466,10 @@ export class ArticulatorService {
 
     // Save the card in the database.
     const result = (await this.db.valuesCard
-      .upsert({ 
-        where: { chatId }, 
+      .upsert({
+        where: { chatId },
         create: { ...data },
-        update: { ...data } 
+        update: { ...data },
       })
       .catch((e) => console.error(e))) as ValuesCard
 
@@ -530,7 +535,9 @@ export class ArticulatorService {
       data.choices[0].message.function_call.arguments
     ) as ArticulateCardResponse
 
-    console.log(`Parsed response from articulation prompt: ${JSON.stringify(response)}`)
+    console.log(
+      `Parsed response from articulation prompt: ${JSON.stringify(response)}`
+    )
 
     return response
   }

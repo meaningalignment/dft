@@ -4,7 +4,7 @@ import { evaluateTranscript, readTranscript } from "./utils"
 
 let openai: OpenAIApi
 
-const model = "gpt-4-0613"
+const model = "gpt-4-1106-preview"
 
 beforeAll(() => {
   openai = new OpenAIApi(

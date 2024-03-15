@@ -1,6 +1,6 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { embeddingService as embeddings } from "../values-tools/embedding"
-import { ValuesCardData, model } from "~/lib/consts"
+import { ValuesCardData } from "~/lib/consts"
 import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
 import { toDataModel, toDataModelWithId } from "~/utils"
 import { db, inngest } from "~/config.server"
@@ -167,7 +167,7 @@ export default class DeduplicationService {
 
     // Call prompt.
     const response = await this.openai.createChatCompletion({
-      model: "gpt-4-32k-0613",
+      model: "gpt-4-1106-preview",
       messages: [
         { role: "system", content: clusterPrompt },
         { role: "user", content: message },
@@ -217,7 +217,7 @@ export default class DeduplicationService {
     const message = JSON.stringify(cards.map((c) => toDataModelWithId(c)))
 
     const response = await this.openai.createChatCompletion({
-      model,
+      model: "gpt-4-1106-preview",
       messages: [
         { role: "system", content: bestValuesCardPrompt },
         { role: "user", content: message },
@@ -292,7 +292,7 @@ export default class DeduplicationService {
     console.log("Calling prompt for deduplication.")
 
     const response = await this.openai.createChatCompletion({
-      model,
+      model: "gpt-4-1106-preview",
       messages: [
         { role: "system", content: dedupePrompt },
         { role: "user", content: message },

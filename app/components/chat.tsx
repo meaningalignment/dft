@@ -22,7 +22,6 @@ export function Chat({
   initialMessages,
   hasSubmitted,
   className,
-  articulatorConfig = "default",
 }: ChatProps) {
   const { chatId, caseId } = useContext(ChatContext)!
   const user = useCurrentUser()
@@ -98,7 +97,7 @@ export function Chat({
     fetch(`/api/messages/${chatId}/delete`, {
       method: "DELETE",
       headers: {
-        "X-Articulator-Config": articulatorConfig,
+
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ chatId, message }),
@@ -120,7 +119,6 @@ export function Chat({
     id: chatId,
     api: "/api/chat-completion",
     headers: {
-      "X-Articulator-Config": articulatorConfig,
       "Content-Type": "application/json",
     },
     body: { chatId, caseId },

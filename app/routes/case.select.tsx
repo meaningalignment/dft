@@ -3,10 +3,29 @@ import { useState } from "react"
 import { Check } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
-import { Link } from "@remix-run/react"
-import { Case, cases } from "~/lib/case"
+import { Link, useLoaderData } from "@remix-run/react"
 import ContinueButton from "~/components/continue-button"
-import va from "@vercel/analytics"
+
+import { json, redirect } from "@remix-run/node"
+import { db } from "~/config.server"
+import { Case } from "@prisma/client"
+import { EmptyScreen } from "~/components/empty-screen"
+
+export async function loader() {
+  const cases = await db.case.findMany()
+
+  if (cases.length === 0) {
+    throw Error("No cases found. To add a new case, make sure you're an admin user and naviagte to /admin/cases.")
+  }
+
+  // Skip case select if there's only one case.
+  if (cases.length === 1) {
+    return redirect(`/case/${cases[0].id}/chat-explainer`)
+  }
+
+  return json({ cases })
+}
+
 
 function CaseCard({ caseData }: { caseData: Case }) {
   return (
@@ -17,7 +36,7 @@ function CaseCard({ caseData }: { caseData: Case }) {
       }
     >
       <p className="text-md font-bold">{caseData.title}</p>
-      <p className="text-md text-neutral-500">{'"' + caseData.text + '"'}</p>
+      <p className="text-md text-neutral-500">{'"' + caseData.question + '"'}</p>
       <div className="flex-grow" />
     </div>
   )
@@ -38,6 +57,7 @@ function SelectedCaseCard({ caseData }: { caseData: Case }) {
 }
 
 export default function CaseSelectScreen() {
+  const cases = useLoaderData<typeof loader>().cases
   const [showCases, setShowCases] = useState(false)
   const [selected, setSelected] = useState<Case | null>(null)
 
@@ -74,9 +94,8 @@ export default function CaseSelectScreen() {
           ))}
         </div>
         <div
-          className={`flex flex-col justify-center items-center pt-4 transition-opacity ease-in duration-500 delay-525 ${
-            showCases ? "opacity-100" : "opacity-0"
-          }`}
+          className={`flex flex-col justify-center items-center pt-4 transition-opacity ease-in duration-500 delay-525 ${showCases ? "opacity-100" : "opacity-0"
+            }`}
         >
           <Link to={selected ? `/case/${selected.id}/chat-explainer` : "#"}>
             <ContinueButton event="Selected Case" />

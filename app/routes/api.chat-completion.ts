@@ -1,9 +1,10 @@
 import { auth, db, openai } from "~/config.server"
 import { ActionArgs, ActionFunction } from "@remix-run/node"
 import { ValuesCardData } from "~/lib/consts"
-import { OpenAIStream, StreamingTextResponse } from "../lib/openai-stream"
+import { OpenAIStream, StreamingTextResponse } from "~/lib/openai-stream"
 import { ArticulatorService } from "~/services/articulator"
 import DeduplicationService from "~/services/deduplication"
+// import { OpenAIStream, StreamingTextResponse } from "ai"
 
 const deduplication = new DeduplicationService(openai, db)
 
@@ -25,23 +26,24 @@ async function createHeaders(
 }
 
 export const config = {
-    maxDuration: 300
-};
+  maxDuration: 300,
+}
 
 export const action: ActionFunction = async ({
   request,
 }: ActionArgs): Promise<Response> => {
-  const articulatorConfig = request.headers.get("X-Articulator-Config")
+  const ff = process.env.ARTICULATOR_CONFIG
+
+  console.log(ff)
+  const articulatorConfig = process.env.ARTICULATOR_CONFIG ?? "default"
   const userId = await auth.getUserId(request)
   const json = await request.json()
 
   const { messages, chatId, caseId, function_call } = json
 
-  console.log(`Chat completion for chat ${chatId}`)
-
   // Create stream for next chat message.
   const articulator = new ArticulatorService(
-    articulatorConfig ?? "default",
+    articulatorConfig,
     deduplication,
     openai,
     db
@@ -69,7 +71,6 @@ export const action: ActionFunction = async ({
     // ...otherwise, return the response.
     return new StreamingTextResponse(OpenAIStream(completionResponse), {
       headers: await createHeaders(),
-      
     })
   }
 }

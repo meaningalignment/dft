@@ -23,12 +23,12 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false)
   const [showError, setShowError] = useState(false)
   const [email, setEmail] = useState<string>("")
-  const actionData = useActionData()
+  const actionData = useActionData<typeof action>()
 
   const redirect = searchParams.get("redirect") as string
 
   useEffect(() => {
-    if (actionData?.error) {
+    if (actionData && actionData?.status !== 200) {
       setShowError(true)
       setIsLoading(false)
       setEmail("")

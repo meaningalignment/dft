@@ -54,7 +54,6 @@ function parseOpenAIStream(): (data: string) => string | void {
   return (data) => {
     /*
        If the response is a function call, the first streaming chunk from OpenAI returns the name of the function like so
-
           {
             ...
             "choices": [{
@@ -70,10 +69,8 @@ function parseOpenAIStream(): (data: string) => string | void {
               "finish_reason": null
             }]
           }
-
        Then, it begins streaming the arguments for the function call.
        The second chunk looks like:
-
           {
             ...
             "choices": [{
@@ -86,9 +83,7 @@ function parseOpenAIStream(): (data: string) => string | void {
               "finish_reason": null
             }]
           }
-
         Third chunk:
-
           {
             ...
             "choices": [{
@@ -101,11 +96,8 @@ function parseOpenAIStream(): (data: string) => string | void {
               "finish_reason": null
             }]
           }
-
         ...
-
         Finally, the last chunk has a `finish_reason` of either `function_call`:
-
           {
             ...
             "choices": [{
@@ -114,10 +106,8 @@ function parseOpenAIStream(): (data: string) => string | void {
               "finish_reason": "function_call"
             }]
           }
-
         or `stop`, when the `function_call` request parameter 
         is specified with a particular function via `{\"name\": \"my_function\"}` 
-
           {
             ...
             "choices": [{
@@ -126,11 +116,9 @@ function parseOpenAIStream(): (data: string) => string | void {
               "finish_reason": "stop"
             }]
           }
-
         With the implementation below, the client will end up getting a
         response like the one below streamed to them whenever a function call
         response is returned:
-
           {
             "function_call": {
               "name": "get_current_weather",

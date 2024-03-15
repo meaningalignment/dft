@@ -1,7 +1,7 @@
 import { redirect } from "@remix-run/node"
-import { defaultCase } from "~/lib/case"
+import { db } from "~/config.server"
 
 export async function loader() {
-  // Redirect to the link page for the default case.
+  const defaultCase = (await db.case.findFirst({ orderBy: { id: "asc" } }))!.id
   return redirect(`/case/${defaultCase}/link`)
 }
