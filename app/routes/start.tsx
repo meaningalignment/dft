@@ -12,9 +12,6 @@ export async function loader() {
   const title = process.env.START_SCREEN_TITLE ?? "Welcome to Democratic Fine-Tuning!"
   const description = process.env.START_SCREEN_DESCRIPTION ?? "You will be asked how ChatGPT should act in a morally tricky situation by articuating a value and considering those of others. Your input will contribute to a moral graph used to fine-tune future models. This process will take around 15 minutes."
 
-  console.log("title", title)
-  console.log("description", description)
-
   const carouselValues = await db.canonicalValuesCard.findMany({
     take: 12,
     include: {
