@@ -12,6 +12,7 @@ export type ValuesCardData = {
 
 export const valueStyle = dftStyle
 
+export const isChatGpt = valueStyle === dftStyle
 
 export const prolificRuns = {
   prolific_50: {

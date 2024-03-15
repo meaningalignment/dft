@@ -18,7 +18,7 @@ export default function ChatExplainerScreen() {
             setShowNext(true)
           }}
           isFinished={showNext}
-          text={`This process has 3 steps.\n\nIn the first step, you will articulate a value for ChatGPT responding to the user story you selected. This usually takes around 5-10 minutes.\n\nNote: Only the values you articulate will be shared, not the chat content.`}
+          text={`This process has 3 steps.\n\nIn the first step, you will articulate a value for for the question at hand. This usually takes around 5-10 minutes.\n\nNote: Only the values you articulate will be shared, not the chat content.`}
         />
         <div
           className={cn(

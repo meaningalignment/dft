@@ -1,6 +1,6 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { embeddingService as embeddings } from "../values-tools/embedding"
-import { ValuesCardData } from "~/lib/consts"
+import { ValuesCardData, isChatGpt } from "~/lib/consts"
 import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
 import { toDataModel, toDataModelWithId } from "~/utils"
 import { db, inngest } from "~/config.server"
@@ -44,12 +44,16 @@ const bestValuesCardPrompt = `You will be provided with a list of "values card",
 # Card Guidelines
 1. **Cards should be indeterminate.** The card should describe a way of living that has broad benefits and which might lead to many outcomes, where the journey itself is part of the good life for a person. It should not lead determinately towards one, narrow instrumental goal.
 2. **Cards should not be about meeting others’ expectations.** They should be the kind of thing that is meaningful to someone.
-3. **Cards should be positively stated**. The stuff in the “how” section should be things ChatGPT SHOULD attend to.
+3. **Cards should be positively stated**. The stuff in the “how” section should be things ${
+  isChatGpt ? "ChatGPT" : "one"
+} SHOULD attend to.
 4. **Cards should use clear, simple language**. Anyone in the relevant context should be able to see what you mean about what to attend to. The instructions should be clear enough that you could use them in a survey to see whether or not someone was attending to those things.
 5. **Cards should be as general as possible.** Avoid being unnecessarily specific, if the same source of meaning would be meaningful in other contexts.
 6. **Cards should not have unnecessary elements.** All elements of the source of meaning should be required, and work together, in the context.
 7. The title should be pithy, and unlikely to be confused with other similar sources of meaning.
-8. The values card should be written from the perspective of how ChatGPT should respond to the situation in the first message. They should reflect the user's sources of meaning, not yours or those of ChatGPT's creators.`
+8. The values card should be written from the perspective of how ${
+  isChatGpt ? "ChatGPT" : "one"
+}  should respond to the situation in the first message. They should reflect the user's sources of meaning, not yours.`
 
 //
 // Functions.

@@ -1,4 +1,4 @@
-import { ValuesCardData } from "~/lib/consts"
+import { ValuesCardData, valueStyle } from "~/lib/consts"
 import { Button } from "./ui/button"
 import {
   Dialog,
@@ -34,8 +34,7 @@ export default function ChatValuesCard({ card }: Props) {
             <DialogHeader>
               <DialogTitle>Details</DialogTitle>
               <DialogDescription>
-                ChatGPT will be considered successful if, in dialogue with the
-                user, the following kinds of things were surfaced or enabled:
+                {valueStyle.evaluationCriteriaIntroString}
               </DialogDescription>
             </DialogHeader>
             <div className="flex space-y-1 flex-col overflow-auto">

@@ -7,6 +7,7 @@ import {
 import { db, inngest } from "~/config.server"
 import { Configuration, OpenAIApi } from "openai-edge"
 import { embeddingService as embeddings } from "../values-tools/embedding"
+import { isChatGpt } from "~/lib/consts"
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
@@ -350,7 +351,7 @@ const exampleTransitions: ExampleTransition[] = [
   {
     a: {
       instructionsShort:
-        "ChatGPT can highlight moments where my child needs support, boost my capacity to comfort them, their sense of safety, all of which added together lead to a nurturing presence in my child's life.",
+        `${isChatGpt ? "ChatGPT can" : "I"} highlight moments where my child needs support, boost my capacity to comfort them, their sense of safety, all of which added together lead to a nurturing presence in my child's life.`,
       evaluationCriteria: [
         "MOMENTS where my child needs my support and I can be there",
         "MY CAPACITY to comfort them in times of fear and sorrow",
@@ -361,7 +362,7 @@ const exampleTransitions: ExampleTransition[] = [
     },
     b: {
       instructionsShort:
-        "ChaGPT should enable my child to encounter experiences that will allow them to discover their inner strength, especially in moments of emotional confusion. Help me discern when they can rely on their self-reliance and when I should offer my nurturing support.",
+        `${isChatGpt ? "ChatGPT should" : "I"} enable my child to encounter experiences that will allow them to discover their inner strength, especially in moments of emotional confusion. Help me discern when they can rely on their self-reliance and when I should offer my nurturing support.`,
       evaluationCriteria: [
         "OPPORTUNITIES for my child to find their own capacities or find their own grounding in the midst of emotional turmoil",
         "INTUITIONS about when they can rely on their own budding agency, versus when I should ease the way with loving support",
@@ -396,8 +397,9 @@ const exampleTransitions: ExampleTransition[] = [
   },
   {
     a: {
-      instructionsShort:
-        "ChatGPT should strive to foster an environment that encourages exploration and is open to serendipitous outcomes. This could involve providing avenues for discovery, encouraging open-ended inquiry and considering non-prescriptive ways of handling situations, which could lead to unpredictable but potentially beneficial outcomes.",
+      instructionsShort: `${
+        isChatGpt ? "ChatGPT should" : "I"
+      } strive to foster an environment that encourages exploration and is open to serendipitous outcomes. This could involve providing avenues for discovery, encouraging open-ended inquiry and considering non-prescriptive ways of handling situations, which could lead to unpredictable but potentially beneficial outcomes.`,
       evaluationCriteria: [
         "SERENDIPITOUS OUTCOMES that are better than anything I could have planned",
         "OPEN-ENDED QUESTIONS that invite expansive thinking",
@@ -407,8 +409,8 @@ const exampleTransitions: ExampleTransition[] = [
     },
     b: {
       instructionsShort:
-        "ChatGPT can facilitate discussions and provide suggestions that speak to both, risk-averse and risk-seeking tendencies. It should point out the stability of conventional approaches simultaneous with the potential rewards of exploratory ones. The goal is to inform a balance between security and exploration, fostering a portfolio approach in decision-making.",
-      evaluationCriteria: [
+        `${isChatGpt ? "ChatGPT can" : "I"} facilitate discussions and provide suggestions that speak to both, risk-averse and risk-seeking tendencies. ${isChatGpt ? "It should" : "I"} point out the stability of conventional approaches simultaneous with the potential rewards of exploratory ones. The goal is to inform a balance between security and exploration, fostering a portfolio approach in decision-making.`,
+      evaluationCriteria: [ 
         "THE BALANCE of less risky approaches with more exploratory ones that matches baseline outcomes with potential upside",
         "ABILITY to generate options that represent both risk-averse and risk-seeking tendencies",
         "DEGREE to which discussions explore potential rewards and risks of both conventional and novel strategies",

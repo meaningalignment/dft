@@ -32,9 +32,6 @@ export const config = {
 export const action: ActionFunction = async ({
   request,
 }: ActionArgs): Promise<Response> => {
-  const ff = process.env.ARTICULATOR_CONFIG
-
-  console.log(ff)
   const articulatorConfig = process.env.ARTICULATOR_CONFIG ?? "default"
   const userId = await auth.getUserId(request)
   const json = await request.json()
