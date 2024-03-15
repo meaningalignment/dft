@@ -45,7 +45,7 @@ export async function loader({ request }: LoaderArgs) {
       where: { chat: { userId } },
     })) as ValuesCard[] | null)
 
-  const valueStyle = process.env.VALUE_STYLE === "chatgpt" ? dftStyle : personalStyle
+  const valueStyle = process.env.VALUE_STYLE === "personal" ? personalStyle : dftStyle
 
   return json({ user, values, valueStyle })
 }
