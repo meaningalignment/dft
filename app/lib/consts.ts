@@ -1,5 +1,3 @@
-import { dftStyle } from "~/values-tools/value-styles"
-
 /**
  * The type of the `parameters` field of the values card OpenAI functions.
  */
@@ -9,10 +7,6 @@ export type ValuesCardData = {
   instructions_detailed: string
   evaluation_criteria?: string[]
 }
-
-export const valueStyle = dftStyle
-
-export const isChatGpt = valueStyle === dftStyle
 
 export const prolificRuns = {
   prolific_50: {

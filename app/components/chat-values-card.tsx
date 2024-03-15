@@ -1,4 +1,4 @@
-import { ValuesCardData, valueStyle } from "~/lib/consts"
+import { ValuesCardData } from "~/lib/consts"
 import { Button } from "./ui/button"
 import {
   Dialog,
@@ -10,6 +10,7 @@ import {
 } from "./ui/dialog"
 import { isAllUppercase } from "~/utils"
 import React from "react"
+import { useValueStyle } from "~/root"
 
 type Props = {
   card: ValuesCardData
@@ -17,6 +18,8 @@ type Props = {
 }
 
 export default function ChatValuesCard({ card }: Props) {
+  const style = useValueStyle()
+
   return (
     <div className="my-8 border-2 border-border rounded-xl px-8 pt-8 pb-4 max-w-[420px]">
       <p className="text-md font-bold">{card.title}</p>
@@ -34,7 +37,7 @@ export default function ChatValuesCard({ card }: Props) {
             <DialogHeader>
               <DialogTitle>Details</DialogTitle>
               <DialogDescription>
-                {valueStyle.evaluationCriteriaIntroString}
+                {style.evaluationCriteriaIntroString}
               </DialogDescription>
             </DialogHeader>
             <div className="flex space-y-1 flex-col overflow-auto">

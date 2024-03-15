@@ -6,7 +6,6 @@ import { DialogueEvaluatorConfig } from "./values-tools/dialogue-evaluator"
 import { ArticulatorConfig } from "./values-tools/articulator-config"
 import dftDefaultConfig from "./values-tools/articulator-configs/dft-default"
 import dftGeneralConfig from "./values-tools/articulator-configs/dft-general"
-import { dftStyle as chatGptStyle, personalStyle } from "./values-tools/value-styles"
 
 export const db = new PrismaClient()
 
@@ -28,6 +27,8 @@ export const openai = new OpenAIApi(
     apiKey: process.env.OPENAI_API_KEY,
   })
 )
+
+export const isChatGpt = process.env.VALUE_STYLE !== "personal"
 
 export const dialogueEvaluatorConfig: DialogueEvaluatorConfig = {
   where: {
