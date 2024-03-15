@@ -9,8 +9,8 @@ import {
   DialogTrigger,
 } from "./ui/dialog"
 import { ValuesCard as DataModel, CanonicalValuesCard } from "@prisma/client"
-import React from "react"
-import { valueStyle } from "~/lib/consts"
+import React, { useContext } from "react"
+import { StyleContext } from "~/context/style"
 
 type Props = {
   card: DataModel | CanonicalValuesCard
@@ -48,6 +48,7 @@ function DetailsDialog({
   children: React.ReactNode
   card: DataModel | CanonicalValuesCard
 }) {
+  const { valueStyle } = useContext(StyleContext)
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>

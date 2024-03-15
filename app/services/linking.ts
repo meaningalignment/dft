@@ -4,10 +4,9 @@ import {
   PrismaClient,
   Vote,
 } from "@prisma/client"
-import { db, inngest } from "~/config.server"
+import { db, inngest, isChatGpt } from "~/config.server"
 import { Configuration, OpenAIApi } from "openai-edge"
 import { embeddingService as embeddings } from "../values-tools/embedding"
-import { isChatGpt } from "~/lib/consts"
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,

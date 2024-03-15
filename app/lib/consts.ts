@@ -1,4 +1,5 @@
-import { dftStyle } from "~/values-tools/value-styles"
+import { isChatGpt } from "~/config.server"
+import { dftStyle, personalStyle } from "~/values-tools/value-styles"
 
 /**
  * The type of the `parameters` field of the values card OpenAI functions.
@@ -10,9 +11,8 @@ export type ValuesCardData = {
   evaluation_criteria?: string[]
 }
 
-export const valueStyle = dftStyle
-
-export const isChatGpt = valueStyle === dftStyle
+// Can only be used on server (as it uses process.env). For client, use the `valueStyle` context.
+export const valueStyle = isChatGpt ? dftStyle : personalStyle
 
 export const prolificRuns = {
   prolific_50: {
