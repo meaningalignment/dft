@@ -36,10 +36,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       where: { id: caseId },
       data: { title, question, seedMessage },
     })
-
-
-    // TODO remove
-    await inngest.send({ name: "seed", data: { caseId, question } });
   }
 
   return redirect('/admin/cases')
