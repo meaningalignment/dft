@@ -17,7 +17,7 @@ export const auth = cowpunkify({
 })
 
 export const inngest = new Inngest({
-  name: "Democratic Fine-Tuning",
+  name: process.env.INNGEST_NAME ?? "Democratic Fine-Tuning",
   apiKey: process.env.INNGEST_API_KEY,
   eventKey: process.env.INNGEST_EVENT_KEY,
 })
