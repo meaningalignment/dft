@@ -10,7 +10,7 @@ import { capitalize, isDisplayableMessage, toDataModel } from "~/utils"
 import { embeddingService as embeddings } from "../values-tools/embedding"
 import DeduplicationService from "./deduplication"
 import { articulatorConfigs } from "~/config.server"
-import { OpenAIStream } from "~/lib/openai-stream"
+import { OpenAIStream, StreamingTextResponse } from "~/lib/openai-stream"
 
 // import { OpenAIStream, StreamingTextResponse } from "ai"   //TODO replace the above import with this once https://github.com/vercel-labs/ai/issues/199 is fixed.
 
