@@ -1,10 +1,12 @@
 import { attentionPoliciesCriteria, definitionOfASourceOfMeaning } from "./prompt-segments"
 import { gpt4 } from "./gpt"
 import { json } from "@remix-run/node"
-import { db } from "~/config.server"
+import { db, isChatGpt } from "~/config.server"
 import { embeddingService } from "./embedding"
 import { CanonicalValuesCard } from "@prisma/client"
-import { valueStyle } from "~/lib/consts"
+import { dftStyle, personalStyle } from "./value-styles"
+
+const valueStyle = isChatGpt ? dftStyle : personalStyle
 
 async function regenerateInstructionsDetailed(evaluationCriteria: string[]) {
   return await gpt4(regenPrompt, evaluationCriteria.join("\n"))

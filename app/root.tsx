@@ -45,7 +45,7 @@ export async function loader({ request }: LoaderArgs) {
       where: { chat: { userId } },
     })) as ValuesCard[] | null)
 
-  const valueStyle = process.env.VALUES_STYLE === "chatgpt" ? dftStyle : personalStyle
+  const valueStyle = process.env.VALUE_STYLE === "chatgpt" ? dftStyle : personalStyle
 
   return json({ user, values, valueStyle })
 }
@@ -66,7 +66,6 @@ export function useValueStyle(): ValueStyle {
 }
 
 export default function App() {
-
   useEffect(() => {
     console.log("App load")
   }, [])

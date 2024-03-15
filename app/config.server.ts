@@ -28,7 +28,7 @@ export const openai = new OpenAIApi(
   })
 )
 
-export const isChatGpt = process.env.VALUES_STYLE !== "personal"
+export const isChatGpt = process.env.VALUE_STYLE !== "personal"
 
 export const dialogueEvaluatorConfig: DialogueEvaluatorConfig = {
   where: {
