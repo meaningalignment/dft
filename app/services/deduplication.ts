@@ -4,7 +4,6 @@ import { ValuesCardData } from "~/lib/consts"
 import { OpenAI } from "openai"
 import { toDataModel, toDataModelWithId } from "~/utils"
 import { db, inngest, isChatGpt } from "~/config.server"
-import { ChatCompletionFunctionCallOption } from "openai/resources"
 
 //
 // Prompts.

@@ -4,7 +4,7 @@ import { embed } from "~/values-tools/embedding"
 import { inngest } from "~/config.server"
 import { hypothesize, hypothesize_cron } from "~/services/linking"
 import { evaluateDialogues } from "~/values-tools/rater"
-import { deduplicate as deduplicate_new, seedGeneration } from "~/values-tools/deduplicator2"
+import { deduplicate as deduplicate_new, seedGeneration } from "~/values-tools/deduplicator"
 import { seed } from "~/services/seed"
 
 const handler = serve(inngest, [
