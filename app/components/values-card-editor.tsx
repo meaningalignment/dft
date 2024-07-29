@@ -14,7 +14,7 @@ export function ValuesCardEditor({ card, cardType }: { card: SerializeFrom<Canon
   const [titleIdeas, setTitleIdeas] = useState<string[] | null>(null)
   const nav = useNavigation()
   return <div key={card.id}>
-    <ValuesCard inlineDetails card={card as any as CanonicalValuesCard} />
+    <ValuesCard detailsInline card={card as any as CanonicalValuesCard} />
     <Form method="post" className="mt-8 w-96 flex flex-col gap-4">
       <h1 className="text-3xl font-bold my-8 text-center">
         Edit your card
@@ -100,7 +100,7 @@ export function ValuesCardEditor({ card, cardType }: { card: SerializeFrom<Canon
         <BackgroundTaskButton
           task={{
             task: 'reembed',
-            cardId: card.id!
+            cardId: card.id!.toString()
           }}
           onData={() => alert('done!')}
         >

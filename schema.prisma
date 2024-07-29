@@ -67,7 +67,7 @@ model ValuesCard {
   id                        Int                          @id @default(autoincrement())
   title                     String
   instructionsShort         String
-  instructionsDetailed      String?
+  instructionsDetailed      String
   evaluationCriteria        String[]
   createdAt                 DateTime                     @default(now())
   updatedAt                 DateTime                     @updatedAt
@@ -104,7 +104,7 @@ model CanonicalValuesCard {
 model Chat {
   id                         String      @id
   userId                     Int
-  transcript                 Json?
+  transcript                 Json
   createdAt                  DateTime    @default(now())
   updatedAt                  DateTime    @updatedAt
   provisionalCard            Json? // A values card being formed in the background.

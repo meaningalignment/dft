@@ -1,5 +1,5 @@
 import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node"
-import { Link, useLoaderData, useNavigate, useParams } from "@remix-run/react"
+import { useLoaderData, useNavigate, useParams } from "@remix-run/react"
 import { IconArrowRight } from "~/components/ui/icons"
 import ValuesCard from "~/components/values-card"
 import { db } from "~/config.server"
@@ -45,7 +45,7 @@ export async function loader(args: LoaderFunctionArgs) {
     return redirect(`/survey/thanks/${userId}`)
   }
 
-  return json({ canonical: card.canonicalCard, deduplicate: getDeduplicate(card), caseId: card.chat.caseId })
+  return json({ canonical: card.canonicalCard, deduplicate: getDeduplicate(card), caseId: card.chat!.caseId })
 }
 
 export async function action(args: ActionFunctionArgs) {

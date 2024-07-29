@@ -3,13 +3,11 @@ import { useAssistant, type Message } from "ai/react"
 import { cn } from "./../utils"
 import { ChatList } from "./chat-list"
 import { ChatPanel } from "./chat-panel"
-import { EmptyScreen } from "./layout/empty-screen"
 import { ChatScrollAnchor } from "./chat-scroll-anchor"
 
 export interface ChatProps extends React.ComponentProps<"div"> {
   oldMessages?: Message[]
   threadId: string,
-  seedMessage: string,
 }
 
 export function Chat({
@@ -39,7 +37,6 @@ export function Chat({
       <ChatPanel
         status={status}
         isFinished={hasValuesCard}
-        // @ts-ignore
         append={append}
         messages={messages}
         input={input}

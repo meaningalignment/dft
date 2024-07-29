@@ -53,7 +53,7 @@ function NodeInfoBox({ node, x, y }: { node: Node | null; x: number; y: number }
 
   return (
     <div className="info-box z-50" style={style as any}>
-      <ValuesCard card={node as any} inlineDetails />
+      <ValuesCard card={node as any} detailsInline />
     </div>
   )
 }

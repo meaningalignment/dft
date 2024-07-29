@@ -46,21 +46,9 @@ export function PromptForm({
   const { formRef, onKeyDown } = useEnterSubmit()
   const inputRef = React.useRef<HTMLTextAreaElement>(null)
 
-  const [isClient, setIsClient] = React.useState(false)
-
   React.useEffect(() => {
-    console.log("Gailwdn")
-    setIsClient(true)
-  }, [])
-
-  console.log("Foobar")
-
-  React.useEffect(() => {
-    if (isClient) {
-      console.log("Focus")
-      if (inputRef.current) {
-        inputRef.current.focus()
-      }
+    if (inputRef.current) {
+      inputRef.current.focus()
     }
   }, [])
 

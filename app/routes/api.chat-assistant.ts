@@ -21,45 +21,52 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 async function submitValuesCard(
-  {
-    authorId,
-    threadId,
-  }: { authorId: number; threadId: string },
+  { authorId, threadId }: { authorId: number; threadId: string },
   {
     title,
     description,
     policies,
-    story,
   }: {
     title: string
     description: string
     policies: string[]
-    story: string | null
   },
   sendDataMessage: (message: DataMessage) => void
 ) {
-  const chat = await db.chat.create({
-    data: {
+  const chat = await db.chat.upsert({
+    create: {
       id: threadId,
       userId: authorId,
-    }
+      transcript: [] // TODO: Add transcript
+    },
+    update: {},
+    where: { id: threadId },
   })
-  const card = await db.valuesCard.create({
-    data: {
+  const card = await db.valuesCard.upsert({
+    create: {
       title,
       chatId: chat.id,
       instructionsShort: description,
+      instructionsDetailed: description, // For legacy reasons.
       evaluationCriteria: policies,
     },
+    update: {
+      title,
+      chatId: chat.id,
+      instructionsShort: description,
+      instructionsDetailed: description, // For legacy reasons.
+      evaluationCriteria: policies,
+    },
+    where: { chatId: chat.id },
   })
   await embeddingService.embedNonCanonicalCard(card)
   const data = {
     type: "values_card",
     title,
     description,
-    story,
     policies,
   }
+  console.log("Data in KV", data)
   kv.set(`data:${threadId}`, JSON.stringify(data)) // Data messages are not saved, so we persist in KV for reloads.
   sendDataMessage({ role: "data", data })
 
@@ -123,6 +130,7 @@ async function assistantResponseWithTools<C>({
         runResult?.status === "requires_action" &&
         runResult.required_action?.type === "submit_tool_outputs"
       ) {
+        
         cancelFunctionSpinner(threadId)
         const tool_outputs = await Promise.all(
           runResult.required_action.submit_tool_outputs.tool_calls.map(

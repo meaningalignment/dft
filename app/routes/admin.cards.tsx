@@ -36,7 +36,7 @@ export default function AdminCardsScreen() {
                 key={value.id}
                 className="cursor-pointer hover:opacity-80 active:opacity-70 hover:duration-0 hover:transition-none opacity-100"
               >
-                <ValuesCard inlineDetails card={value as any} />
+                <ValuesCard detailsInline card={value as any} />
               </div>
             </Link>
           ))}

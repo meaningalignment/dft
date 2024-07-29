@@ -59,7 +59,7 @@ function Canonicalization({ pair }: { pair: Pair }) {
             Articulated {new Date(pair.card.createdAt).toLocaleDateString()}
           </a>
           <div className="flex-grow h-full w-96">
-            <ValuesCard card={pair.card} inlineDetails />
+            <ValuesCard card={pair.card} detailsInline />
           </div>
         </div>
         <IconArrowRight className="h-8 w-8 mx-auto rotate-90 md:rotate-0" />
@@ -68,7 +68,7 @@ function Canonicalization({ pair }: { pair: Pair }) {
             Deduplicated Version
           </p>
           <div className="flex-grow h-full w-96">
-            <ValuesCard card={pair.deduplicate} inlineDetails />
+            <ValuesCard card={pair.deduplicate} detailsInline />
           </div>
         </div>
       </div>

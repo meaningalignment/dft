@@ -2,7 +2,7 @@ import { type Message } from "ai"
 import { Separator } from "./ui/separator"
 import { ChatMessage } from "./chat-message"
 import ChatMessageLoading from "./chat-message-loading"
-import ValuesCard, { ValuesCardData } from "./cards/values-card"
+import ValuesCard, { ValuesCardData } from "./values-card"
 
 export interface ChatList {
   threadId: string
