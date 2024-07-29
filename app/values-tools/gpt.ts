@@ -1,8 +1,8 @@
 import { openai } from "~/config.server"
 
 export async function gpt4(systemPrompt: string, userMessage: string, temperature: number = 0.4) {
-  const result = await openai.createChatCompletion({
-    model: "gpt-4-0613",
+  const result = await openai.chat.completions.create({
+    model: "gpt-4o",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userMessage },
@@ -10,6 +10,5 @@ export async function gpt4(systemPrompt: string, userMessage: string, temperatur
     temperature: temperature,
     stream: false,
   })
-  const data = await result.json()
-  return data.choices[0].message.content
+  return result.choices[0].message.content
 }

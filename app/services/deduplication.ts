@@ -1,7 +1,7 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { embeddingService as embeddings } from "../values-tools/embedding"
 import { ValuesCardData } from "~/lib/consts"
-import { ChatCompletionFunctions, Configuration, OpenAIApi } from "openai-edge"
+import { OpenAI } from "openai"
 import { toDataModel, toDataModelWithId } from "~/utils"
 import { db, inngest, isChatGpt } from "~/config.server"
 
@@ -59,7 +59,7 @@ const bestValuesCardPrompt = `You will be provided with a list of "values card",
 // Functions.
 //
 
-const bestCardFunction: ChatCompletionFunctions = {
+const bestCardFunction = {
   name: "best_card",
   description:
     "Return the best formulated values card from a list of values cards.",
@@ -76,7 +76,7 @@ const bestCardFunction: ChatCompletionFunctions = {
   },
 }
 
-const dedupeFunction: ChatCompletionFunctions = {
+const dedupeFunction = {
   name: "dedupe",
   description:
     "Return the id of the canonical values card that is a duplicate value ",
@@ -92,7 +92,7 @@ const dedupeFunction: ChatCompletionFunctions = {
   },
 }
 
-const clusterFunction: ChatCompletionFunctions = {
+const clusterFunction = {
   name: "cluster",
   description:
     "Return a list of clusters, where each cluster is a list of values card ids that all are about the same value.",
@@ -133,10 +133,10 @@ const clusterFunction: ChatCompletionFunctions = {
  * Handles all logic around deduplicating and canonicalizing values cards.
  */
 export default class DeduplicationService {
-  private openai: OpenAIApi
+  private openai: OpenAI
   private db: PrismaClient
 
-  constructor(openai: OpenAIApi, db: PrismaClient) {
+  constructor(openai: OpenAI, db: PrismaClient) {
     this.openai = openai
     this.db = db
   }
@@ -155,7 +155,7 @@ export default class DeduplicationService {
       },
     })
     // Embed the canonical values card.
-    await embeddings.embedCanonicalCard(canonical)
+    await embeddings.embedDeduplicatedCard(canonical as any)
     return canonical
   }
 
@@ -170,7 +170,7 @@ export default class DeduplicationService {
     const message = JSON.stringify(cards.map((c) => toDataModelWithId(c)))
 
     // Call prompt.
-    const response = await this.openai.createChatCompletion({
+    const response = await this.openai.chat.completions.create({
       model: "gpt-4-1106-preview",
       messages: [
         { role: "system", content: clusterPrompt },
@@ -180,10 +180,8 @@ export default class DeduplicationService {
       functions: [clusterFunction],
       temperature: 0.0,
     })
-    const data = await response.json()
-
     const clusters = JSON.parse(
-      data.choices[0].message.function_call.arguments
+      response.choices[0].message.function_call!.arguments!
     ).clusters
 
     const uniqueIds = clusters.flatMap((c: any) => c.values_cards_ids)
@@ -220,7 +218,7 @@ export default class DeduplicationService {
 
     const message = JSON.stringify(cards.map((c) => toDataModelWithId(c)))
 
-    const response = await this.openai.createChatCompletion({
+    const response = await this.openai.chat.completions.create({
       model: "gpt-4-1106-preview",
       messages: [
         { role: "system", content: bestValuesCardPrompt },
@@ -230,9 +228,9 @@ export default class DeduplicationService {
       function_call: { name: bestCardFunction.name },
       temperature: 0.0,
     })
-    const data = await response.json()
+  
     const id: number = JSON.parse(
-      data.choices[0].message.function_call.arguments
+      response.choices[0].message.function_call!.arguments!
     ).best_values_card_id
 
     const card = cards.find((c) => c.id === id) as CanonicalValuesCard
@@ -295,7 +293,7 @@ export default class DeduplicationService {
 
     console.log("Calling prompt for deduplication.")
 
-    const response = await this.openai.createChatCompletion({
+    const response = await this.openai.chat.completions.create({
       model: "gpt-4-1106-preview",
       messages: [
         { role: "system", content: dedupePrompt },
@@ -305,9 +303,8 @@ export default class DeduplicationService {
       function_call: { name: dedupeFunction.name },
       temperature: 0.0,
     })
-    const data = await response.json()
     const matchingId: number | null | undefined = JSON.parse(
-      data.choices[0].message.function_call.arguments
+      response.choices[0].message!.function_call!.arguments
     ).canonical_card_id
 
     console.log(`Got response from prompt, canonical duplicate: ${matchingId}`)
@@ -355,10 +352,9 @@ export const deduplicate = inngest.createFunction(
     //
     // Prepare the service.
     //
-    const configuration = new Configuration({
+    const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     })
-    const openai = new OpenAIApi(configuration)
     const service = new DeduplicationService(openai, db)
 
     // Get all non-canonicalized submitted values cards.

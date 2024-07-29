@@ -1,6 +1,6 @@
 import { CanonicalValuesCard, PrismaClient, ValuesCard } from "@prisma/client"
 import { db } from "../config.server"
-import { ChatCompletionFunctions, OpenAIApi } from "openai-edge"
+import { ChatCompletionFunctions, OpenAI } from "openai"
 import { v4 as uuid } from "uuid"
 import { embeddingService as embedding } from "../values-tools/embedding"
 
@@ -42,9 +42,9 @@ const submitWiseValues: ChatCompletionFunctions = {
 
 export default class SelectionService {
   private db: PrismaClient
-  private openai: OpenAIApi
+  private openai: OpenAI
 
-  constructor(openai: OpenAIApi, db: PrismaClient) {
+  constructor(openai: OpenAI, db: PrismaClient) {
     this.openai = openai
     this.db = db
   }
@@ -185,7 +185,7 @@ export default class SelectionService {
     const message = `For a user that has this value:\n\n${userValueString}\n\nWhich 6 of the provided values is he or she most likely to think is also wise to consider?`
 
     // Call prompt.
-    const response = await this.openai.createChatCompletion({
+    const response = await this.openai.chat.completions.create({
       model: "gpt-4-1106-preview",
       messages: [
         { role: "system", content: system },

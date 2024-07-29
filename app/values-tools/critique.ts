@@ -52,7 +52,7 @@ export async function runTaskFromForm(formData: FormData) {
     return json(result)
   } else if (task === 'reembed') {
     const card = await db.canonicalValuesCard.findUnique({ where: { id: Number(formData.get("cardId")) } })
-    await embeddingService.embedCanonicalCard(card as any as CanonicalValuesCard)
+    await embeddingService.embedDeduplicatedCard(card as any)
     return json({ ok: true })
   } else {
     return json({ error: "Unknown task" }, { status: 400 })

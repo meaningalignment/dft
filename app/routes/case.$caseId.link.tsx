@@ -1,11 +1,10 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react"
-import { LoaderArgs, json } from "@remix-run/node"
+import { LoaderFunctionArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
 import { useEffect, useState } from "react"
-import toast from "react-hot-toast"
 import LinkingService from "~/services/linking"
 import { IconArrowRight } from "~/components/ui/icons"
 import { Separator } from "../components/ui/separator"
@@ -19,7 +18,7 @@ import va from "@vercel/analytics"
 
 type Relationship = "upgrade" | "no_upgrade" | "not_sure"
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await auth.getUserId(request)
   const service = new LinkingService(db)
 
@@ -28,7 +27,7 @@ export async function loader({ request }: LoaderArgs) {
   return json({ draw })
 }
 
-export async function action({ request }: LoaderArgs) {
+export async function action({ request }: LoaderFunctionArgs) {
   const userId = await auth.getUserId(request)
   const body = await request.json()
   const { edge, comment, relationship } = body
@@ -110,7 +109,6 @@ export default function LinkScreen() {
       setIsLoading(false)
       const text = await response.json()
       console.error(text)
-      toast.error("Failed to submit relationship. Please try again.")
       return
     }
 

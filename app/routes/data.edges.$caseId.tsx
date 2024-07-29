@@ -1,10 +1,10 @@
-import { LoaderArgs, defer } from "@remix-run/node"
+import { LoaderFunctionArgs, defer } from "@remix-run/node"
 import { Suspense } from "react"
 import { Await, useLoaderData } from "@remix-run/react"
 import { MoralGraph } from "~/components/moral-graph"
 import { summarizeGraph } from "~/values-tools/generate-moral-graph"
 
-export async function loader({ params }: LoaderArgs) {
+export async function loader({ params }: LoaderFunctionArgs) {
   const caseId = params.caseId!
   const graph = summarizeGraph({
     edgeWhere: {

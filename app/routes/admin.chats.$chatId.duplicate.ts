@@ -1,9 +1,9 @@
 import { v4 as uuid } from "uuid"
-import { LoaderArgs, json, redirect } from "@remix-run/node"
+import { LoaderFunctionArgs, json, redirect } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import { Chat } from "@prisma/client"
 
-export async function loader({ request, params }: LoaderArgs) {
+export async function loader({ request, params }: LoaderFunctionArgs) {
   const user = await auth.getCurrentUser(request)
 
   if (user?.isAdmin !== true) {
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderArgs) {
   }
 
   // Duplicate the chat.
-  const newChat = await db.chat.create({
+  const newChat = await db.chat.completions.create({
     data: {
       ...(chat as any),
       id: uuid(),

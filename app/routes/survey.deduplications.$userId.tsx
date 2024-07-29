@@ -1,4 +1,4 @@
-import { ActionArgs, LoaderArgs, json, redirect } from "@remix-run/node"
+import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node"
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react"
 import { IconArrowRight } from "~/components/ui/icons"
 import ValuesCard from "~/components/values-card"
@@ -19,7 +19,7 @@ function isDifferent(card: ValuesCardType, deduplicate: DeduplicatedCard) {
     deduplicate.evaluationCriteria.join("") != card.evaluationCriteria.join("")
 }
 
-export async function loader(args: LoaderArgs) {
+export async function loader(args: LoaderFunctionArgs) {
   const userId = parseInt(args.params.userId!)
 
   const pairs = (
@@ -58,7 +58,7 @@ export async function loader(args: LoaderArgs) {
   return json({ pairs })
 }
 
-export async function action({ request, params }: ActionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
   const userId = parseInt(params.userId!)
   const { card, deduplicate: deduplicate, response } = (await request.json()) as Pair
 

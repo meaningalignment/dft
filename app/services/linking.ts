@@ -5,13 +5,12 @@ import {
   Vote,
 } from "@prisma/client"
 import { db, inngest, isChatGpt } from "~/config.server"
-import { Configuration, OpenAIApi } from "openai-edge"
+import { OpenAI } from "openai"
 import { embeddingService as embeddings } from "../values-tools/embedding"
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
-const openai = new OpenAIApi(configuration)
 
 type EdgeHypothesisData = {
   to: CanonicalValuesCard
@@ -145,7 +144,7 @@ async function clusterCanonicalCards(contexts: string[]) {
     2
   )
 
-  const res = await openai.createChatCompletion({
+  const res = await openai.chat.completions.create({
     model: "gpt-4-1106-preview",
     temperature: 0.0,
     messages: [
@@ -242,7 +241,7 @@ export async function generateTransitions(cardIds: number[]): Promise<{
     2
   )
 
-  const res = await openai.createChatCompletion({
+  const res = await openai.chat.completions.create({
     model: "gpt-4-1106-preview",
     temperature: 0.3,
     messages: [

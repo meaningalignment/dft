@@ -1,36 +1,24 @@
-import { cssBundleHref } from "@remix-run/css-bundle"
 import {
   json,
   SerializeFrom,
-  type LinksFunction,
-  type LoaderArgs,
+  type LoaderFunctionArgs,
 } from "@remix-run/node"
 import {
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
   useRouteLoaderData,
 } from "@remix-run/react"
-import styles from "./tailwind.css"
 import { auth, db } from "./config.server"
 import { TooltipProvider } from "@radix-ui/react-tooltip"
 import { User, ValuesCard } from "@prisma/client"
-import { Toaster } from "react-hot-toast"
 import { Analytics } from "@vercel/analytics/react"
-import React, { useEffect } from "react"
-import { ValueStyle, dftStyle, personalStyle } from "./values-tools/value-styles"
-import { StyleContext } from "~/context/style"
 
+import "~/tailwind.css"
 
-export const links: LinksFunction = () => [
-  ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
-  { rel: "stylesheet", href: styles },
-]
-
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
   const userId = await auth.getUserId(request)
 
   const user =
@@ -45,9 +33,7 @@ export async function loader({ request }: LoaderArgs) {
       where: { chat: { userId } },
     })) as ValuesCard[] | null)
 
-  const valueStyle = process.env.VALUE_STYLE === "personal" ? personalStyle : dftStyle
-
-  return json({ user, values, valueStyle })
+  return json({ user, values })
 }
 
 export function useCurrentUser(): User | null {
@@ -60,17 +46,8 @@ export function useCurrentUserValues(): ValuesCard[] | null {
   return values
 }
 
-export function useValueStyle(): ValueStyle {
-  const { valueStyle } = useRouteLoaderData("root") as SerializeFrom<typeof loader>
-  return valueStyle
-}
-
 export default function App() {
-  useEffect(() => {
-    console.log("App load")
-  }, [])
   return (
-    <StyleContext.Provider value={{ valueStyle: useValueStyle() }}>
       <TooltipProvider>
         <html lang="en">
           <head>
@@ -81,16 +58,11 @@ export default function App() {
           </head>
           <body className="bg-slate-50">
             <Outlet />
-            <React.Suspense>
-              <Toaster />
-            </React.Suspense>
             <ScrollRestoration />
             <Scripts />
-            <LiveReload />
             <Analytics />
           </body>
         </html>
       </TooltipProvider>
-    </StyleContext.Provider>
   )
 }

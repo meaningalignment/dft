@@ -1,15 +1,12 @@
-import { useContext, useRef, useEffect, useState } from "react"
+import * as React from "react"
 import Textarea from "react-textarea-autosize"
-import { UseChatHelpers } from "ai/react"
-
+import type { UseChatHelpers } from "ai/react"
 import { Button } from "./ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip"
-import { IconArrowElbow, IconArrowRight, IconRefresh } from "./ui/icons"
+import { IconArrowElbow, IconArrowRight } from "./ui/icons"
 import { useEnterSubmit } from "~/hooks/use-enter-submit"
-import { useCurrentUserValues } from "~/root"
-import { ChatContext } from "~/context/case"
-import { Loader2 } from "lucide-react"
-import va from "@vercel/analytics"
+import { Link, useParams } from "@remix-run/react"
+import LoadingButton from "./loading-button"
 
 export interface PromptProps
   extends Pick<UseChatHelpers, "input" | "setInput"> {
@@ -18,63 +15,22 @@ export interface PromptProps
   isFinished?: boolean
 }
 
-function ArticulateAnotherButton({ caseId }: { caseId: string }) {
-  const [isLoading, setIsLoading] = useState(false)
-
-  return (
-    <Button
-      variant="outline"
-      className="bg-white"
-      onClick={() => {
-        setIsLoading(true)
-        window.location.href = `/case/${caseId}/chat`
-      }}
-      disabled={isLoading}
-    >
-      {isLoading ? (
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-      ) : (
-        <IconRefresh className="mr-2" />
-      )}
-      Articulate Another Value
-    </Button>
-  )
-}
-
-function FinishedView() {
-  const { caseId } = useContext(ChatContext)!
-  const values = useCurrentUserValues()
-  const count = (values?.length ?? 0) + 1
-  const suffix = count === 1 ? "" : "s"
-  const [isLoading, setIsLoading] = useState(false)
-
-  const onContinue = () => {
-    setIsLoading(true)
-    va.track("Finished Chat")
-
-    // Hard reset to prevent state reuse issues.
-    window.location.href = `/case/${caseId}/select`
-  }
+const FinishedView = () => {
+  const { caseId } = useParams()
+  
+  const continueUrl = `/case/${caseId}/select`
 
   return (
     <div className="flex flex-col items-center justify-center">
-      <p className="p-2 pb-4 text-md">
-        {"You have articulated "}
-        <a className="underline font-semibold">
-          {count} value{suffix}
-        </a>
-        . Would you like to continue?
+      <p className="p-2 pb-4 text-sm text-gray-600">
+        Thank you for sharing your story!
       </p>
       <div className="flex justify-center pt-2">
-        <ArticulateAnotherButton caseId={caseId} />
-        <Button disabled={isLoading} onClick={onContinue} className="ml-2">
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <IconArrowRight className="mr-2" />
-          )}
-          Continue
-        </Button>
+        <LoadingButton iconRight={<IconArrowRight className="ml-2" />}>
+          <Link to={continueUrl} prefetch="render" className="flex flex-row items-center justify-center">
+            Continue
+          </Link>
+        </LoadingButton>
       </div>
     </div>
   )
@@ -88,9 +44,9 @@ export function PromptForm({
   isFinished,
 }: PromptProps) {
   const { formRef, onKeyDown } = useEnterSubmit()
-  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const inputRef = React.useRef<HTMLTextAreaElement>(null)
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus()
     }
@@ -100,7 +56,7 @@ export function PromptForm({
     <form
       onSubmit={async (e) => {
         e.preventDefault()
-        if (!input?.trim()) {
+        if (isLoading || !input?.trim()) {
           return
         }
         setInput("")
@@ -109,7 +65,7 @@ export function PromptForm({
       ref={formRef}
     >
       {(isFinished && <FinishedView />) || (
-        <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-white pr-8 sm:rounded-md sm:border sm:pr-12">
+        <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-white pr-8 sm:rounded-md sm:border sm:pr-12 dark:bg-black">
           <Textarea
             ref={inputRef}
             tabIndex={0}

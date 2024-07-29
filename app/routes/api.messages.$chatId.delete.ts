@@ -1,4 +1,4 @@
-import { ActionArgs, json } from "@remix-run/node"
+import { ActionFunctionArgs, json } from "@remix-run/node"
 import { Message } from "ai"
 import { db } from "~/config.server"
 
@@ -35,7 +35,7 @@ export function removeLastMatchAndPrecedingFunctions(
   return messages
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   const body = await request.json()
   let { message, chatId } = body
 

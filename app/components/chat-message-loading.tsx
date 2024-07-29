@@ -1,17 +1,19 @@
 import { cn } from "~/utils"
-import { IconOpenAI } from "./ui/icons"
 import { Loader2 } from "lucide-react"
-import { useContext, useEffect, useState } from "react"
-import { ChatContext } from "~/context/case"
+import { useEffect, useState } from "react"
+import { IconOpenAI } from "./ui/icons"
 
-export default function ChatMessageLoading() {
-  const { chatId } = useContext(ChatContext)!
+type Props = {
+  threadId: string
+}
+
+export default function ChatMessageLoading({ threadId }: Props) {
   const [currentFunction, setCurrentFunction] = useState<string | null>(null)
 
   // Poll for the current function call.
   useEffect(() => {
     const fetchData = async () => {
-      const res = await fetch(`/api/chat/${chatId}/function`)
+      const res = await fetch(`/api/chat/${threadId}/function`)
       const json = await res.json()
 
       if (json && json.function) {

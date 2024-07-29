@@ -97,9 +97,9 @@ export default function CaseSelectScreen() {
           className={`flex flex-col justify-center items-center pt-4 transition-opacity ease-in duration-500 delay-525 ${showCases ? "opacity-100" : "opacity-0"
             }`}
         >
-          <Link to={selected ? `/case/${selected.id}/chat-explainer` : "#"}>
+          <a href={selected ? `/case/${selected.id}/chat-explainer` : "#"}>
             <ContinueButton event="Selected Case" />
-          </Link>
+          </a>
 
           <div className="flex flex-col justify-center items-center my-4 h-4">
             {!selected && (

@@ -7,7 +7,6 @@ import {
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { ValuesCardData } from "./lib/consts"
-import { generation } from "./values-tools/deduplicator2"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -83,7 +82,7 @@ export function toDataModel(
   return {
     title: card.title,
     instructions_short: card.instructionsShort,
-    instructions_detailed: card.instructionsDetailed,
+    instructions_detailed: card.instructionsDetailed || "",
     evaluation_criteria: card.evaluationCriteria,
   }
 }
@@ -151,6 +150,6 @@ export function getDeduplicate(
     deduplications: (Deduplication & { deduplicatedCard: DeduplicatedCard })[]
   }
 ): DeduplicatedCard {
-  return valuesCard.deduplications.filter((d) => d.generation === generation)[0]
+  return valuesCard.deduplications.filter((d) => d.generation === 3)[0]
     .deduplicatedCard
 }

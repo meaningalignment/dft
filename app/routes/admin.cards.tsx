@@ -1,11 +1,11 @@
 import Header from "~/components/header"
 import { Link, useLoaderData } from "@remix-run/react"
-import { ActionArgs, json } from "@remix-run/node"
+import { ActionFunctionArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
 import { CanonicalValuesCard } from "@prisma/client"
 
-export async function loader({ request }: ActionArgs) {
+export async function loader({ request }: ActionFunctionArgs) {
   if ((await auth.getCurrentUser(request))?.isAdmin !== true) {
     throw new Error("Unauthorized")
   }
@@ -36,7 +36,7 @@ export default function AdminCardsScreen() {
                 key={value.id}
                 className="cursor-pointer hover:opacity-80 active:opacity-70 hover:duration-0 hover:transition-none opacity-100"
               >
-                <ValuesCard inlineDetails card={value as any} />
+                <ValuesCard detailsInline card={value as any} />
               </div>
             </Link>
           ))}

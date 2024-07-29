@@ -30,9 +30,9 @@ export default function LinkExplainerScreen() {
           )}
         >
           <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
-            <Link to={`/case/${caseId}/link`}>
+            <a href={`/case/${caseId}/link`}>
               <ContinueButton text="Let's Go" event="Started Linking" />
-            </Link>
+            </a>
           </div>
         </div>
       </div>

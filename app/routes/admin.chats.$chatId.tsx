@@ -1,4 +1,4 @@
-import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node"
 import { Form, Link, useLoaderData, useNavigation } from "@remix-run/react"
 import { CohereStream, Message } from "ai"
 import { Loader2 } from "lucide-react"
@@ -7,9 +7,8 @@ import { ChatList } from "~/components/chat-list"
 import { Button } from "~/components/ui/button"
 import { Separator } from "~/components/ui/separator"
 import { auth, db } from "~/config.server"
-import { evaluateTranscript } from "~/values-tools/dialogue-evaluator"
 
-export async function loader({ params, request }: LoaderArgs) {
+export async function loader({ params, request }: LoaderFunctionArgs) {
   const chatId = params.chatId!
   const userId = await auth.getUserId(request)
   const chat = await db.chat.findUnique({
@@ -43,21 +42,21 @@ export async function loader({ params, request }: LoaderArgs) {
   })
 }
 
-export async function action({ params }: ActionArgs) {
-  const chat = await db.chat.findFirst({
-    where: {
-      id: params.chatId,
-    },
-  })
-  if (!chat) throw new Error("Chat not found")
-  const result = await evaluateTranscript(chat)
-  console.log("result", result)
-  await db.chat.update({
-    where: { id: params.chatId },
-    data: { evaluation: result },
-  })
-  return json({ result })
-}
+// export async function action({ params }: ActionFunctionArgs) {
+//   const chat = await db.chat.findFirst({
+//     where: {
+//       id: params.chatId,
+//     },
+//   })
+//   if (!chat) throw new Error("Chat not found")
+//   const result = await evaluateTranscript(chat)
+//   console.log("result", result)
+//   await db.chat.update({
+//     where: { id: params.chatId },
+//     data: { evaluation: result },
+//   })
+//   return json({ result })
+// }
 
 function EvaluateButton() {
   const { chatId } = useLoaderData<typeof loader>()
@@ -168,6 +167,7 @@ export default function AdminChat() {
       <Separator className="my-4 md:my-8" />
       <ChatList
         messages={messages as Message[]}
+        // @ts-ignore
         isFinished={true}
         isLoading={false}
         valueCards={[]}

@@ -28,9 +28,9 @@ export default function ChatExplainerScreen() {
           )}
         >
           <div className="flex flex-row mx-auto justify-center items-center space-x-2 pt-8">
-            <Link to={`/case/${caseId}/chat`}>
+            <a href={`/case/${caseId}/chat`}>
               <ContinueButton event="Started Chat" />
-            </Link>
+            </a>
           </div>
         </div>
       </div>
