@@ -6,6 +6,8 @@ import { DBSCAN } from "density-clustering"
 
 const model = "gpt-4-turbo"
 
+const generation = 3
+
 //
 // Prompts.
 //

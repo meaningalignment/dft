@@ -155,7 +155,7 @@ export default class DeduplicationService {
       },
     })
     // Embed the canonical values card.
-    await embeddings.embedCanonicalCard(canonical)
+    await embeddings.embedDeduplicatedCard(canonical as any)
     return canonical
   }
 
