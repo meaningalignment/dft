@@ -1,12 +1,9 @@
-import { v4 as uuid } from "uuid"
-import { LoaderArgs, redirect } from "@remix-run/node"
-import { articulatorConfig } from "~/cookies.server"
+import { LoaderFunctionArgs, redirect } from "@remix-run/node"
+import { ensureLoggedIn, openai } from "~/config.server"
 
-export async function loader({ params }: LoaderArgs) {
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  await ensureLoggedIn(request)
   const caseId = params.caseId!
-  return redirect(`/case/${caseId}/chat/${uuid()}`, {
-    headers: {
-      "Set-Cookie": await articulatorConfig.serialize('default'),
-    }
-  })
+  const threadId = (await openai.beta.threads.create({})).id
+  return redirect(`/case/${caseId}/chat/${threadId}`)
 }

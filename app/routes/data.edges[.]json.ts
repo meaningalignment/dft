@@ -1,8 +1,8 @@
-import { LoaderArgs, json } from "@remix-run/node"
+import { LoaderFunctionArgs, json } from "@remix-run/node"
 import { prolificRuns } from "~/lib/consts";
 import { Options, summarizeGraph } from "~/values-tools/generate-moral-graph"
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   
   const options: Options = {}

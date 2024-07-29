@@ -1,12 +1,10 @@
 import { DeduplicatedCard, ValuesCard } from "@prisma/client"
 import { embeddingService as embeddings } from "./embedding"
-import { ChatCompletionFunctions } from "openai-edge"
 import { db, inngest, openai } from "~/config.server"
 import { attentionPoliciesCriteria } from "./prompt-segments"
-import { DBSCAN } from 'density-clustering'
+import { DBSCAN } from "density-clustering"
 
-export const generation = 3
-const model = "gpt-4-1106-preview"
+const model = "gpt-4-turbo"
 
 //
 // Prompts.
@@ -34,7 +32,7 @@ ${attentionPoliciesCriteria}`
 // Functions.
 //
 
-const bestCardFunction: ChatCompletionFunctions = {
+const bestCardFunction = {
   name: "best_card",
   description:
     "Return the best formulated values card from a list of values cards.",
@@ -51,7 +49,7 @@ const bestCardFunction: ChatCompletionFunctions = {
   },
 }
 
-const dedupeFunction: ChatCompletionFunctions = {
+const dedupeFunction = {
   name: "dedupe",
   description:
     "Return the id of the canonical values card that is a duplicate value ",
@@ -67,7 +65,7 @@ const dedupeFunction: ChatCompletionFunctions = {
   },
 }
 
-const clusterFunction: ChatCompletionFunctions = {
+const clusterFunction = {
   name: "cluster",
   description:
     "Return a list of clusters, where each cluster is a list of values card ids that all are about the same value.",
@@ -104,41 +102,63 @@ const clusterFunction: ChatCompletionFunctions = {
   },
 }
 
-function toDataModelArrayWithId(
-  cards: ValuesCard[] | DeduplicatedCard[]
-) {
-  return cards.map(card => ({ id: card.id, attentionPolicies: card.evaluationCriteria }))
+function toDataModelArrayWithId(cards: ValuesCard[] | DeduplicatedCard[]) {
+  return cards.map((card) => ({
+    id: card.id,
+    attentionPolicies: card.evaluationCriteria,
+  }))
 }
 
 function toDataModelArrayWithIdJSON(
-  cards: { id: number, evaluationCriteria: string[] }[]
+  cards: { id: number; evaluationCriteria: string[] }[]
 ): string {
-  return JSON.stringify(cards.map(card => ({ id: card.id, attentionPolicies: card.evaluationCriteria })))
+  return JSON.stringify(
+    cards.map((card) => ({
+      id: card.id,
+      attentionPolicies: card.evaluationCriteria,
+    }))
+  )
 }
 
-function cosineDistance(vecA: number[], vecB: number[]) {
-  let dotProduct = 0.0;
-  let normA = 0.0;
-  let normB = 0.0;
+export function cosineDistance(vecA: number[], vecB: number[]) {
+  let dotProduct = 0.0
+  let normA = 0.0
+  let normB = 0.0
   for (let i = 0; i < vecA.length; i++) {
-    dotProduct += vecA[i] * vecB[i];
-    normA += vecA[i] * vecA[i];
-    normB += vecB[i] * vecB[i];
+    dotProduct += vecA[i] * vecB[i]
+    normA += vecA[i] * vecA[i]
+    normB += vecB[i] * vecB[i]
   }
-  return 1.0 - (dotProduct / (Math.sqrt(normA) * Math.sqrt(normB)));
+  return 1.0 - dotProduct / (Math.sqrt(normA) * Math.sqrt(normB))
 }
 
 // DBSCAN instance
-let dbscan = new DBSCAN();
+let dbscan = new DBSCAN()
 
-export interface ClusterableObject { id: number, embedding: number[] }
-export function cluster(objs: ClusterableObject[], { epsilon = 0.11, minPoints = 3 }: { epsilon: number, minPoints: number } = { epsilon: 0.11, minPoints: 3 }) {
+export interface ClusterableObject {
+  id: number
+  embedding: number[]
+}
+export function cluster<X extends ClusterableObject>(
+  objs: X[],
+  { epsilon = 0.11, minPoints = 3 }: { epsilon: number; minPoints: number } = {
+    epsilon: 0.11,
+    minPoints: 3,
+  }
+) {
   // Epsilon (maximum radius) and minimum points
   // let epsilon = 0.11; // Adjust this based on your needs
   // let minPoints = 3;
 
   // Run DBSCAN with cosine distance
-  let clusters = dbscan.run(objs.map(c => c.embedding), epsilon, minPoints, cosineDistance).map(cluster => cluster.map(i => objs[i]));
+  let clusters = dbscan
+    .run(
+      objs.map((c) => c.embedding),
+      epsilon,
+      minPoints,
+      cosineDistance
+    )
+    .map((cluster) => cluster.map((i) => objs[i]))
 
   // clusters now contains your clustered vectors
   console.log(`Found ${clusters.length} clusters.`)
@@ -160,7 +180,7 @@ export default class DeduplicationService {
         generation,
         title: data.title,
         instructionsShort: data.instructionsShort,
-        instructionsDetailed: data.instructionsDetailed,
+        instructionsDetailed: data.instructionsDetailed!,
         evaluationCriteria: data.evaluationCriteria,
       },
     })
@@ -172,9 +192,7 @@ export default class DeduplicationService {
   /**
    * Get the best values card according to a prompt from a cluster of cards.
    */
-  async getBestValuesCard(
-    card_ids: number[]
-  ) {
+  async getBestValuesCard(card_ids: number[]) {
     const cards = await db.valuesCard.findMany({
       where: {
         id: { in: card_ids },
@@ -184,7 +202,7 @@ export default class DeduplicationService {
 
     const message = toDataModelArrayWithIdJSON(cards)
 
-    const response = await openai.createChatCompletion({
+    const response = await openai.chat.completions.create({
       model,
       messages: [
         { role: "system", content: bestValuesCardPrompt },
@@ -194,9 +212,8 @@ export default class DeduplicationService {
       function_call: { name: bestCardFunction.name },
       temperature: 0.0,
     })
-    const data = await response.json()
     const id: number = JSON.parse(
-      data.choices[0].message.function_call.arguments
+      response.choices[0]!.message.tool_calls![0].function!.arguments
     ).best_values_card_id
 
     const card = cards.find((c) => c.id === id)!
@@ -232,7 +249,9 @@ export default class DeduplicationService {
     candidate: { evaluationCriteria: string[] },
     limit: number = 5
   ): Promise<DeduplicatedCard | null> {
-    console.log(`Fetching similar canonical card, candidate: ${JSON.stringify(candidate)}`)
+    console.log(
+      `Fetching similar canonical card, candidate: ${JSON.stringify(candidate)}`
+    )
 
     // Embed the candidate.
     const card_embeddings = await embeddings.embedCandidate(candidate)
@@ -240,7 +259,11 @@ export default class DeduplicationService {
     console.log("Got card embeddings, fetching canonical card.")
 
     // Fetch `limit` canonical cards for the case based on similarity.
-    const deduplicated = await this.similaritySearch(card_embeddings, limit, 0.1)
+    const deduplicated = await this.similaritySearch(
+      card_embeddings,
+      limit,
+      0.1
+    )
 
     console.log(`Got ${deduplicated.length} deduplicated cards`)
 
@@ -260,7 +283,7 @@ export default class DeduplicationService {
 
     console.log("Calling prompt for deduplication.")
 
-    const response = await openai.createChatCompletion({
+    const response = (await openai.chat.completions.create({
       model,
       messages: [
         { role: "system", content: dedupePrompt },
@@ -269,11 +292,10 @@ export default class DeduplicationService {
       functions: [dedupeFunction],
       function_call: { name: dedupeFunction.name },
       temperature: 0.0,
-    })
-    const data = await response.json()
+    }))!
     const matchingId: number | null | undefined = JSON.parse(
-      data.choices[0].message.function_call.arguments
-    ).canonical_card_id
+      response.choices[0].message.tool_calls![0].function.arguments
+    ).canonical_card_id!
 
     console.log(`Got response from prompt, deduplicated: ${matchingId}`)
 
@@ -291,41 +313,53 @@ export default class DeduplicationService {
 
 const service = new DeduplicationService()
 
-export const seedGeneration = inngest.createFunction({
-  name: "Seed a dedupe generation"
-}, {
-  event: "seed_generation"
-}, async ({ step, logger }) => {
-  // cluster them ALL mf (currently with prompt - maybe eventually use )
-  const clusters = (await step.run(`Clustering, using badass linear algebra`, async () => {
-    const cards = await db.$queryRawUnsafe<Array<ClusterableObject>>(`SELECT id, embedding::real[] FROM "ValuesCard"`)
-    return cluster(cards).map(cluster => cluster.map(c => c.id))
-  }))
+export const seedGeneration = inngest.createFunction(
+  {
+    name: "Seed a dedupe generation",
+  },
+  {
+    event: "seed_generation",
+  },
+  async ({ step, logger }) => {
+    // cluster them ALL mf (currently with prompt - maybe eventually use )
+    const clusters = await step.run(
+      `Clustering, using badass linear algebra`,
+      async () => {
+        const cards = await db.$queryRawUnsafe<Array<ClusterableObject>>(
+          `SELECT id, embedding::real[] FROM "ValuesCard"`
+        )
+        return cluster(cards).map((cluster) => cluster.map((c) => c.id))
+      }
+    )
 
-  logger.info(`Found ${clusters.length} clusters.`)
+    logger.info(`Found ${clusters.length} clusters.`)
 
-  // for each cluster, find the best
-  let i = 0
-  for (const cluster of clusters) {
-    if (cluster.length < 2) {
-      logger.info(`Skipping cluster ${++i} of ${cluster.length} cards.`)
-    } else {
-      logger.info(`Choosing representative from cluster ${++i} of ${cluster.length} cards.`)
+    // for each cluster, find the best
+    let i = 0
+    for (const cluster of clusters) {
+      if (cluster.length < 2) {
+        logger.info(`Skipping cluster ${++i} of ${cluster.length} cards.`)
+      } else {
+        logger.info(
+          `Choosing representative from cluster ${++i} of ${
+            cluster.length
+          } cards.`
+        )
 
-      const representative = (await step.run(
-        `Get best values card from cluster ${i} of ${cluster.length} cards.`,
-        async () => service.getBestValuesCard(cluster)
-      )) as any as ValuesCard
+        const representative = (await step.run(
+          `Get best values card from cluster ${i} of ${cluster.length} cards.`,
+          async () => service.getBestValuesCard(cluster)
+        )) as any as ValuesCard
 
-      console.log(`Representative: ${JSON.stringify(representative)}`);
-
-      (await step.run(
-        "Add representative to deduped generation, and embed",
-        async () => service.createDeduplicatedCard(representative)
-      )) as any as DeduplicatedCard
+        console.log(`Representative: ${JSON.stringify(representative)}`)
+        ;(await step.run(
+          "Add representative to deduped generation, and embed",
+          async () => service.createDeduplicatedCard(representative)
+        )) as any as DeduplicatedCard
+      }
     }
   }
-})
+)
 
 export const deduplicate = inngest.createFunction(
   { name: "Deduplicate 2", concurrency: 1 }, // Run sequentially to avoid RCs.
@@ -341,7 +375,6 @@ export const deduplicate = inngest.createFunction(
         return await db.valuesCard.findMany({
           where: {
             deduplications: { none: { generation } },
-            quality: 'ok',
           },
           take: 100,
         })
@@ -381,7 +414,7 @@ export const deduplicate = inngest.createFunction(
                 generation,
                 deduplicatedCardId: existingCanonicalDuplicate.id,
                 valuesCardId: card.id,
-              }
+              },
             })
           }
         )
@@ -394,14 +427,14 @@ export const deduplicate = inngest.createFunction(
                 generation,
                 title: card.title,
                 instructionsShort: card.instructionsShort,
-                instructionsDetailed: card.instructionsDetailed,
+                instructionsDetailed: card.instructionsDetailed!,
                 evaluationCriteria: card.evaluationCriteria,
                 deduplications: {
                   create: {
                     generation,
                     valuesCardId: card.id,
-                  }
-                }
+                  },
+                },
               },
             })
             // Embed the canonical values card.

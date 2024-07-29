@@ -1,11 +1,7 @@
-import { v4 as uuid } from "uuid"
 import { redirect } from "@remix-run/node"
-import { articulatorConfig } from "~/cookies.server"
+import { db } from "~/config.server"
 
 export async function loader() {
-  return redirect(`/chat/${uuid()}`, {
-    headers: {
-      "Set-Cookie": await articulatorConfig.serialize('default'),
-    },
-  })
+  const defaultCase = (await db.case.findFirst({ orderBy: { id: "asc" } }))!.id
+  return redirect(`/case/${defaultCase}/chat`)
 }

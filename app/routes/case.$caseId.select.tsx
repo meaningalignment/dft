@@ -1,13 +1,13 @@
 import { Button } from "~/components/ui/button"
 import Header from "~/components/header"
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react"
-import { ActionArgs, LoaderArgs, json } from "@remix-run/node"
+import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
 import { useEffect, useState } from "react"
 import { CanonicalValuesCard } from "@prisma/client"
 import SelectionService from "~/services/selection"
-import { Configuration, OpenAIApi } from "openai-edge"
+import { OpenAI } from "openai"
 import { Check, Loader2 } from "lucide-react"
 import StaticChatMessage from "~/components/static-chat-message"
 import { cn } from "~/utils"
@@ -15,13 +15,13 @@ import va from "@vercel/analytics"
 
 const minRequiredVotes = 2
 
-export async function loader({ request, params }: LoaderArgs) {
+export async function loader({ request, params }: LoaderFunctionArgs) {
   const userId = await auth.getUserId(request)
   const caseId = params.caseId!
 
   // Set up service.
-  const openai = new OpenAIApi(
-    new Configuration({ apiKey: process.env.OPENAI_API_KEY })
+  const openai = new OpenAI(
+    { apiKey: process.env.OPENAI_API_KEY }
   )
   const routing = new SelectionService(openai, db)
 
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderArgs) {
   return json({ values, drawId: id })
 }
 
-export async function action({ request, params }: ActionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
   const userId = await auth.getUserId(request)
   const caseId = params.caseId!
 

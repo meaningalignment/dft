@@ -4,10 +4,9 @@ import { Link, useLoaderData } from "@remix-run/react"
 import Header from "~/components/header"
 import Carousel from "~/components/carousel"
 import { db } from "~/config.server"
-import { useContext, useState } from "react"
+import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import va from "@vercel/analytics"
-import { StyleContext } from "~/context/style"
 
 export async function loader() {
   const title = process.env.START_SCREEN_TITLE ?? "Welcome to Democratic Fine-Tuning!"
@@ -45,9 +44,6 @@ export async function loader() {
 export default function StartPage() {
   const [isLoading, setIsLoading] = useState(false)
   const { carouselValues, title, description } = useLoaderData<typeof loader>()
-  const { valueStyle } = useContext(StyleContext)
-
-  console.log(valueStyle)
 
   return (
     <div className="flex flex-col h-screen w-screen">

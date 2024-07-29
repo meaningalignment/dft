@@ -5,7 +5,7 @@ node_modules.nosync
 /build
 /public/build
 .env
+.env.singapore
 /notes
 .DS_Store
-
-tests/script.test.ts
+*.timestamp-*.mjs

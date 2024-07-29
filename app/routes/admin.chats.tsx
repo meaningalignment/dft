@@ -1,9 +1,9 @@
-import { LoaderArgs, json } from "@remix-run/node"
+import { LoaderFunctionArgs, json } from "@remix-run/node"
 import { NavLink, Outlet, useLoaderData } from "@remix-run/react"
 import { db } from "~/config.server"
 import { cn } from "~/utils"
 
-export async function loader({ params }: LoaderArgs) {
+export async function loader({ params }: LoaderFunctionArgs) {
   const chats = await db.chat.findMany({
     orderBy: { createdAt: "desc" },
     select: {

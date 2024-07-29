@@ -1,12 +1,11 @@
 import {
-  ChatCompletionRequestMessage,
-  Configuration,
-  OpenAIApi,
-} from "openai-edge"
+  OpenAI,
+} from "openai"
 import { db, dialogueEvaluatorConfig, inngest } from "~/config.server"
 import { normalizeMessage } from "../services/articulator"
 import { Chat, Prisma } from "@prisma/client"
 import crypto from "crypto"
+import { ChatCompletionMessage } from "openai/resources"
 
 export interface DialogueEvaluatorConfig {
   where: Prisma.ChatWhereInput
@@ -22,14 +21,13 @@ function evaluatorMetadata() {
 }
 
 export async function evaluateTranscript(chat: Chat) {
-  const configuration = new Configuration({
+  const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   })
-  const openai = new OpenAIApi(configuration)
   const transcript = (chat?.transcript ??
-    []) as any as ChatCompletionRequestMessage[]
+    []) as any as ChatCompletionMessage[]
   const messages = transcript.map(normalizeMessage).slice(1)
-  const res = await openai.createChatCompletion({
+  const res = await openai.chat.completions.create({
     model: "gpt-4-1106-preview",
     temperature: 0.2,
     messages: [
@@ -44,8 +42,7 @@ export async function evaluateTranscript(chat: Chat) {
     },
     functions: [evaluateDialogueFunction],
   })
-  const data = await res.json()
-  const result = JSON.parse(data.choices[0].message.function_call.arguments)
+  const result = JSON.parse(res.choices[0].message!.function_call!.arguments)
   result.metadata = evaluatorMetadata()
   return result
 }

@@ -1,11 +1,11 @@
 import { PrismaClient, Prisma } from "@prisma/client"
 import { cowpunkify } from "cowpunk-auth"
 import { Inngest } from "inngest"
-import { Configuration, OpenAIApi } from "openai-edge"
-import { DialogueEvaluatorConfig } from "./values-tools/dialogue-evaluator"
-import { ArticulatorConfig } from "./values-tools/articulator-config"
-import dftDefaultConfig from "./values-tools/articulator-configs/dft-default"
-import dftGeneralConfig from "./values-tools/articulator-configs/dft-general"
+import { OpenAI } from "openai"
+// import { ArticulatorConfig } from "./values-tools/articulator-config"
+// import dftDefaultConfig from "./values-tools/articulator-configs/dft-default"
+// import dftGeneralConfig from "./values-tools/articulator-configs/dft-general"
+import { redirect } from "@remix-run/node"
 
 export const db = new PrismaClient()
 
@@ -16,21 +16,32 @@ export const auth = cowpunkify({
   emailCodes: db.emailCodes,
 })
 
+export async function ensureLoggedIn(request: Request, extraParams = {}) {
+  const userId = (await auth.getUserId(request)) as number | undefined
+  if (!userId) {
+    const params = new URLSearchParams({
+      redirect: request.url,
+      ...extraParams,
+    })
+    throw redirect(`/auth/login?${params.toString()}`)
+  } else {
+    return userId
+  }
+}
+
 export const inngest = new Inngest({
   name: process.env.INNGEST_NAME ?? "Democratic Fine-Tuning",
   apiKey: process.env.INNGEST_API_KEY,
   eventKey: process.env.INNGEST_EVENT_KEY,
 })
 
-export const openai = new OpenAIApi(
-  new Configuration({
-    apiKey: process.env.OPENAI_API_KEY,
-  })
-)
+export const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+})
 
 export const isChatGpt = process.env.VALUE_STYLE !== "personal"
 
-export const dialogueEvaluatorConfig: DialogueEvaluatorConfig = {
+export const dialogueEvaluatorConfig = {
   where: {
     evaluation: {
       equals: Prisma.DbNull,
@@ -46,9 +57,4 @@ export const dialogueEvaluatorConfig: DialogueEvaluatorConfig = {
       equals: null,
     },
   },
-}
-
-export const articulatorConfigs: { [key: string]: ArticulatorConfig } = {
-  default: dftDefaultConfig,
-  general: dftGeneralConfig,
 }

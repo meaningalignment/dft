@@ -1,5 +1,5 @@
 import { Chat, PrismaClient, ValuesCard } from "@prisma/client"
-import { ChatCompletionRequestMessage, OpenAIApi } from "openai-edge/types/api"
+import { ChatCompletionRequestMessage, OpenAI } from "openai-edge/types/api"
 import {
   ArticulatorConfig,
   metadata,
@@ -39,14 +39,14 @@ export function normalizeMessage(
  */
 export class ArticulatorService {
   private deduplication: DeduplicationService
-  private openai: OpenAIApi
+  private openai: OpenAI
   private db: PrismaClient
   public config: ArticulatorConfig
 
   constructor(
     configKey: string,
     deduplication: DeduplicationService,
-    openai: OpenAIApi,
+    openai: OpenAI,
     db: PrismaClient
   ) {
     this.config = articulatorConfigs[configKey]
@@ -125,7 +125,7 @@ export class ArticulatorService {
         { role: "system", content: this.config.prompts.main.prompt },
         ...messages,
       ]
-      await this.db.chat.create({
+      await this.db.chat.completions.create({
         data: {
           userId,
           caseId,
@@ -146,7 +146,7 @@ export class ArticulatorService {
       functions = functions.filter((f) => f.name !== "submit_values_card")
     }
 
-    const completionResponse = await this.openai.createChatCompletion({
+    const completionResponse = await this.openai.chat.completions.create({
       model: this.config.model,
       messages: messages,
       temperature: 0.7,
@@ -434,7 +434,7 @@ export class ArticulatorService {
     console.log(`Calling OpenAI API with function result...`)
     console.log(`Messages:\n${JSON.stringify(messages)}`)
 
-    const response = await this.openai.createChatCompletion({
+    const response = await this.openai.chat.completions.create({
       model: this.config.model,
       messages,
       temperature: 0.0,
@@ -507,7 +507,7 @@ export class ArticulatorService {
     let res: Response
 
     try {
-      res = await this.openai.createChatCompletion({
+      res = await this.openai.chat.completions.create({
         model: this.config.model,
         messages: [
           {
