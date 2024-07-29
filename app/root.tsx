@@ -5,7 +5,6 @@ import {
 } from "@remix-run/node"
 import {
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
@@ -16,7 +15,6 @@ import { auth, db } from "./config.server"
 import { TooltipProvider } from "@radix-ui/react-tooltip"
 import { User, ValuesCard } from "@prisma/client"
 import { Analytics } from "@vercel/analytics/react"
-import React, { useEffect } from "react"
 
 import "~/tailwind.css"
 
@@ -49,9 +47,6 @@ export function useCurrentUserValues(): ValuesCard[] | null {
 }
 
 export default function App() {
-  useEffect(() => {
-    console.log("App load")
-  }, [])
   return (
       <TooltipProvider>
         <html lang="en">
@@ -65,7 +60,6 @@ export default function App() {
             <Outlet />
             <ScrollRestoration />
             <Scripts />
-            <LiveReload />
             <Analytics />
           </body>
         </html>

@@ -44,12 +44,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const chosenCase = await db.case.findFirst({ where: { id: caseId } })
   const seedMessage = chosenCase!.seedMessage
 
-  return json({ messages, seedMessage })
+  // Insert the welcome message in new chat.
+  if (messages.length === 0) {
+    messages.push({ role: 'assistant', content: seedMessage })
+    await openai.beta.threads.messages.create(threadId, { role: 'assistant', content: seedMessage })
+  }
+
+  return json({ messages })
 }
 
 export default function ChatScreen() {
   const { threadId } = useParams()
-  const { messages, seedMessage } = useLoaderData<typeof loader>()
+  const { messages } = useLoaderData<typeof loader>()
 
   return (
     <div className="flex flex-col h-screen w-screen">
@@ -57,7 +63,6 @@ export default function ChatScreen() {
       <Chat
         threadId={threadId!}
         oldMessages={messages}
-        seedMessage={seedMessage}
       />
     </div>
   )

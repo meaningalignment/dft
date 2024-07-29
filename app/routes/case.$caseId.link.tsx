@@ -5,7 +5,6 @@ import { LoaderFunctionArgs, json } from "@remix-run/node"
 import { auth, db } from "~/config.server"
 import ValuesCard from "~/components/values-card"
 import { useEffect, useState } from "react"
-import toast from "react-hot-toast"
 import LinkingService from "~/services/linking"
 import { IconArrowRight } from "~/components/ui/icons"
 import { Separator } from "../components/ui/separator"
@@ -110,7 +109,6 @@ export default function LinkScreen() {
       setIsLoading(false)
       const text = await response.json()
       console.error(text)
-      toast.error("Failed to submit relationship. Please try again.")
       return
     }
 

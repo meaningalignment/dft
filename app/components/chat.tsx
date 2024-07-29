@@ -16,7 +16,6 @@ export function Chat({
   threadId,
   oldMessages,
   className,
-  seedMessage,
 }: ChatProps) {
   const { messages: newMessages, append, input, setInput, status } =
     useAssistant({
@@ -30,24 +29,17 @@ export function Chat({
   return (
     <>
       <div className={cn("pb-[200px] pt-4 md:pt-10", className)}>
-        {messages.length ? (
-          <>
-            <ChatList
-              threadId={threadId}
-              messages={messages}
-              isLoading={status === "in_progress"}
-            />
-            <ChatScrollAnchor trackVisibility={status === "in_progress"} />
-          </>
-        ) : (
-          <>
-            <EmptyScreen title="Welcome!" description={seedMessage} />
-          </>
-        )}
+        <ChatList
+          threadId={threadId}
+          messages={messages}
+          isLoading={status === "in_progress"}
+        />
+        <ChatScrollAnchor trackVisibility={status === "in_progress"} />
       </div>
       <ChatPanel
         status={status}
         isFinished={hasValuesCard}
+        // @ts-ignore
         append={append}
         messages={messages}
         input={input}

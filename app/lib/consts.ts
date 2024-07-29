@@ -1,3 +1,5 @@
+import { dftStyle } from "~/values-tools/value-styles"
+
 /**
  * The type of the `parameters` field of the values card OpenAI functions.
  */
@@ -22,3 +24,5 @@ export const prolificRuns = {
     end: new Date("Oct 9, 2023 23:00:00 UTC"),
   },
 }
+
+export const valueStyle = dftStyle

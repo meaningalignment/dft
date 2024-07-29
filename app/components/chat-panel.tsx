@@ -1,16 +1,16 @@
-import { UseAssistantHelpers, type UseChatHelpers } from "ai/react"
+import { type UseChatHelpers } from "ai/react"
 import { PromptForm } from "./prompt-form"
 import { ButtonScrollToBottom } from "./button-scroll-to-bottom"
 import { FooterText } from "./footer"
 
 export interface ChatPanelProps
   extends Pick<
-    UseAssistantHelpers,
+    UseChatHelpers,
     | "append"
     | "messages"
     | "input"
     | "setInput"
-    | "status"
+    | "isLoading"
   > {
   isFinished?: boolean
 }
@@ -20,10 +20,9 @@ export function ChatPanel({
   append,
   input,
   setInput,
-  status,
+  isLoading,
 }: ChatPanelProps) {
 
-  console.log(status)
   return (
     <div className="fixed inset-x-0 bottom-0 light:bg-gradient-to-b from-muted/10 from-10% to-muted/30 to-50%">
       <ButtonScrollToBottom />
@@ -40,8 +39,8 @@ export function ChatPanel({
             }}
             input={input}
             setInput={setInput}
-            isLoading={status === "in_progress"}
-            isFinished={isFinished && status !== "in_progress"}
+            isLoading={isLoading}
+            isFinished={isFinished && !isLoading}
           />
           <FooterText className="hidden sm:block" />
         </div>
