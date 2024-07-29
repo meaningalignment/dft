@@ -1,4 +1,4 @@
-Note: This repository is archived. We're working on turning this process into a standalone deliberation platform for any topic. You can see this fork [https://github.com/meaningalignment/mgd](here).
+Note: This repository is archived. We're working on turning this process into a standalone deliberation platform for any topic. You can see this fork [here](https://github.com/meaningalignment/mgd).
 
 
 # Democratic Fine-Tuning: README
