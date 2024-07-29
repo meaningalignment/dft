@@ -7,7 +7,6 @@ import { ChatList } from "~/components/chat-list"
 import { Button } from "~/components/ui/button"
 import { Separator } from "~/components/ui/separator"
 import { auth, db } from "~/config.server"
-import { evaluateTranscript } from "~/values-tools/rater"
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const chatId = params.chatId!
@@ -43,21 +42,21 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   })
 }
 
-export async function action({ params }: ActionFunctionArgs) {
-  const chat = await db.chat.findFirst({
-    where: {
-      id: params.chatId,
-    },
-  })
-  if (!chat) throw new Error("Chat not found")
-  const result = await evaluateTranscript(chat)
-  console.log("result", result)
-  await db.chat.update({
-    where: { id: params.chatId },
-    data: { evaluation: result },
-  })
-  return json({ result })
-}
+// export async function action({ params }: ActionFunctionArgs) {
+//   const chat = await db.chat.findFirst({
+//     where: {
+//       id: params.chatId,
+//     },
+//   })
+//   if (!chat) throw new Error("Chat not found")
+//   const result = await evaluateTranscript(chat)
+//   console.log("result", result)
+//   await db.chat.update({
+//     where: { id: params.chatId },
+//     data: { evaluation: result },
+//   })
+//   return json({ result })
+// }
 
 function EvaluateButton() {
   const { chatId } = useLoaderData<typeof loader>()
@@ -168,6 +167,7 @@ export default function AdminChat() {
       <Separator className="my-4 md:my-8" />
       <ChatList
         messages={messages as Message[]}
+        // @ts-ignore
         isFinished={true}
         isLoading={false}
         valueCards={[]}

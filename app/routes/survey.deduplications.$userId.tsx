@@ -7,7 +7,7 @@ import { db } from "~/config.server"
 import { cn, getDeduplicate } from "~/utils"
 import { Button } from "~/components/ui/button"
 import { useState } from "react"
-import { generation } from "~/values-tools/deduplicator"
+import { generation } from "~/values-tools/deduplicator2"
 
 type Response = "same" | "different"
 type Pair = { card: ValuesCardType, deduplicate: DeduplicatedCard, response: Response | null }

@@ -5,7 +5,7 @@ import ValuesCard from "~/components/values-card"
 import { DeduplicatedCard, ValuesCard as ValuesCardType } from "@prisma/client"
 import { db } from "~/config.server"
 import { cn, getDeduplicate } from "~/utils"
-import { generation as currentGeneration } from "~/values-tools/deduplicator"
+import { generation as currentGeneration } from "~/values-tools/deduplicator2"
 
 type Response = "same" | "different"
 type Pair = { card: ValuesCardType, deduplicate: DeduplicatedCard, response: Response | null }
