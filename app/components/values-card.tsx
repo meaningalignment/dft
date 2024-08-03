@@ -14,11 +14,11 @@ type Props = {
 function DetailsList({ card }: { card: ValuesCardData }) {
   return <div className="flex flex-col overflow-auto gap-y-1">
     {card.evaluationCriteria?.map((criterion, id) => (
-      <li key={id} className="text-sm text-neutral-500 dark:text-neutral-300 list-none">
+      <li key={id} className="text-sm text-neutral-500 list-none">
         {criterion.split(" ").map((word, index) => (
           <React.Fragment key={`${id}/${index}`}>
             {isAllUppercase(word) ? (
-              <strong className="font-bold text-neutral-600 dark:text-neutral-200">
+              <strong className="font-bold text-neutral-600">
                 {word}
               </strong>
             ) : (
@@ -36,7 +36,7 @@ export default function ValuesCard({ card, header, editButton }: Props) {
   return (
     <div
       className={
-        `border-2 border-border rounded-xl px-8 pt-8 pb-6 max-w-sm h-full bg-white dark:bg-black dark:text-white flex flex-col`
+        `border-2 border-border rounded-xl px-8 pt-8 pb-6 max-w-sm h-full bg-white flex flex-col`
       }
     >
       {header && header}
@@ -44,7 +44,7 @@ export default function ValuesCard({ card, header, editButton }: Props) {
         <p className="text-md font-bold">{card.title}</p>
         {editButton}
       </div> : <p className="text-md font-bold">{card.title}</p>}
-      <p className="text-md text-neutral-500 dark:text-neutral-300">{card.story ?? card.instructionsShort}</p>
+      <p className="text-md text-neutral-500">{card.story ?? card.instructionsShort}</p>
       <div className="px-4 py-2 -mx-4 mt-4 place-self-stretch bg-blue-100 rounded-md">
         <p className="text-xs font-bold text-neutral-500 mb-3">
           {/* <Eye className="h-4 w-4 inline-block mr-2" /> */}
