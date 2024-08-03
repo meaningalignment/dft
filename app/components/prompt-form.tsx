@@ -65,7 +65,7 @@ export function PromptForm({
       ref={formRef}
     >
       {(isFinished && <FinishedView />) || (
-        <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-white pr-8 sm:rounded-md sm:border sm:pr-12 dark:bg-black">
+        <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-white pr-8 sm:rounded-md sm:border sm:pr-12">
           <Textarea
             ref={inputRef}
             tabIndex={0}

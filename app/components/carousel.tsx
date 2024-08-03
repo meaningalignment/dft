@@ -12,10 +12,6 @@ type CardWithCounts = CanonicalValuesCard & {
 export default function Carousel({ cards }: { cards: CardWithCounts[] }) {
   const carouselRef = useRef<HTMLDivElement | null>(null)
 
-  const uniqueArticulations = (card: CardWithCounts) => {
-    return [...new Set(card.valuesCards.map((c) => c.userId))].length
-  }
-
   const uniqueVotes = (card: CardWithCounts) => {
     return card._count.Vote
   }
@@ -51,7 +47,7 @@ export default function Carousel({ cards }: { cards: CardWithCounts[] }) {
         {cards.map((card) => (
           <div key={card.id} className="flex flex-col">
             <div className="flex-grow w-96">
-              <ValuesCard card={card} />
+              <ValuesCard card={card} shouldTruncate={true} />
             </div>
             <p className="mx-8 mt-2 text-sm text-neutral-500">
               {footerText(card)}
