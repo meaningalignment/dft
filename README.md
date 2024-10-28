@@ -2,7 +2,7 @@
 > **This repository is archived.** We're working on turning this process into a standalone deliberation platform for any topic. You can see this fork [here](https://github.com/meaningalignment/mgd).
 
 
-# Moral Graph Deliberation Tooling
+# Democratic Fine-Tuning
 
 *Developed by the [Meaning Alignment Institute](https://www.meaningalignment.org/), funded by [OpenAI](https://openai.com/blog/democratic-inputs-to-ai). Live deployment available at [dft.meaningalignment.org](https://dft.meaningalignment.org).*
 
